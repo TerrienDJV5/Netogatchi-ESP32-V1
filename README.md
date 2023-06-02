@@ -15,6 +15,9 @@ hardware
 - IR transmitter
 - IR receiver
 - SH1106 screen
+- battery
+- resisters
+- NPN transistor
 
 
 instructions
