@@ -15,3 +15,8 @@ hardware
 - IR transmitter
 - IR receiver
 - SH1106 screen
+
+
+instructions
+- download board layout 
+- 
