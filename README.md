@@ -3,8 +3,9 @@ Netogatchi device with LoRa and WiFi integration
 
 
 features
-- Wifi
-- LoRa 
+- Wifi Hotspot
+- Wifi repeater
+- LoRa to Wifi connection (with usage of a base station)( low bandwidth )
 - Bluetooth (ETA)
 - IR cloning
 
