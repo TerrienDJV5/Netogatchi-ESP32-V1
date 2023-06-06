@@ -2679,6 +2679,32 @@ void printFreeHeap(Stream &serialport) {
 #define MAXDEBUG_COMMANDINPUT_LENGTH 256
 #define MAXDEBUG_SUBTARGETCOMMAND_LENGTH 256
 #define MAXDEBUG_SUBCOMMANDINPUT_LENGTH 256
+class DebugCommands {
+  private:
+    //
+    
+  public:
+    DebugCommands();
+    void init();
+    void DebugCommands::serialDebugCommands(Stream &serialport);
+    
+};
+DebugCommands::DebugCommands() {
+  init();
+}
+void DebugCommands::init() {
+  //init Buffers
+  char targetCommand[ MAXDEBUG_TARGETCOMMAND_LENGTH ];
+  char commandInputs[ MAXDEBUG_COMMANDINPUT_LENGTH ];
+  char subTargetCommand[ MAXDEBUG_SUBTARGETCOMMAND_LENGTH ];
+  char subCommandInputs[ MAXDEBUG_SUBCOMMANDINPUT_LENGTH ];
+}
+void DebugCommands::serialDebugCommands(Stream &serialport) {
+  //
+}
+
+
+
 void serialDebugCommands(Stream &serialport)
 {
   //https://forum.arduino.cc/t/can-you-pass-a-serial-port-as-a-parameter/658755
