@@ -1,0 +1,46 @@
+FileData Structure:
+5 bytes - file header
+2 bytes - file version
+16 bytes - in-program name
+2 bytes - Total Frame Count (1-65536)( tFcount )
+1 byte - Global Pixel Width (1-256)
+1 byte - Global Pixel Height (1-256)
+1 byte - image format flags (6 bools + 2bit value)
+->B00000001 = Per-Frame Pixel Width&Height Enabled
+->B00000010 = Per-Frame X&Y Pos Offset Enabled
+->B00000100 = Per-Frame Delay Enabled
+->B00001000 = Clear Area before each Frame Enabled
+---> draws a black square at display location before drawing frame
+->B00110000 = encoded image rotation
+---> (Clockwise)( imgEncodeRot )
+---> used if the encoded image needs to be rotated before stored in memory
+->B01000000 = loop animation enabled 
+---> ( used if tFcount > 1 )
+->B10000000 = inverted Image Data flag
+---> if enabled flip each Pixel bit before output
+
+Per frame:
+1 byte - Pixel Width (if enabled)( fbitpxw )
+1 byte - Pixel Height (if enabled)( fbitpxh )
+1 byte - Image Xpos offset (if enabled)
+1 byte - Image Ypos offset (if enabled)
+2 bytes - hold Frame Delay before next draw (if enabled) (1-65536 milliseconds)
+2 bytes - Frame Data Bytes Count (fdBytec)
+fdBytec Bytes - Frame Pixel Data
+
+《MATH STUFF》
+% = Modulo
+
+switch (imgEncodeRot){
+case (0 or 2):
+Frame Data Byte Size = 
+((fbitpxw+(fbitpxw%8))>>3)*fbitpxh
+break;
+case (1 or 3):
+Frame Data Byte Size = 
+((fbitpxh+(fbitpxh%8))>>3)*fbitpxw
+break;
+default:
+//error that should never happen
+break;
+}

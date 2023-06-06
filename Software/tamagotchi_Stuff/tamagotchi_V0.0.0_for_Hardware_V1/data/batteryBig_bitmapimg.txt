@@ -1,0 +1,2 @@
+// 'batteryBig_bitmapimg', 25x12px
+3fffff80200000802ffffe80effffe80affffe80affffe80affffe80affffe80effffe802ffffe80200000803fffff80
