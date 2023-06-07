@@ -167,6 +167,7 @@ int wifi_status = WL_IDLE_STATUS;
 WiFiServer SerialWiFiserver(23);
 
 // Initialize the client library
+//https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
 WiFiClient SerialWiFiclient;
 
 
@@ -359,15 +360,21 @@ Adafruit_SH1106 display(OLED_SDA, OLED_SCL);
 
 
 
-#define ENABLE_RSSI true
 
 #include "LoRa_E220.h"
+
+#define ENABLE_RSSI true
+#define FREQUENCY_915
+#define E220_22
+
+
 //https://github.com/xreef/EByte_LoRa_E220_Series_Library
 
 
 //LoRa_E220 e220ttl(&ExtraSerial2);  // e22 TX e22 RX
 LoRa_E220 e220ttl(&Serial2);  // e22 TX e22 RX
 
+//#include "EByte_LoRa_E220_library.h"
 
 
 
@@ -901,8 +908,8 @@ void drawTaskbar(Adafruit_SH1106 &display, int frame_location_offset, byte rotat
 
 
 /*
- * Struct Images and Animations: Begin
- */
+   Struct Images and Animations: Begin
+*/
 typedef struct {
   //https://www.tutorialspoint.com/structs-in-arduino-program
   char imageName[32] = "IMAGE";//max name length = 31 charaters
@@ -926,9 +933,9 @@ void display_struct_bitmapIMG(Adafruit_SH1106 &display, IMGbitmapStruct &bitmapI
 
 
 /* Sorce: https://forum.arduino.cc/t/passing-struct-info-as-function-parameters/37330/2
- *  Sorce: https://forum.arduino.cc/t/passing-struct-info-as-function-parameters/37330/7
- * The "&" effectively means that the original will be operated on rather than a copy that only exists in the scope of the function.
- * References are a less powerful but far easier to use derivative of pointers, Google should find more about them if you want to know.
+    Sorce: https://forum.arduino.cc/t/passing-struct-info-as-function-parameters/37330/7
+   The "&" effectively means that the original will be operated on rather than a copy that only exists in the scope of the function.
+   References are a less powerful but far easier to use derivative of pointers, Google should find more about them if you want to know.
 */
 void load_struct_bitmapIMG_dat_File(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   if (!fileBMP) {
@@ -948,7 +955,7 @@ void load_struct_bitmapIMG_dat_File(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   imageTemp = (unsigned char*)malloc(bitmapIMG.imageByteLength + 1);
   bitmapIMG.image = (unsigned char*)malloc(bitmapIMG.imageByteLength);
   fileBMP.read(imageTemp, bitmapIMG.imageByteLength);
-  for (int index=0; index < bitmapIMG.imageByteLength; index++){
+  for (int index = 0; index < bitmapIMG.imageByteLength; index++) {
     bitmapIMG.image[index] = imageTemp[index];
   }
   free(imageTemp);
@@ -963,19 +970,19 @@ void display_struct_bitmapIMG(Adafruit_SH1106 &display, IMGbitmapStruct &bitmapI
 
 
 typedef struct {
-  uint16_t locxPxOffset=0;//X Offset in pixels
-  uint16_t locyPxOffset=0;//Y Offset in pixels
+  uint16_t locxPxOffset = 0; //X Offset in pixels
+  uint16_t locyPxOffset = 0; //Y Offset in pixels
   uint16_t widthPx;//in pixels(Global)
   uint16_t heightPx;//in pixels(Global)
-  
+
   //subframeDataRotation is used if "rotationSFCompression" is Enabled
-  uint8_t subframeDataRotation=0;//data rotated Clockwise 4 phases
+  uint8_t subframeDataRotation = 0; //data rotated Clockwise 4 phases
   /* subframeDataRotation
-   * 0 == 0 CW rotations Needed
-   * 1 == 3 CW rotations Needed
-   * 2 == 2 CW rotations Needed
-   * 3 == 1 CW rotations Needed
-   */
+     0 == 0 CW rotations Needed
+     1 == 3 CW rotations Needed
+     2 == 2 CW rotations Needed
+     3 == 1 CW rotations Needed
+  */
   unsigned int frameStaydelayms = 100;// units = milliseconds
   uint16_t frameByteLength;//frame data byteSize
   unsigned char* frameDataPool;//size is gifByteLength
@@ -992,28 +999,28 @@ typedef struct {
   uint16_t globalsubimageByteLength;
   uint16_t widthGPx;//in pixels(Global)
   uint16_t heightGPx;//in pixels(Global)
-  
+
   byte subframeCompressionFlags;//size is frameCount //8 flags each frame
   bool cropSFCompression = false;
   bool rotationSFCompression = false;
 
   uint16_t* subimageByteLength; //size is frameCount
-  
+
   //locxPxOffset, locyPxOffset, widthPx and HeightPx are used if "cropSFCompression" is Enabled
   uint16_t* locxPxOffset;//size is frameCount //X Offset in pixels
   uint16_t* locyPxOffset;//size is frameCount //Y Offset in pixels
   uint16_t* widthPx;//size is frameCount //in pixels(Sub Image)
   uint16_t* heightPx;//size is frameCount //in pixels(Sub Image)
-  
-  
+
+
   //subframeDataRotation is used if "rotationSFCompression" is Enabled
   uint8_t* subframeDataRotation;//size is frameCount //data rotated Clockwise 4 phases
   /* subframeDataRotation
-   * 0 == 0 CW rotations Needed
-   * 1 == 3 CW rotations Needed
-   * 2 == 2 CW rotations Needed
-   * 3 == 1 CW rotations Needed
-   */
+     0 == 0 CW rotations Needed
+     1 == 3 CW rotations Needed
+     2 == 2 CW rotations Needed
+     3 == 1 CW rotations Needed
+  */
   uint16_t* subimageByteOffset; //size is frameCount
   unsigned int* frameStaydelayms;//size is frameCount// units = milliseconds
   unsigned char* frameDataPool;//size is gifByteLength
@@ -1053,20 +1060,20 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
   file.seek(5);
   checkHeaderFormat[5] = (char)file.peek();
   file.seek(0);
-  if (strncpy(checkHeaderFormat,"datgif", 6)==0){
+  if (strncpy(checkHeaderFormat, "datgif", 6) == 0) {
     formatCheck = true;
-  }else{
+  } else {
     formatCheck = false;
   }
-  
-  
+
+
   unsigned char* imageTemp;
-  
+
   unsigned int gifdataReadIndex = 0;
   unsigned int imagedataSize = 0;
   Serial.println("load_struct_bitmapGIF_dat_File -Check -00");
   printFreeHeap(Serial);
-  if (formatCheck==false){
+  if (formatCheck == false) {
     Serial.println("load_struct_bitmapGIF_dat_File -Check -01");
     //old format
     //2 bytes - subframeDataSize (includes subframe variables)
@@ -1075,21 +1082,21 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
     //# bytes - frameData (byte size = subframeDataSize)
     //repeat until end of File
     unsigned int frameIndex = 0;
-    
+
     unsigned int frameDataSize;
     file.seek(0);
     frameDataSize = ((file.read()) << 8) | (file.read());
     file.seek(0);
-    
+
     printFreeHeap(Serial);
-    bitmapGIF.frameCount = int(filesize / (frameDataSize+2));
+    bitmapGIF.frameCount = int(filesize / (frameDataSize + 2));
     //bitmapGIF.frameDataPool = (unsigned char*)malloc(bitmapGIF.frameCount*(frameDataSize-2-2));
-    Serial.print("bitmapGIF.frameDataPool: ");Serial.println( bitmapGIF.frameCount*(frameDataSize-2-2) );
-    
-    
+    Serial.print("bitmapGIF.frameDataPool: "); Serial.println( bitmapGIF.frameCount * (frameDataSize - 2 - 2) );
+
+
     bitmapGIF.subFramePointers = (GIFframebitmapStruct*)malloc(bitmapGIF.frameCount);
-    
-    
+
+
     //bitmapGIF.subimageByteOffset = (uint16_t*)malloc(bitmapGIF.frameCount);
     //bitmapGIF.frameStaydelayms = (unsigned int*)malloc(bitmapGIF.frameCount);
     bitmapGIF.subframeCompressionFlags = 0b00000000;
@@ -1098,7 +1105,7 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
     bitmapGIF.gifByteLength = 0;
     frameIndex = 0;
     while (file.available()) {
-      Serial.print("load_struct_bitmapGIF_dat_File -Check -03 -");Serial.println(frameIndex);
+      Serial.print("load_struct_bitmapGIF_dat_File -Check -03 -"); Serial.println(frameIndex);
       bitmapGIF.subFramePointers[ frameIndex ].frameByteLength = ((file.read()) << 8) | (file.read());
       bitmapGIF.subFramePointers[ frameIndex ].widthPx = ((file.read()) << 8) | (file.read());
       bitmapGIF.subFramePointers[ frameIndex ].widthPx++;
@@ -1108,27 +1115,27 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
       bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
       Serial.println("load_struct_bitmapGIF_dat_File -Check -04");
       printFreeHeap(Serial);
-      
+
       bitmapGIF.subFramePointers[ frameIndex ].frameDataPool = (unsigned char*)malloc(bitmapGIF.subFramePointers[ frameIndex ].frameByteLength);
       file.read(bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].frameByteLength);
-      
+
       display.clearDisplay();
-      display.drawBitmap(0,0, bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].widthPx, bitmapGIF.subFramePointers[ frameIndex ].heightPx, WHITE);
+      display.drawBitmap(0, 0, bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].widthPx, bitmapGIF.subFramePointers[ frameIndex ].heightPx, WHITE);
       display.display();
-      
+
       Serial.println("load_struct_bitmapGIF_dat_File -Check -05");
-      
+
       printFreeHeap(Serial);
       bitmapGIF.subFramePointers[ frameIndex ].frameStaydelayms = 1;
       gifdataReadIndex += bitmapGIF.globalsubimageByteLength;
       bitmapGIF.gifByteLength += bitmapGIF.globalsubimageByteLength;
-      
+
       frameIndex++;
     }
     frameIndex--;
-    Serial.print("frameIndex: ");Serial.println(frameIndex);
+    Serial.print("frameIndex: "); Serial.println(frameIndex);
   }
-  if (formatCheck==true){
+  if (formatCheck == true) {
     /*needs to be tested*/
     //format of .datgif
     //6 bytes - Fileheader ("datgif")
@@ -1138,8 +1145,8 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
     //2 bytes - GlobalsubframeDataSize
     //2 bytes - globalframeWidth
     //2 bytes - globalframeHeight
-    
-    
+
+
     //subframes
     //2 bytes - subframeDataSize (if "enabled") (cropSFCompression OR rotationSFCompression)(includes subframe variables)
     //2 bytes - subframeWidth         (if "enabled") (cropSFCompression OR rotationSFCompression)
@@ -1149,80 +1156,80 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
     //1 byte  - subframeDataRotation  (if "enabled") (rotationSFCompression)
     //2 bytes - subframeDelay
     //# bytes - subframeData
-    
+
     file.read((unsigned char*)checkHeaderFormat, 6);
     char* dataFileVersionString;
     dataFileVersionString = (char*)malloc(3);
     memset(dataFileVersionString, '\0', 3);
     file.read((unsigned char*)dataFileVersionString, 2);
     unsigned long fileTempPostition = file.position();
-    
-    
+
+
     bitmapGIF.frameCount = ((file.read()) << 8) | (file.read());
     bitmapGIF.subframeCompressionFlags = file.read();
-    bitmapGIF.cropSFCompression = (bitmapGIF.subframeCompressionFlags & 0b10000000)==0b10000000;
-    bitmapGIF.rotationSFCompression = (bitmapGIF.subframeCompressionFlags & 0b01000000)==0b01000000;
+    bitmapGIF.cropSFCompression = (bitmapGIF.subframeCompressionFlags & 0b10000000) == 0b10000000;
+    bitmapGIF.rotationSFCompression = (bitmapGIF.subframeCompressionFlags & 0b01000000) == 0b01000000;
     bitmapGIF.globalsubimageByteLength = ((file.read()) << 8) | (file.read());
     bitmapGIF.widthGPx = ((file.read()) << 8) | (file.read());
     bitmapGIF.heightGPx = ((file.read()) << 8) | (file.read());
-    
+
     //allocate
-    if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression){
+    if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression) {
       bitmapGIF.widthPx = (uint16_t*)malloc(bitmapGIF.frameCount);
       bitmapGIF.heightPx = (uint16_t*)malloc(bitmapGIF.frameCount);
       bitmapGIF.subimageByteLength = (uint16_t*)malloc(bitmapGIF.frameCount);
     }
-    if (bitmapGIF.cropSFCompression){
+    if (bitmapGIF.cropSFCompression) {
       bitmapGIF.locxPxOffset = (uint16_t*)malloc(bitmapGIF.frameCount);
       bitmapGIF.locyPxOffset = (uint16_t*)malloc(bitmapGIF.frameCount);
     }
-    if (bitmapGIF.rotationSFCompression){
+    if (bitmapGIF.rotationSFCompression) {
       bitmapGIF.subframeDataRotation = (uint8_t*)malloc(bitmapGIF.frameCount);
     }
     bitmapGIF.subimageByteOffset = (uint16_t*)malloc(bitmapGIF.frameCount);
     bitmapGIF.frameStaydelayms = (unsigned int*)malloc(bitmapGIF.frameCount);
-    
-    
+
+
     gifdataReadIndex = 0;
     imagedataSize = 0;
     for (int frameIndex = 0; frameIndex < bitmapGIF.frameCount; frameIndex++) {
       //subimageByteLength, subimageByteOffset, frameStaydelayms, locxPxOffset, locyPxOffset, widthPx, heightPx, subframeDataRotation
       bitmapGIF.subimageByteOffset[ frameIndex ] = gifdataReadIndex;
 
-      if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression){
+      if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression) {
         bitmapGIF.subimageByteLength[ frameIndex ] = ((file.read()) << 8) | (file.read());
         bitmapGIF.widthPx[ frameIndex ] = ((file.read()) << 8) | (file.read());
         bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
         bitmapGIF.heightPx[ frameIndex ] = ((file.read()) << 8) | (file.read());
         bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
       }
-      if (bitmapGIF.cropSFCompression){
+      if (bitmapGIF.cropSFCompression) {
         bitmapGIF.locxPxOffset[ frameIndex ] = ((file.read()) << 8) | (file.read());
         bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
         bitmapGIF.locyPxOffset[ frameIndex ] = ((file.read()) << 8) | (file.read());
         bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
       }
-      if (bitmapGIF.rotationSFCompression){
+      if (bitmapGIF.rotationSFCompression) {
         bitmapGIF.subframeDataRotation[ frameIndex ] = file.read();
         bitmapGIF.subimageByteLength[ frameIndex ] -= 1;
       }
       bitmapGIF.frameStaydelayms[ frameIndex ] = ((file.read()) << 8) | (file.read());
-      if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression){
+      if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression) {
         bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
-        
+
         gifdataReadIndex += bitmapGIF.subimageByteLength[ frameIndex ];
         imagedataSize += bitmapGIF.subimageByteLength[ frameIndex ];
         file.read( &bitmapGIF.frameDataPool[ bitmapGIF.subimageByteOffset[ frameIndex ] ], bitmapGIF.subimageByteLength[ frameIndex ] );
-      }else {
+      } else {
         bitmapGIF.globalsubimageByteLength -= 2;
-        
+
         gifdataReadIndex += bitmapGIF.globalsubimageByteLength;
         imagedataSize += bitmapGIF.globalsubimageByteLength;
         file.read( &bitmapGIF.frameDataPool[ bitmapGIF.subimageByteOffset[ frameIndex ] ], bitmapGIF.globalsubimageByteLength );
       }
-      
+
     }
-    
+
     free(dataFileVersionString);
   }
   free(checkHeaderFormat);
@@ -1232,34 +1239,34 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
 
 void display_struct_bitmapGIF(Adafruit_SH1106 &display, GIFbitmapStruct &bitmapGIF, int frame, int locx, int locy) {
   Serial.println("display_struct_bitmapGIF");
-  for(byte index = frame; index <= frame; index++){
+  for (byte index = frame; index <= frame; index++) {
     printFreeHeap(Serial);
-    Serial.print("index: ");Serial.println(index);
-    Serial.print("subimageByteOffset: ");Serial.println(bitmapGIF.subimageByteOffset[ index ]);
-    Serial.print("frameCount: ");Serial.println(bitmapGIF.frameCount);
-    Serial.print("gifByteLength: ");Serial.println(bitmapGIF.gifByteLength);
-    
-    if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression){
+    Serial.print("index: "); Serial.println(index);
+    Serial.print("subimageByteOffset: "); Serial.println(bitmapGIF.subimageByteOffset[ index ]);
+    Serial.print("frameCount: "); Serial.println(bitmapGIF.frameCount);
+    Serial.print("gifByteLength: "); Serial.println(bitmapGIF.gifByteLength);
+
+    if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression) {
       unsigned char* imageTemp;
       imageTemp = (unsigned char*)malloc(bitmapGIF.subimageByteLength[ index ]);
-      Serial.print("subimageByteLength: ");Serial.println(bitmapGIF.subimageByteLength[ index ]);
+      Serial.print("subimageByteLength: "); Serial.println(bitmapGIF.subimageByteLength[ index ]);
       memcpy(imageTemp, &bitmapGIF.frameDataPool[ bitmapGIF.subimageByteOffset[ index ] ], bitmapGIF.subimageByteLength[ index ]);
-      if (bitmapGIF.cropSFCompression){
-        display.drawBitmap(locx+bitmapGIF.locxPxOffset[ index ], locy+bitmapGIF.locyPxOffset[ index ], imageTemp, bitmapGIF.widthPx[ index ], bitmapGIF.heightPx[ index ], WHITE);
-      }else if (bitmapGIF.rotationSFCompression){
+      if (bitmapGIF.cropSFCompression) {
+        display.drawBitmap(locx + bitmapGIF.locxPxOffset[ index ], locy + bitmapGIF.locyPxOffset[ index ], imageTemp, bitmapGIF.widthPx[ index ], bitmapGIF.heightPx[ index ], WHITE);
+      } else if (bitmapGIF.rotationSFCompression) {
         //add rotate
         display.drawBitmap(locx, locy, imageTemp, bitmapGIF.widthPx[ index ], bitmapGIF.heightPx[ index ], WHITE);
       }
       free(imageTemp);
-    }else{
+    } else {
       Serial.println("Old Format");
       //Serial.println(bitmapGIF.globalsubimageByteLength);
       //Serial.println(ESP.getMaxAllocHeap());
       /*
-      uint32_t getHeapSize(); //total heap size
-      uint32_t getFreeHeap(); //available heap
-      uint32_t getMinFreeHeap(); //lowest level of free heap since boot
-      uint32_t getMaxAllocHeap(); //largest block of heap that can be allocated at once
+        uint32_t getHeapSize(); //total heap size
+        uint32_t getFreeHeap(); //available heap
+        uint32_t getMinFreeHeap(); //lowest level of free heap since boot
+        uint32_t getMaxAllocHeap(); //largest block of heap that can be allocated at once
       */
       printFreeHeap(Serial);
       display.drawBitmap(bitmapGIF.subFramePointers[ index ].locxPxOffset, bitmapGIF.subFramePointers[ index ].locyPxOffset, bitmapGIF.subFramePointers[ index ].frameDataPool, bitmapGIF.subFramePointers[ index ].widthPx, bitmapGIF.subFramePointers[ index ].heightPx, WHITE);
@@ -1272,8 +1279,8 @@ void display_struct_bitmapGIF(Adafruit_SH1106 &display, GIFbitmapStruct &bitmapG
 
 
 /*
- * Struct Images and Animations: End
- */
+   Struct Images and Animations: End
+*/
 
 
 
@@ -1342,7 +1349,7 @@ void readbitmapdatFile(Adafruit_SH1106 &display, File &fileBMP) {
     fileImageDataBuffer = (unsigned char*)malloc(frameDataSize + 1);
     //Serial.println(fileBMP.available());Serial.println(frameDataSize);
     fileBMP.read(fileImageDataBuffer, frameDataSize);
-    
+
     display.clearDisplay();
     display.drawBitmap(0, 0, fileImageDataBuffer, frameWidthSize, frameHeightSize, WHITE);
     display.display();
@@ -1404,33 +1411,33 @@ const char *filenameWiFi = "/Wifi_Connections.txt";
 WiFiconfig wificonfig;
 
 /*
-#define STORAGE_SELECT_SD 0
-#define STORAGE_SELECT_SPIFFS 1
-#define STORAGE_SELECT_SDFAT 2
-#define STORAGE_SELECT_FFAT 3
+  #define STORAGE_SELECT_SD 0
+  #define STORAGE_SELECT_SPIFFS 1
+  #define STORAGE_SELECT_SDFAT 2
+  #define STORAGE_SELECT_FFAT 3
 
-#define STORAGE_INCLUDE_SD false
-#define STORAGE_INCLUDE_SPIFFS true
-#define STORAGE_INCLUDE_SDFAT false
-#define STORAGE_INCLUDE_FFAT false
+  #define STORAGE_INCLUDE_SD false
+  #define STORAGE_INCLUDE_SPIFFS true
+  #define STORAGE_INCLUDE_SDFAT false
+  #define STORAGE_INCLUDE_FFAT false
 */
 
 // Loads the configuration from a file
 void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
   // Open file for reading
   File file;
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD){
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
     file = SD.open(filename);
   }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS){
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
     file = SPIFFS.open(filename);
   }
-  #endif
-  
-  
+#endif
+
+
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/v6/assistant to compute the capacity.
@@ -1457,31 +1464,31 @@ void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte st
 // Saves the configuration to a file
 void saveWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
   // Delete existing file, otherwise the configuration is appended to the file
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD){
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
     SD.remove(filename);
   }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS){
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
     SPIFFS.remove(filename);
   }
-  #endif
-  
+#endif
+
   // Open file for writing
   File file;
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD){
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
     file = SD.open(filename, FILE_WRITE);
   }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS){
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
     file = SPIFFS.open(filename, FILE_WRITE);
   }
-  #endif
+#endif
 
-  
+
   if (!file) {
     Serial.println(F("Failed to create file"));
     return;
@@ -1509,17 +1516,17 @@ void saveWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, b
 void printWiFiFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
   // Open file for reading
   File file;
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD){
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
     file = SD.open(filename);
   }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS){
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
     file = SPIFFS.open(filename);
   }
-  #endif
-  
+#endif
+
   if (!file) {
     Serial.println(F("Failed to read file"));
     return;
@@ -1559,33 +1566,33 @@ const char *filename = "/config.txt";  // <- SD library uses 8.3 filenames
 Config config;                         // <- global configuration object
 
 /*
-#define STORAGE_SELECT_SD 0
-#define STORAGE_SELECT_SPIFFS 1
-#define STORAGE_SELECT_SDFAT 2
-#define STORAGE_SELECT_FFAT 3
+  #define STORAGE_SELECT_SD 0
+  #define STORAGE_SELECT_SPIFFS 1
+  #define STORAGE_SELECT_SDFAT 2
+  #define STORAGE_SELECT_FFAT 3
 
-#define STORAGE_INCLUDE_SD false
-#define STORAGE_INCLUDE_SPIFFS true
-#define STORAGE_INCLUDE_SDFAT false
-#define STORAGE_INCLUDE_FFAT false
+  #define STORAGE_INCLUDE_SD false
+  #define STORAGE_INCLUDE_SPIFFS true
+  #define STORAGE_INCLUDE_SDFAT false
+  #define STORAGE_INCLUDE_FFAT false
 */
 
 // Loads the configuration from a file
 void loadConfiguration(const char *filename, Config &config, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
   // Open file for reading
   File file;
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD){
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
     file = SD.open(filename);
   }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS){
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
     file = SPIFFS.open(filename);
   }
-  #endif
-  
-  
+#endif
+
+
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/v6/assistant to compute the capacity.
@@ -1610,31 +1617,31 @@ void loadConfiguration(const char *filename, Config &config, byte storageDevice 
 // Saves the configuration to a file
 void saveConfiguration(const char *filename, const Config &config, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
   // Delete existing file, otherwise the configuration is appended to the file
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD){
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
     SD.remove(filename);
   }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS){
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
     SPIFFS.remove(filename);
   }
-  #endif
-  
+#endif
+
   // Open file for writing
   File file;
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD){
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
     file = SD.open(filename, FILE_WRITE);
   }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS){
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
     file = SPIFFS.open(filename, FILE_WRITE);
   }
-  #endif
+#endif
 
-  
+
   if (!file) {
     Serial.println(F("Failed to create file"));
     return;
@@ -1662,17 +1669,17 @@ void saveConfiguration(const char *filename, const Config &config, byte storageD
 void printFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
   // Open file for reading
   File file;
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD){
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
     file = SD.open(filename);
   }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS){
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
     file = SPIFFS.open(filename);
   }
-  #endif
-  
+#endif
+
   if (!file) {
     Serial.println(F("Failed to read file"));
     return;
@@ -1709,11 +1716,16 @@ void OnWiFiEvent(WiFiEvent_t event)
     case SYSTEM_EVENT_AP_STADISCONNECTED:
       Serial.println("Station disconnected from ESP32 soft AP");
       break;
-    default: 
+    default:
       Serial.printf("Got Event: %d\n", event);
       break;
   }
 }
+
+
+void printParameters(Stream &serialport, struct Configuration configuration);
+void printModuleInformation(Stream &serialport, struct ModuleInformation moduleInformation);
+
 
 
 TaskHandle_t Task1;
@@ -1727,7 +1739,7 @@ QueueHandle_t queue;
 //https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32s2/api-reference/peripherals/index.html
 void setup()   {
   Serial.begin(115200);
-  Serial.print("setup() running on core ");Serial.println(xPortGetCoreID());
+  Serial.print("setup() running on core "); Serial.println(xPortGetCoreID());
   Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
   //https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/preferences.html
   //https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/
@@ -1735,15 +1747,15 @@ void setup()   {
   preferences.end();
   //setup Pins
 
-  #if (FeatureEnable_IR_RXTX_Control==true)
+#if (FeatureEnable_IR_RXTX_Control==true)
   //IR Pins
   //pinMode(IR_TX_Pin, OUTPUT);
   IrSender.begin(IR_TX_Pin, ENABLE_LED_FEEDBACK, USE_DEFAULT_FEEDBACK_LED_PIN); // Specify send pin and enable feedback LED at default feedback LED pin
 
   //pinMode(IR_RX_Pin, INPUT);
   IrReceiver.begin(IR_RX_Pin, ENABLE_LED_FEEDBACK); // Start the receiver
-  #endif
-  
+#endif
+
   //MIC Pin
   pinMode(MIC_Pin, INPUT);
 
@@ -1755,7 +1767,10 @@ void setup()   {
   //BatterySensePin
   pinMode(batteryVoltageDivider, INPUT);
 
+  // Startup all pins and UART
   e220ttl.begin();//LoRa Usage
+
+
 
   //Enable Devices
   adc_power_on();
@@ -1881,50 +1896,50 @@ void setup()   {
   */
   Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
   {
-  printFreeHeap(Serial);
-  File fileBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
-  IMGbitmapStruct boyKisserTest;
-  printFreeHeap(Serial);
-  Serial.println("IMGbitmapStruct Test: Begin");
-  while (fileBMP.available()) {
-    load_struct_bitmapIMG_dat_File(fileBMP, boyKisserTest);
-    display.clearDisplay();
-    display_struct_bitmapIMG(display, boyKisserTest, 0, 0);
-    display.display();
-  }
-  fileBMP.close();
-  printFreeHeap(Serial);
+    printFreeHeap(Serial);
+    File fileBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
+    IMGbitmapStruct boyKisserTest;
+    printFreeHeap(Serial);
+    Serial.println("IMGbitmapStruct Test: Begin");
+    while (fileBMP.available()) {
+      load_struct_bitmapIMG_dat_File(fileBMP, boyKisserTest);
+      display.clearDisplay();
+      display_struct_bitmapIMG(display, boyKisserTest, 0, 0);
+      display.display();
+    }
+    fileBMP.close();
+    printFreeHeap(Serial);
   }
   delay(1000);
   /*
-  { // Fix Me!
-  GIFbitmapStruct boyKisserGIFTest;
-  
-  File fileStructBMP;
-  fileStructBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
-  load_struct_bitmapGIF_dat_File(fileStructBMP, boyKisserGIFTest);
-  Serial.println(fileStructBMP);
-  fileStructBMP.close();
-  printFreeHeap(Serial);
-  
-  for(byte frame = 0; frame < boyKisserGIFTest.frameCount; frame++){
+    { // Fix Me!
+    GIFbitmapStruct boyKisserGIFTest;
+
+    File fileStructBMP;
+    fileStructBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
+    load_struct_bitmapGIF_dat_File(fileStructBMP, boyKisserGIFTest);
+    Serial.println(fileStructBMP);
+    fileStructBMP.close();
+    printFreeHeap(Serial);
+
+    for(byte frame = 0; frame < boyKisserGIFTest.frameCount; frame++){
     Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
     display.clearDisplay();
     display_struct_bitmapGIF(display, boyKisserGIFTest, frame, 0, 0);
     display.display();
     Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
-  }
-  //free(boyKisserGIFTest);
-  Serial.println("IMGbitmapStruct Test: End");
-  }
-  //*/
+    }
+    //free(boyKisserGIFTest);
+    Serial.println("IMGbitmapStruct Test: End");
+    }
+    //*/
   delay(5000);
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
   fileBMP = SPIFFS.open("/batteryBig_bitmapimg.dat");
   Serial.println("File Content:");
   while (fileBMP.available()) {
@@ -2080,10 +2095,10 @@ void setup()   {
 
   //WiFi Setup
   WiFi.onEvent(OnWiFiEvent);
-  
+
   //https://www.upesy.com/blogs/tutorials/how-to-connect-wifi-acces-point-with-esp32
   disableWiFi();
-  
+
   enableWiFi();
   //wifiSerialSetup();
 
@@ -2105,8 +2120,8 @@ void setup()   {
   // Dump config file
   Serial.println(F("Print config file..."));
   printFile(filename);
-  
-  
+
+
   // Should load default config if run for the first time
   Serial.println(F("Loading WiFi configuration..."));
   loadWiFiConfiguration(filenameWiFi, wificonfig);
@@ -2120,56 +2135,56 @@ void setup()   {
   printWiFiFile(filenameWiFi);
 
   /*
-   * Task Handles
-   */
+     Task Handles
+  */
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
-                    Task1code,   /* Task function. */
-                    "Task1",     /* name of task. */
-                    1000,       /* Stack size of task */
-                    NULL,        /* parameter of the task */
-                    1,           /* priority of the task */
-                    &Task1,      /* Task handle to keep track of created task */
-                    0);          /* pin task to core 0 */                  
-  delay(500); 
+    Task1code,   /* Task function. */
+    "Task1",     /* name of task. */
+    1000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task */
+    &Task1,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 0 */
+  delay(500);
 
   //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
-                    Task2code,   /* Task function. */
-                    "Task2",     /* name of task. */
-                    1000,       /* Stack size of task */
-                    NULL,        /* parameter of the task */
-                    2,           /* priority of the task */
-                    &Task2,      /* Task handle to keep track of created task */
-                    0);          /* pin task to core 1 */
+    Task2code,   /* Task function. */
+    "Task2",     /* name of task. */
+    1000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    2,           /* priority of the task */
+    &Task2,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 1 */
   delay(500);
-  
+
   Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
 }
 
 
 
-void Task1code( void * pvParameters ){
-  Serial.print("Task1 running on core ");Serial.println(xPortGetCoreID());
-  for (;;){
+void Task1code( void * pvParameters ) {
+  Serial.print("Task1 running on core "); Serial.println(xPortGetCoreID());
+  for (;;) {
     delay(1000);
   }
 }
 
-void Task2code( void * pvParameters ){
-  Serial.print("Task2 running on core ");Serial.println(xPortGetCoreID());
-  for (;;){
+void Task2code( void * pvParameters ) {
+  Serial.print("Task2 running on core "); Serial.println(xPortGetCoreID());
+  for (;;) {
     delay(2000);
   }
 }
 
 
-
+//Try esp32's inner Temp Sensor
 
 
 void loop() {
   // put your main code here, to run repeatedly:
-  Serial.print("loop() running on core ");Serial.println(xPortGetCoreID());
+  Serial.print("loop() running on core "); Serial.println(xPortGetCoreID());
   //calculate FPS
   system_Frame_FPS = (double)(1 / ((double)(frameEndTime - frameStartTime) / 1000000));
   //\/ start Frame Here \/
@@ -2177,7 +2192,7 @@ void loop() {
   frameStartTime = micros();
 
   ///*
-  #if (FeatureEnable_IR_RXTX_Control==true)
+#if (FeatureEnable_IR_RXTX_Control==true)
   if (IrReceiver.decode()) {
     Serial.print("IR_Receiver:");
     Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print "old" raw data
@@ -2187,7 +2202,7 @@ void loop() {
 
     IrReceiver.resume(); // Enable receiving of the next value
   }
-  #endif
+#endif
   //*/
 
 
@@ -2350,7 +2365,7 @@ void loop() {
       if (WiFi.getMode() == WIFI_MODE_NULL) {
         enableWiFi();
         //wifiSerialSetup();
-      }else{
+      } else {
         disableWiFi();
       }
     }
@@ -2373,9 +2388,9 @@ void loop() {
         }
       }
     }
-    
-    
-    Serial.print("WiFi.getMode():");Serial.print(WiFi.getMode());Serial.print(", ");
+
+
+    Serial.print("WiFi.getMode():"); Serial.print(WiFi.getMode()); Serial.print(", ");
     if (WiFi.getMode() == WIFI_MODE_NULL) {
       Serial.println("WiFi.getMode() == WIFI_MODE_NULL");
     };
@@ -2391,7 +2406,7 @@ void loop() {
     if (WiFi.getMode() == WIFI_MODE_MAX) {
       Serial.println("WiFi.getMode() == WIFI_MODE_MAX");
     };
-    
+
     if (WiFi.getMode() == WIFI_MODE_NULL) {
       display.println("WiFi.getMode() == WIFI_MODE_NULL");
     };
@@ -2418,7 +2433,7 @@ void loop() {
     display.setTextColor(WHITE);
     display.print("IR Menu"); display.println();
     display.print("Functionality Not yet added!"); display.println();
-    
+
   }
 
 
@@ -2594,7 +2609,7 @@ void loop() {
 
 
 
-  
+
 
 
   //checkPoint
@@ -2607,19 +2622,24 @@ void loop() {
   //Sensors
   //UI
 
+  //https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
+
 
   //Make Serial Debug command into Function in order for usage with both SerialBT and Serial
   serialDebugCommands(Serial);
 #if (FeatureEnable_BT_Serial==true)
   serialDebugCommands(SerialBT);
 #endif
-  
+
+
   // listen for incoming clients
   if (!SerialWiFiclient.connected()) {
     SerialWiFiclient = SerialWiFiserver.available();
   }
-  Serial.print("Client Connected:");Serial.print(SerialWiFiclient.connected());Serial.print(" Client available:");Serial.print(SerialWiFiclient.available());Serial.println();
-  
+  Serial.print("Client Connected:"); Serial.print(SerialWiFiclient.connected()); Serial.print(" Client available:"); Serial.print(SerialWiFiclient.available()); Serial.println();
+
+
+  //MAX_SERIAL_WIFI_CLIENTS
   if (SerialWiFiclient) {
     if (SerialWiFiclient.connected()) {
       Serial.println("Connected to Serial client");
@@ -2628,16 +2648,16 @@ void loop() {
     // close the connection:
     //client.stop();
   }
-  
+
   if (WiFi.getMode() != WIFI_MODE_NULL) {
     if (WiFi.getMode() != WIFI_MODE_AP) {
-      Serial.print("Local IP address: ");Serial.println(WiFi.localIP());
+      Serial.print("Local IP address: "); Serial.println(WiFi.localIP());
     };
     if (WiFi.getMode() != WIFI_MODE_STA) {
-      Serial.print("SoftAP IP address: ");Serial.println(WiFi.softAPIP());
+      Serial.print("SoftAP IP address: "); Serial.println(WiFi.softAPIP());
     };
   }
-  
+
 
 
   //Calculate Battery Percentage
@@ -2650,12 +2670,12 @@ void loop() {
   chargingFlag = false;
   //Serial.print("batteryPercent%:");Serial.println(batteryPercent);
 
-  
+
   //Serial.print("ESP.getFreeHeap():");Serial.println(ESP.getFreeHeap());
   //display.print("ESP.getFreeHeap():"); display.println(ESP.getFreeHeap());
   printFreeHeap(Serial);
   display.print("FreeHeap:"); display.print(ESP.getFreeHeap()); display.print(" B"); display.println();
-  
+
 
   //update some variables
 
@@ -2681,28 +2701,29 @@ void printFreeHeap(Stream &serialport) {
 #define MAXDEBUG_SUBCOMMANDINPUT_LENGTH 256
 class DebugCommands {
   private:
-    //
-    
+    //buffers
+    char targetCommand[ MAXDEBUG_TARGETCOMMAND_LENGTH ];
+    char commandInputs[ MAXDEBUG_COMMANDINPUT_LENGTH ];
+    char subTargetCommand[ MAXDEBUG_SUBTARGETCOMMAND_LENGTH ];
+    char subCommandInputs[ MAXDEBUG_SUBCOMMANDINPUT_LENGTH ];
   public:
     DebugCommands();
     void init();
-    void DebugCommands::serialDebugCommands(Stream &serialport);
-    
+    //void serialDebugCommands(Stream &serialport);
+
 };
 DebugCommands::DebugCommands() {
+  //
   init();
 }
 void DebugCommands::init() {
-  //init Buffers
-  char targetCommand[ MAXDEBUG_TARGETCOMMAND_LENGTH ];
-  char commandInputs[ MAXDEBUG_COMMANDINPUT_LENGTH ];
-  char subTargetCommand[ MAXDEBUG_SUBTARGETCOMMAND_LENGTH ];
-  char subCommandInputs[ MAXDEBUG_SUBCOMMANDINPUT_LENGTH ];
-}
-void DebugCommands::serialDebugCommands(Stream &serialport) {
   //
 }
-
+/*
+  void DebugCommands::serialDebugCommands(Stream &serialport) {
+  //
+  }
+  //*/
 
 
 void serialDebugCommands(Stream &serialport)
@@ -2725,24 +2746,24 @@ void serialDebugCommands(Stream &serialport)
     char subCommandInputs[ MAXDEBUG_SUBCOMMANDINPUT_LENGTH ];
     //
     /*
-    char cacheCommand_0[64];
-    char cacheCommand_1[64];
-    char valueCommandCheckCache_0[64];
-    char valueCommandCheckCache_1[64];
-    char valueCommandCheckCache_2[64];
-    char valueCommandCheckCache_3[64];
-    int intDebugValue_0;
-    int intDebugValue_1;
-    int intDebugValue_2;
-    int intDebugValue_3;
-    //*/
-    
+      char cacheCommand_0[64];
+      char cacheCommand_1[64];
+      char valueCommandCheckCache_0[64];
+      char valueCommandCheckCache_1[64];
+      char valueCommandCheckCache_2[64];
+      char valueCommandCheckCache_3[64];
+      int intDebugValue_0;
+      int intDebugValue_1;
+      int intDebugValue_2;
+      int intDebugValue_3;
+      //*/
+
     printCharArrayValue(serialport, debugCommand, "Debug Command");
-    
+
     serial_WiFi_DebugCommands(serialport, debugCommand);
     serial_LoRa_DebugCommands(serialport, debugCommand);
     serial_ButtonPISO_DebugCommands(serialport, debugCommand);
-    
+
     if (commandSelect(debugCommand, "set ")) {
       strcpy(targetCommand, "set ");
       strcpy(commandInputs, &debugCommand[strlen(targetCommand)]);
@@ -2780,7 +2801,7 @@ void serialDebugCommands(Stream &serialport)
         strcpy(subTargetCommand, "DebugMenu ");
         strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
         printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
-        
+
         if (strcmp(subCommandInputs, "hidden") == 0) {
           showDebugMenu = 0;
         }
@@ -2807,15 +2828,15 @@ void serialDebugCommands(Stream &serialport)
         printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
         currentMenuID = atoi(subCommandInputs);
       }
-      
-      #if (FeatureEnable_IR_RXTX_Control==true)
+
+#if (FeatureEnable_IR_RXTX_Control==true)
       //https://github.com/Arduino-IRremote/Arduino-IRremote/blob/master/examples/SendDemo/SendDemo.ino
       if (commandSelect(commandInputs, "IRSender ")) {
         //command format: set IRSender sendValue
         strcpy(subTargetCommand, "IRSender ");
         strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
         printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
-        
+
         char *ptr;
         unsigned int sendValue;//0xBD3D00802002
 
@@ -2828,13 +2849,13 @@ void serialDebugCommands(Stream &serialport)
 
         IrSender.sendNECRaw(sendValue, 1);
       }
-      #endif
+#endif
 
-      
+
       //
-      
+
     }
-    
+
   }
 }
 
@@ -2845,7 +2866,7 @@ void serial_ButtonPISO_DebugCommands(Stream &serialport, char *debugCommand)
   char commandInputs[ MAXDEBUG_COMMANDINPUT_LENGTH ];
   char subTargetCommand[ MAXDEBUG_SUBTARGETCOMMAND_LENGTH ];
   char subCommandInputs[ MAXDEBUG_SUBCOMMANDINPUT_LENGTH ];
-  
+
   char cacheCommand_0[64];
   char cacheCommand_1[64];
   char valueCommandCheckCache_0[64];
@@ -2856,21 +2877,21 @@ void serial_ButtonPISO_DebugCommands(Stream &serialport, char *debugCommand)
   int intDebugValue_1;
   int intDebugValue_2;
   int intDebugValue_3;
-  
+
   printCharArrayValue(serialport, debugCommand, "Debug Command");
-  
+
   if (commandSelect(debugCommand, "BPISO ")) {
     strcpy(targetCommand, "BPISO ");
     strcpy(commandInputs, &debugCommand[strlen(targetCommand)]);
     printCharArrayValue(serialport, commandInputs, "commandInputs");
-    
+
     if (commandSelect(commandInputs, "auto_update ")) {
       //command format: BPISO auto_update enable
       //command format: BPISO auto_update disable
       strcpy(subTargetCommand, "ButtonPISO_update ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
-      
+
       if (strcmp(subCommandInputs, "enable") == 0) {
         disableButtonPISO_update = false;
         serialPrintMessageFrom("System_Debug", "enabled ButtonPISO update");
@@ -2913,7 +2934,7 @@ void serial_ButtonPISO_DebugCommands(Stream &serialport, char *debugCommand)
       }
     }
     //
-    
+
   }
 }
 
@@ -2930,6 +2951,13 @@ void serial_LoRa_DebugCommands(Stream &serialport, char *debugCommand)
     strcpy(commandInputs, &debugCommand[strlen(targetCommand)]);
     printCharArrayValue(serialport, commandInputs, "commandInputs");
     //
+    if (commandSelect(commandInputs, "getconfig")) {
+      //command format: control LoRa getconfig
+      strcpy(subTargetCommand, "getconfig");
+      strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
+      printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      printLoRaConfig(serialport, e220ttl);
+    }
   }
 }
 
@@ -2991,7 +3019,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "getMode ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
-      serialport.print("WiFi.getMode():");serialport.print(WiFi.getMode());serialport.print(", ");
+      serialport.print("WiFi.getMode():"); serialport.print(WiFi.getMode()); serialport.print(", ");
       if (WiFi.getMode() == WIFI_MODE_NULL) {
         serialport.println("WiFi.getMode() == WIFI_MODE_NULL");
       };
@@ -3039,7 +3067,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       serialport.println("Wifi Disconnected!");
     }
   }
-  
+
 }
 
 
@@ -3069,6 +3097,74 @@ void printCharArrayValue(Stream &serialport, char *charArrayValue, char *charArr
 
 
 
+void printLoRaConfig(Stream &serialport, LoRa_E220 &e220ttl)
+{
+  //https://mischianti.org/2022/04/19/ebyte-lora-e220-llcc68-device-for-arduino-esp32-or-esp8266-configuration-3/
+  // Startup all pins and UART
+  //e220ttl.begin();//LoRa Usage
+
+  //https://mischianti.org/2022/04/19/ebyte-lora-e220-llcc68-device-for-arduino-esp32-or-esp8266-configuration-3/
+  ResponseStructContainer c;
+  c = e220ttl.getConfiguration();
+  // It's important get configuration pointer before all other operation
+  Configuration configuration = *(Configuration*) c.data;
+  serialport.println(c.status.getResponseDescription());
+  serialport.println(c.status.code);
+
+  printParameters(serialport, configuration);
+
+  ResponseStructContainer cMi;
+  cMi = e220ttl.getModuleInformation();
+  // It's important get information pointer before all other operation
+  ModuleInformation mi = *(ModuleInformation*)cMi.data;
+
+  serialport.println(cMi.status.getResponseDescription());
+  serialport.println(cMi.status.code);
+
+  printModuleInformation(serialport, mi);
+  c.close();
+}
+
+
+
+//https://mischianti.org/2022/04/19/ebyte-lora-e220-llcc68-device-for-arduino-esp32-or-esp8266-configuration-3/
+
+void printParameters(Stream &serialport, struct Configuration configuration) {
+  serialport.println("----------------------------------------");
+
+  serialport.print(F("HEAD : "));  serialport.print(configuration.COMMAND, HEX); serialport.print(" "); serialport.print(configuration.STARTING_ADDRESS, HEX); serialport.print(" "); serialport.println(configuration.LENGHT, HEX);
+  serialport.println(F(" "));
+  serialport.print(F("AddH : "));  serialport.println(configuration.ADDH, HEX);
+  serialport.print(F("AddL : "));  serialport.println(configuration.ADDL, HEX);
+  serialport.println(F(" "));
+  serialport.print(F("Chan : "));  serialport.print(configuration.CHAN, DEC); serialport.print(" -> "); serialport.println(configuration.getChannelDescription());
+  serialport.println(F(" "));
+  serialport.print(F("SpeedParityBit     : "));  serialport.print(configuration.SPED.uartParity, BIN); serialport.print(" -> "); serialport.println(configuration.SPED.getUARTParityDescription());
+  serialport.print(F("SpeedUARTDatte     : "));  serialport.print(configuration.SPED.uartBaudRate, BIN); serialport.print(" -> "); serialport.println(configuration.SPED.getUARTBaudRateDescription());
+  serialport.print(F("SpeedAirDataRate   : "));  serialport.print(configuration.SPED.airDataRate, BIN); serialport.print(" -> "); serialport.println(configuration.SPED.getAirDataRateDescription());
+  serialport.println(F(" "));
+  serialport.print(F("OptionSubPacketSett: "));  serialport.print(configuration.OPTION.subPacketSetting, BIN); serialport.print(" -> "); serialport.println(configuration.OPTION.getSubPacketSetting());
+  serialport.print(F("OptionTranPower    : "));  serialport.print(configuration.OPTION.transmissionPower, BIN); serialport.print(" -> "); serialport.println(configuration.OPTION.getTransmissionPowerDescription());
+  serialport.print(F("OptionRSSIAmbientNo: "));  serialport.print(configuration.OPTION.RSSIAmbientNoise, BIN); serialport.print(" -> "); serialport.println(configuration.OPTION.getRSSIAmbientNoiseEnable());
+  serialport.println(F(" "));
+  serialport.print(F("TransModeWORPeriod : "));  serialport.print(configuration.TRANSMISSION_MODE.WORPeriod, BIN); serialport.print(" -> "); serialport.println(configuration.TRANSMISSION_MODE.getWORPeriodByParamsDescription());
+  serialport.print(F("TransModeEnableLBT : "));  serialport.print(configuration.TRANSMISSION_MODE.enableLBT, BIN); serialport.print(" -> "); serialport.println(configuration.TRANSMISSION_MODE.getLBTEnableByteDescription());
+  serialport.print(F("TransModeEnableRSSI: "));  serialport.print(configuration.TRANSMISSION_MODE.enableRSSI, BIN); serialport.print(" -> "); serialport.println(configuration.TRANSMISSION_MODE.getRSSIEnableByteDescription());
+  serialport.print(F("TransModeFixedTrans: "));  serialport.print(configuration.TRANSMISSION_MODE.fixedTransmission, BIN); serialport.print(" -> "); serialport.println(configuration.TRANSMISSION_MODE.getFixedTransmissionDescription());
+
+
+  serialport.println("----------------------------------------");
+}
+void printModuleInformation(Stream &serialport, struct ModuleInformation moduleInformation) {
+  serialport.println("----------------------------------------");
+  serialport.print(F("HEAD: "));  serialport.print(moduleInformation.COMMAND, HEX); serialport.print(" "); serialport.print(moduleInformation.STARTING_ADDRESS, HEX); serialport.print(" "); serialport.println(moduleInformation.LENGHT, DEC);
+
+  serialport.print(F("Model no.: "));  serialport.println(moduleInformation.model, HEX);
+  serialport.print(F("Version  : "));  serialport.println(moduleInformation.version, HEX);
+  serialport.print(F("Features : "));  serialport.println(moduleInformation.features, HEX);
+  serialport.println("----------------------------------------");
+
+}
 
 
 
@@ -3083,25 +3179,28 @@ void enableWiFi() {
   WiFi.disconnect(false);  // Reconnect the network
   if (WiFi.getMode() == WIFI_MODE_NULL) {
     WiFi.mode(WIFI_STA);
-  }else if (WiFi.getMode() == WIFI_MODE_AP){
+  } else if (WiFi.getMode() == WIFI_MODE_AP) {
     WiFi.mode(WIFI_AP_STA);
   }
-  
+
   Serial.println("START WIFI");
   //WiFi.begin(STA_SSID, STA_PASS);
   wifi_status = WiFi.begin("TP-Link_0F3D", "Jerkface13597603");
-  
+  //wifi_status = WiFi.begin("Hail Hydra", "aarsabteeros@48");
+  //wifi_status = WiFi.begin("Test Network", "12345678");
+
+  /*
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
-  }
-  
+  }//*/
+
   if (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.printf("WiFi Failed!\n");
     return;
   }
-  
-  
+
+
   SerialWiFiserver.begin();
   Serial.println("");
   Serial.println("WiFi connected");
@@ -3111,18 +3210,18 @@ void enableWiFi() {
 
 
 //https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
-void disableWiFiSoftAP(){
+void disableWiFiSoftAP() {
   if (WiFi.getMode() == WIFI_MODE_AP) {
     WiFi.mode(WIFI_OFF);
-  }else if (WiFi.getMode() == WIFI_MODE_APSTA){
+  } else if (WiFi.getMode() == WIFI_MODE_APSTA) {
     WiFi.mode(WIFI_STA);
   }
 }
 
-void enableWiFiSoftAP(char* soft_ap_ssid, char* soft_ap_password){
+void enableWiFiSoftAP(char* soft_ap_ssid, char* soft_ap_password) {
   if (WiFi.getMode() == WIFI_MODE_NULL) {
     WiFi.mode(WIFI_AP);
-  }else if (WiFi.getMode() == WIFI_MODE_STA){
+  } else if (WiFi.getMode() == WIFI_MODE_STA) {
     WiFi.mode(WIFI_AP_STA);
   }
   WiFi.softAP(soft_ap_ssid, soft_ap_password);
