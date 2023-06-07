@@ -362,7 +362,6 @@ Adafruit_SH1106 display(OLED_SDA, OLED_SCL);
 
 
 #include "LoRa_E220.h"
-
 #define ENABLE_RSSI true
 #define FREQUENCY_915
 #define E220_22
@@ -533,6 +532,23 @@ static char smOptionName_List[][32 + 1] = {
   "Op13",
   "Op14",
   "Op15",
+  "Op15",
+  "Op16",
+  "Op17",
+  "Op18",
+  "Op19",
+  "Op20",
+  "Op21",
+  "Op22",
+  "Op23",
+  "Op24",
+  "Op25",
+  "Op26",
+  "Op27",
+  "Op28",
+  "Op29",
+  "Op30",
+  "Op31",
 };
 
 
@@ -3041,9 +3057,42 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "connect ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
-      WiFi.disconnect(false);  // Reconnect the network
+      
+      const char ch0 = '"';
+      char *pointer0;
+      char *pointer1;
+      char *pointer2;
+      char *pointer3;
+      unsigned int pSize0;
+      unsigned int pSize1;
+      unsigned int pSize2;
+      unsigned int pSize3;
       char STA_SSID[33];
       char STA_PASS[64];
+      memset(STA_SSID, '\0', 33);
+      memset(STA_PASS, '\0', 64);
+      pointer0 = strchr(subCommandInputs, ch0);
+      pSize0 = strlen(pointer0);
+      pointer1 = strchr(&pointer0[1], ch0);
+      pSize1 = strlen(pointer1);
+      pointer2 = strchr(&pointer1[1], ch0);
+      pSize2 = strlen(pointer2);
+      pointer3 = strchr(&pointer2[1], ch0);
+      pSize3 = strlen(pointer3);
+      
+      serialport.printf("Looling For: |%c|\n", ch0);
+      serialport.printf("Pointer0: |%s| Len=%d\n", pointer0, pSize0);
+      serialport.printf("Pointer1: |%s| Len=%d\n", pointer1, pSize1);
+      serialport.printf("Pointer2: |%s| Len=%d\n", pointer2, pSize2);
+      serialport.printf("Pointer3: |%s| Len=%d\n", pointer3, pSize3);
+      
+      strncpy(STA_SSID, &pointer0[1], pSize0-pSize1-1);
+      strncpy(STA_PASS, &pointer2[1], pSize2-pSize3-1);
+      serialport.printf("STA_SSID: |%s|\n", STA_SSID);
+      serialport.printf("STA_PASS: |%s|\n", STA_PASS);
+      
+      WiFi.disconnect(false);  // Reconnect the network
+      
       //The SSID can be any alphanumeric, case-sensitive entry from 2 to 32 characters. The printable characters plus the space (ASCII 0x20) are allowed, but these six characters are not: ?, ", $, [, \, ], and +.
       //WEP - Maximum key length is 16 characters.
       //WPA-PSK/WPA2-PSK - Maximum key length is 63 characters.
@@ -3053,10 +3102,12 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
         serialport.print(".");
       }
       serialport.println("");
-      serialport.println("WiFi connected");
-      serialport.println("IP address: ");
-      serialport.println(WiFi.localIP());
-      serialport.println("Wifi connected!");
+      if (WiFi.status() == WL_CONNECTED){
+        serialport.println("WiFi connected");
+        serialport.println("IP address: ");
+        serialport.println(WiFi.localIP());
+        serialport.println("Wifi connected!");
+      }
     }
     if (commandSelect(commandInputs, "disconnect")) {
       //command format: control WiFi disconnect
@@ -3069,6 +3120,10 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
   }
 
 }
+
+
+
+
 
 
 bool commandSelect(char* commandCheck, char* commandSelect) {
