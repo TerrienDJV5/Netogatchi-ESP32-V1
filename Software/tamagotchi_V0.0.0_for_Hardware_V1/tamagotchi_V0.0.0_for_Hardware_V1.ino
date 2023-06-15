@@ -191,6 +191,8 @@ Preferences preferences;
 #if (FeatureEnable_SH1106_Display==true)
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH1106.h>
+#include "Taskbar.h"
+
 
 
 
@@ -213,6 +215,7 @@ BMIMGmanipulate bitmapIMGmanipulate0(false);
 #endif
 
 
+
 #if (FeatureEnable_BT_Serial==true)
 #include "BluetoothSerial.h"
 
@@ -221,7 +224,6 @@ BMIMGmanipulate bitmapIMGmanipulate0(false);
 #endif
 BluetoothSerial SerialBT;
 #endif
-
 
 
 
@@ -346,6 +348,9 @@ ButtonPISO buttonpiso1(BUTTONPISO_DataIn, BUTTONPISO_Clk, BUTTONPISO_PL);
 
 
 Adafruit_SH1106 display(OLED_SDA, OLED_SCL);
+//(FeatureEnable_SH1106_Display==true)
+Taskbar OBJ_Taskbar( &display );
+
 
 
 //http://electronics4dogs.blogspot.com/2011/01/arduino-predefined-constants.html
@@ -633,293 +638,21 @@ static const unsigned char PROGMEM rotateImageTestIcon[] =
 
 
 
-static const unsigned char PROGMEM icon8x8_filled_bmp[] =
-{
-  B11111111,
-  B11111111,
-  B11111111,
-  B11111111,
-  B11111111,
-  B11111111,
-  B11111111,
-  B11111111
-};
-
-
-
-static const unsigned char PROGMEM icon8x8_missing_icon_bmp[] =
-{
-  B00000111,
-  B01111011,
-  B11000101,
-  B01100010,
-  B01010010,
-  B01001010,
-  B01111110,
-  B00000001,
-};
-
-static const unsigned char PROGMEM icon8x8_Battery_bmp[6][8] =
-{
-  {
-    B00111100,
-    B01000010,
-    B01000010,
-    B01000010,
-    B01000010,
-    B01000010,
-    B01000010,
-    B01111110
-  },
-  {
-    B00000000,
-    B00000000,
-    B00011000,
-    B00110000,
-    B00111100,
-    B00001100,
-    B00011000,
-    B00000000
-  },
-  {
-    B00000000,
-    B00000000,
-    B00001000,
-    B00010000,
-    B00111100,
-    B00001000,
-    B00010000,
-    B00000000
-  },
-  {
-    B00111100,
-    B01100110,
-    B11001111,
-    B10011101,
-    B10111001,
-    B11110011,
-    B01100110,
-    B00111100
-  },
-  {
-    B00000000,
-    B00100100,
-    B00100100,
-    B01111110,
-    B01111110,
-    B00111100,
-    B00011000,
-    B00011000
-  },
-  {
-    B00100100,
-    B01100100,
-    B11100100,
-    B00100100,
-    B00100100,
-    B00100111,
-    B00100110,
-    B00100100
-  },
-};
-
-
-void drawBatteryPowerIcon(Adafruit_SH1106 &currentDisplay, unsigned int xPos, unsigned int yPos, byte batteryPercent = 0, bool chargingFlag = false, byte rotation = 0) {
-  //add rotation later
-  //batteryPercent is out of 100
-  byte batteryIconSelect = map(batteryPercent, 0, 101, 0, 7);
-
-
-  if (batteryPercent == 0) { //if 0 the battery is disconnected
-    currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
-    currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[3], 8, 8, WHITE);//circleWithACross
-    return ;
-  }
-
-  switch (batteryIconSelect) {
-    case (0):
-      currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
-      if (chargingFlag == true) {
-        currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[2], 8, 8, WHITE);//Thin Ligthing Symbol
-      }
-      break;
-    case (6):
-      currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
-      currentDisplay.fillRect(xPos + 1, yPos + 1, 6, 6, WHITE);
-      if (chargingFlag == true) {
-        currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[1], 8, 8, BLACK);//Thick Ligthing Symbol
-      }
-      break;
-    default:
-      currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
-      currentDisplay.fillRect(xPos + 1, yPos + 1 + (6 - batteryIconSelect), 6, batteryIconSelect, WHITE);
-      currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[1], 8, 8, BLACK);//Thick Ligthing Symbol
-      if (chargingFlag == true) {
-        currentDisplay.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[2], 8, 8 - batteryIconSelect - 1, WHITE); //Thin Ligthing Symbol
-      }
-      break;
-  }
-}
-
-void drawCableIcon(Adafruit_SH1106 &display, unsigned int xPos, unsigned int yPos, byte cableStatus = 0, byte rotation = 0) {
-  //add rotation later
-  display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[5], 8, 8, WHITE);
-  display.fillRect(xPos, yPos, 4, 8, BLACK);
-  display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[4], 4, 8, WHITE);
-
-
-}
 
 
 
 
+typedef struct {
+  //six characters are not allowed (SSID): ?, ", $, [, \, ], and +
+  char ssid[33];//max length 32 //Min Length 2
+  char passphrase[64];//max length 63
+} Credentials_WiFi_Struct;
 
-static const unsigned char PROGMEM iconLocationsRXY[4][16][2] = {
-  {{0, 0}, {8, 0}, {16, 0}, {24, 0}, {32, 0}, {40, 0}, {48, 0}, {56, 0}, {64, 0}, {72, 0}, {80, 0}, {88, 0}, {96, 0}, {104, 0}, {112, 0}, {120, 0}},
-  {{120, 0}, {120, 8}, {120, 16}, {120, 24}, {120, 32}, {120, 40}, {120, 48}, {120, 56}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}},
-  {{0, 56}, {0, 56}, {0, 56}, {0, 56}, {0, 56}, {0, 56}, {0, 56}, {0, 56}, {0, 64}, {0, 72}, {0, 80}, {0, 88}, {0, 96}, {0, 104}, {0, 112}, {0, 120}},
-  {{0, 0}, {0, 8}, {0, 16}, {0, 24}, {0, 32}, {0, 40}, {0, 48}, {0, 56}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}}
-};
+void saveWiFicredentials(Credentials_WiFi_Struct &credential);
 
 
-#define taskbarIconCount 16
-#define showMissingIconIfEmpty false
-void drawTaskbar(Adafruit_SH1106 &display, int frame_location_offset, byte rotation = 1, bool displayFlag = false) {
-  static byte lastRotation;
-  static int iconLocationsXY[taskbarIconCount][2];
-  static byte visibleIconCont;
-  if (rotation != lastRotation) {
-    //iconLocations
-    for (uint8_t index = 0; index < taskbarIconCount; index++) {
-      switch (rotation) {
-        case (0)://Top
-          iconLocationsXY[ index ][0] = 0 + 8 * index;
-          iconLocationsXY[ index ][1] = 0;//0-frame_location_offset
-          visibleIconCont = 16;
-          break;
-        case (1): //Right
-          iconLocationsXY[ index ][0] = 120;//120+frame_location_offset
-          iconLocationsXY[ index ][1] = 0 + 8 * index;
-          visibleIconCont = 8;
-          break;
-        case (2): //Bottom
-          iconLocationsXY[ index ][0] = 0 + 8 * index;
-          iconLocationsXY[ index ][1] = 56;//56+frame_location_offset
-          visibleIconCont = 16;
-          break;
-        case (3): //Left
-          iconLocationsXY[ index ][0] = 0;//0-frame_location_offset
-          iconLocationsXY[ index ][1] = 0 + 8 * index;
-          visibleIconCont = 8;
-          break;
-        default:
-          //taskbar is hidden
-          visibleIconCont = 0;
-          return ;
-          break;
-      }
-    }
-    //iconLocationsXY[16][2] = iconLocationsRXY[rotation][16][2];
-    lastRotation = rotation;
-  } else {
 
-  }
-  int iconXPOS;
-  int iconYPOS;
-  byte batteryIconIndex = 0;
-  byte cableIconIndex = 0;
-  for (uint8_t iconIndex = 0; iconIndex < taskbarIconCount; iconIndex++) {
-    iconXPOS = iconLocationsRXY[rotation][ iconIndex ][0];
-    iconYPOS = iconLocationsRXY[rotation][ iconIndex ][1];
-    switch (rotation) {
-      case (0)://Top
-        iconYPOS = iconYPOS - frame_location_offset;
-        break;
-      case (1): //Right
-        iconXPOS = iconXPOS + frame_location_offset;
-        break;
-      case (2): //Bottom
-        iconYPOS = iconYPOS + frame_location_offset;
-        break;
-      case (3): //Left
-        iconXPOS = iconXPOS - frame_location_offset;
-        break;
-      default:
-        //taskbar is hidden
-        break;
-    }
-    iconLocationsXY[ iconIndex ][0] = iconXPOS;
-    iconLocationsXY[ iconIndex ][1] = iconYPOS;
-  }
 
-  switch (rotation) {
-    case (0)://Top
-      //batteryIcon
-      batteryIconIndex = 7;
-      //cableIcon
-      cableIconIndex = 6;
-      display.fillRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, BLACK);
-      display.drawRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, WHITE);
-      display.drawLine(0, iconLocationsXY[0][1] + 8, 8 * visibleIconCont, iconLocationsXY[0][1] + 8, WHITE);
-
-      break;
-    case (1)://Right
-      //batteryIcon
-      batteryIconIndex = 0;
-      //cableIcon
-      cableIconIndex = 1;
-      display.fillRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, BLACK);
-      display.drawRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, WHITE);
-      break;
-    case (2)://Bottom
-      //batteryIcon
-      batteryIconIndex = 7;
-      //cableIcon
-      cableIconIndex = 6;
-      display.fillRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, BLACK);
-      display.drawRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, WHITE);
-      break;
-    case (3)://Left
-      //batteryIcon
-      batteryIconIndex = 0;
-      //cableIcon
-      cableIconIndex = 1;
-      display.fillRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, BLACK);
-      display.drawRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, WHITE);
-      break;
-    default:
-      //taskbar is hidden
-      return ;
-      break;
-  }
-
-  for (uint8_t iconIndex = 0; iconIndex < taskbarIconCount; iconIndex++) {
-    iconXPOS = iconLocationsXY[ iconIndex ][0];
-    iconYPOS = iconLocationsXY[ iconIndex ][1];
-
-    if (batteryIconIndex == iconIndex) {
-      drawBatteryPowerIcon(display, iconXPOS, iconYPOS, batteryPercent, chargingFlag);
-      //display.setTextSize(1);
-      //display.setTextColor(WHITE);
-      //display.print("batteryPercent:"); display.println(batteryPercent);
-      continue;
-    }
-    if (cableIconIndex == iconIndex) {
-      drawCableIcon(display, iconXPOS, iconYPOS, cableStatus);
-      continue;
-    }
-    if (showMissingIconIfEmpty == true) {
-      display.drawBitmap(iconXPOS, iconYPOS, icon8x8_missing_icon_bmp, 8, 8, WHITE);
-      if (displayFlag) {
-        display.display();
-      };
-    }
-  }
-
-  if (displayFlag) {
-    display.display();
-  };
-}
 
 
 
@@ -1756,7 +1489,7 @@ QueueHandle_t queue;
 void setup()   {
   Serial.begin(115200);
   Serial.print("setup() running on core "); Serial.println(xPortGetCoreID());
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+  printFreeHeap(Serial);
   //https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/preferences.html
   //https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/
   Serial.println( preferences.begin("boyKisser", false, "nvs"));
@@ -1792,11 +1525,11 @@ void setup()   {
   adc_power_on();
 
   //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/size.html#idf-py-size
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+  printFreeHeap(Serial);
 #if (FeatureEnable_BT_Serial==true)
   SerialBT.begin("ESP32test"); //Bluetooth device name
   Serial.println("The device started, now you can pair it with bluetooth!");
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+  printFreeHeap(Serial);
 #endif
 
 
@@ -1862,10 +1595,12 @@ void setup()   {
   display.clearDisplay();
 
 
-
+  /*
+   * Startup Tests Starts
+   */
   //Text Image Read
   File fileBMP;
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+  printFreeHeap(Serial);
 
   /*
     static unsigned char animationFrameBuffer[1024*16];
@@ -1910,7 +1645,7 @@ void setup()   {
     display.display();
     delay(1500);
   */
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+  printFreeHeap(Serial);
   {
     printFreeHeap(Serial);
     File fileBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
@@ -1935,7 +1670,7 @@ void setup()   {
     fileStructBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
     load_struct_bitmapGIF_dat_File(fileStructBMP, boyKisserGIFTest);
     Serial.println(fileStructBMP);
-    fileStructBMP.close();
+    fileStructBMP.close();//Dies Here!
     printFreeHeap(Serial);
 
     for(byte frame = 0; frame < boyKisserGIFTest.frameCount; frame++){
@@ -1980,7 +1715,7 @@ void setup()   {
   }
   fileBMP.close();
 
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+  printFreeHeap(Serial);
 
 
 
@@ -1994,8 +1729,7 @@ void setup()   {
   fileBMP.close();
   delay(500);
 
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
-
+  printFreeHeap(Serial);
 
 
   fileBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.hex");
@@ -2030,9 +1764,9 @@ void setup()   {
   fileBMP.close();
   delay(500);
 
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
-
-
+  printFreeHeap(Serial);
+  
+  
   //Neco-Arc_bitmapimg.txt
   fileBMP = SPIFFS.open("/Neco-Arc_bitmapimg.txt");
   if (!fileBMP) {
@@ -2058,8 +1792,7 @@ void setup()   {
   fileBMP.close();
   delay(500);
 
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
-
+  printFreeHeap(Serial);
 
   //"/boyKisserFaceGif_bitmapgif.txt"
   fileBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.txt");
@@ -2105,8 +1838,12 @@ void setup()   {
   }
   fileBMP.close();
 
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
-
+  printFreeHeap(Serial);
+  /*
+   * Startup Tests Ends
+   */
+  
+  
   display.clearDisplay();
 
   //WiFi Setup
@@ -2118,7 +1855,7 @@ void setup()   {
   enableWiFi();
   //wifiSerialSetup();
 
-
+  startSoftAP( Serial );
   //WiFi Setup Complete
 
 #ifdef _TEST_ADAFRUIT_SH1106
@@ -2175,7 +1912,7 @@ void setup()   {
     0);          /* pin task to core 1 */
   delay(500);
 
-  Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+  printFreeHeap(Serial);
 }
 
 
@@ -2335,6 +2072,7 @@ void loop() {
   }
   //Lora menu //currentMenuID==2
   if (currentMenuID == 2) {
+    //https://github.com/xreef/EByte_LoRa_E220_Series_Library
     display.setCursor(0, 1 * 8);
     display.setTextSize(1);
     display.setTextColor(WHITE);
@@ -2345,11 +2083,12 @@ void loop() {
       display.println("Message received!");
 
       // read the String message
-#ifdef ENABLE_RSSI
+      #ifdef ENABLE_RSSI
       ResponseContainer rc = e220ttl.receiveMessageRSSI();
-#else
+      #else
       ResponseContainer rc = e220ttl.receiveMessage();
-#endif
+      #endif
+      
       // Is something goes wrong print error
       if (rc.status.code != 1) {
         Serial.println(rc.status.getResponseDescription());
@@ -2360,10 +2099,10 @@ void loop() {
         Serial.println(rc.data);
         display.println(rc.status.getResponseDescription());
         display.println(rc.data);
-#ifdef ENABLE_RSSI
+        #ifdef ENABLE_RSSI
         Serial.print("RSSI: "); Serial.println(rc.rssi, DEC);
         display.print("RSSI: "); display.println(rc.rssi, DEC);
-#endif
+        #endif
       }
     }
     display.setCursor(0, 5 * 8);
@@ -2480,7 +2219,7 @@ void loop() {
     while (file) {
       //extend Main List Length
       Serial.println("Extending File Name List!");
-      Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+      printFreeHeap(Serial);
       if (fileCount > currentNameSaveCount) {
         //allocate buffer
         //copy to buffer
@@ -2511,7 +2250,7 @@ void loop() {
         free(savedFileNamesExtendBuffer);//frees Memory
         Serial.println("CheckPoint-0a");
       }
-      Serial.print("ESP.getFreeHeap():"); Serial.println(ESP.getFreeHeap());
+      printFreeHeap(Serial);
       Serial.println("CheckPoint-0b");
       //add to main List
       strcpy(&savedFileNames[ fileCount * maxFileNameLength ], file.name()); //savedFileNames[ fileCount ] = file.name();
@@ -2578,14 +2317,16 @@ void loop() {
     Serial.println("CheckPoint-11");
   }
 
-
-
+  OBJ_Taskbar.syncPointer_BatteryPercent( batteryPercent );
+  OBJ_Taskbar.syncPointer_ChargingFlag( chargingFlag );
+  OBJ_Taskbar.syncPointer_CableStatus( cableStatus );
+  
   if (buttonpiso1.isPressed(2) == true) {//Select
     frame_location_offset --; //frameCountVariable%10;
     if (frame_location_offset < (-0)) {
       frame_location_offset = (-0);
     };
-    drawTaskbar(display, frame_location_offset, taskbarRotation);
+    OBJ_Taskbar.drawTaskbar(frame_location_offset, taskbarRotation);
     display.setCursor(4, 52);
     display.setTextSize(1.5);
     display.setTextColor(WHITE);
@@ -2596,7 +2337,7 @@ void loop() {
       frame_location_offset = (9);
     };
     if (frame_location_offset < (9)) {
-      drawTaskbar(display, frame_location_offset, taskbarRotation);
+      OBJ_Taskbar.drawTaskbar(frame_location_offset, taskbarRotation);
       display.setCursor(4, 52);
       display.setTextSize(1.5);
       display.setTextColor(WHITE);
@@ -2977,6 +2718,9 @@ void serial_LoRa_DebugCommands(Stream &serialport, char *debugCommand)
   }
 }
 
+
+
+
 void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
 {
   char targetCommand[ MAXDEBUG_TARGETCOMMAND_LENGTH ];
@@ -3102,12 +2846,17 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
         serialport.print(".");
       }
       serialport.println("");
-      if (WiFi.status() == WL_CONNECTED){
-        serialport.println("WiFi connected");
-        serialport.println("IP address: ");
-        serialport.println(WiFi.localIP());
-        serialport.println("Wifi connected!");
-      }
+      serialport.print("IP address: ");
+      serialport.println(WiFi.localIP());
+      serialport.println("Wifi connected!");
+      serialport.println("Saving Wifi Credentials!");
+      Credentials_WiFi_Struct wifiCredential;
+      strcpy(wifiCredential.ssid, STA_SSID);
+      strcpy(wifiCredential.passphrase, STA_PASS);
+      saveWiFicredentials( wifiCredential );
+      
+      serialport.println("Wifi Credentials Saved!");
+      
     }
     if (commandSelect(commandInputs, "disconnect")) {
       //command format: control WiFi disconnect
@@ -3117,10 +2866,58 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       WiFi.disconnect(true);  // Disconnect from the network
       serialport.println("Wifi Disconnected!");
     }
+    if (commandSelect(commandInputs, "enableAP")) {
+      //command format: control WiFi enableAP
+      strcpy(subTargetCommand, "enableAP ");
+      strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
+      printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      startSoftAP( serialport );
+    }
   }
 
 }
 
+void saveWiFicredentials(Credentials_WiFi_Struct &credential){
+  //Wifi_Connections.txt
+  //https://cplusplus.com/reference/cstdio/printf/
+  File fileToAppend = SPIFFS.open("/Wifi_Connections.txt", FILE_APPEND);
+  if(!fileToAppend){
+    Serial.println("There was an error opening the file for appending");
+    return;
+  }
+  /*
+  fileToAppend.print("{");
+  fileToAppend.print(credential.ssid);
+  fileToAppend.print("}{");
+  fileToAppend.print(credential.passphrase);
+  fileToAppend.println("}");
+  //*/
+  
+  if(fileToAppend.printf("{%s}{%s}\n", credential.ssid, credential.passphrase)){
+    Serial.println("File content was appended");
+  } else {
+    Serial.println("File append failed");
+  }
+  fileToAppend.flush();
+  fileToAppend.close();
+  ;
+}
+
+
+
+void startSoftAP(Stream &serialport){
+  //https://randomnerdtutorials.com/esp32-access-point-ap-web-server/
+  char ssid[33]     = "ESP32-Access-Point";
+  char password[64] = "123456789";
+  // Connect to Wi-Fi network with SSID and password
+  serialport.print("Setting AP (Access Point)…");
+  // Remove the password parameter, if you want the AP (Access Point) to be open
+  (void)WiFi.softAP(ssid, password);
+  ;
+  IPAddress IP = WiFi.softAPIP();
+  serialport.print("AP IP address: ");
+  serialport.println(IP);
+}
 
 
 
@@ -3231,6 +3028,7 @@ void disableWiFi() {
 }
 
 void enableWiFi() {
+  //https://docs.arduino.cc/library-examples/wifi-library/ScanNetworks
   WiFi.disconnect(false);  // Reconnect the network
   if (WiFi.getMode() == WIFI_MODE_NULL) {
     WiFi.mode(WIFI_STA);
@@ -3240,21 +3038,58 @@ void enableWiFi() {
 
   Serial.println("START WIFI");
   //WiFi.begin(STA_SSID, STA_PASS);
-  wifi_status = WiFi.begin("TP-Link_0F3D", "Jerkface13597603");
+  //wifi_status = WiFi.begin("TP-Link_0F3D", "Jerkface13597603");
   //wifi_status = WiFi.begin("Hail Hydra", "aarsabteeros@48");
   //wifi_status = WiFi.begin("Test Network", "12345678");
+  
+  /*
+  int numSsid = WiFi.scanNetworks();
+  if (numSsid == -1) {
+    Serial.println("Couldn't get a wifi connection");
+    return;
+  }
+  */
+  
+  Credentials_WiFi_Struct wifiCredential;
+  File fileToRead = SPIFFS.open("/Wifi_Connections.txt", FILE_READ);
+  if(!fileToRead){
+    Serial.println("There was an error opening the file for appending");
+    return;
+  }
+  
+  Serial.println( fileToRead.available() );
+  String fileLineString;
+  fileLineString = fileToRead.readString();//readStringUntil('\n');
+  Serial.println( fileLineString );//readStringUntil("\r\n")
+  char fileLine[ fileLineString.length() + 1 ];
+  fileLineString.toCharArray(fileLine, fileLineString.length() + 1);
+  Serial.println( fileLine );
+  
+  //
+  //
+  //finish me!
+  //("{&s}{&s}\n", wifiCredential.ssid, wifiCredential.passphrase)
+  fileToRead.close();
+  
 
+  
+  
+  wifi_status = WiFi.begin(wifiCredential.ssid, wifiCredential.passphrase);
+  
+  
+  //
+  
   /*
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }//*/
-
+  /*
   if (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.printf("WiFi Failed!\n");
     return;
   }
-
+  //*/
 
   SerialWiFiserver.begin();
   Serial.println("");
