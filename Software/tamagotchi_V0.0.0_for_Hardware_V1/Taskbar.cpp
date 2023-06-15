@@ -2,10 +2,12 @@
 //Taskbar.cpp
 //Date Created: jun 15 2023 3:27PM
 
-
-#include "Taskbar.h"
 #define taskbarIconCount 16
 #define showMissingIconIfEmpty false
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH1106.h>
+
+#include "Taskbar.h"
 
 
 static const unsigned char PROGMEM icon8x8_filled_bmp[] =
@@ -108,74 +110,52 @@ static const unsigned char PROGMEM iconLocationsRXY[4][16][2] = {
 
 
 
-Taskbar::Taskbar( Adafruit_SH1106 &displayL ) {
-  this->display = &displayL;
-  init();
-}
-
-void Taskbar::init(){
-  ;
-}
-
-void Taskbar::syncPointer_BatteryPercent(byte batteryPercent){
-  this->batteryPercentP = &batteryPercent;
-  this->batteryPercent = batteryPercent;
-}
-void Taskbar::syncPointer_ChargingFlag(bool chargingFlag){
-  this->chargingFlagP = &chargingFlag;
-  this->chargingFlag = chargingFlag;
-}
-void Taskbar::syncPointer_CableStatus(byte cableStatus){
-  this->cableStatusP = &cableStatus;
-  this->cableStatus = cableStatus;
-}
 
 
-
-//void Taskbar::drawBatteryPowerIcon(unsigned int xPos, unsigned int yPos, byte batteryPercent = 0, bool chargingFlag = false, byte rotation = 0) {
-void Taskbar::drawBatteryPowerIcon(unsigned int xPos, unsigned int yPos, byte batteryPercent, bool chargingFlag, byte rotation) {
+//void drawBatteryPowerIcon(Adafruit_SH1106 &display, unsigned int xPos, unsigned int yPos, byte batteryPercent = 0, bool chargingFlag = false, byte rotation = 0) {
+void drawBatteryPowerIcon(Adafruit_SH1106 &display, unsigned int xPos, unsigned int yPos, byte batteryPercent, bool chargingFlag, byte rotation) {
   //add rotation later
   //batteryPercent is out of 100
   byte batteryIconSelect = map(batteryPercent, 0, 101, 0, 7);
 
 
   if (batteryPercent == 0) { //if 0 the battery is disconnected
-    display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
-    display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[3], 8, 8, WHITE);//circleWithACross
+    display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
+    display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[3], 8, 8, WHITE);//circleWithACross
     return ;
   }
 
   switch (batteryIconSelect) {
     case (0):
-      display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
+      display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
       if (chargingFlag == true) {
-        display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[2], 8, 8, WHITE);//Thin Ligthing Symbol
+        display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[2], 8, 8, WHITE);//Thin Ligthing Symbol
       }
       break;
     case (6):
-      display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
-      display->fillRect(xPos + 1, yPos + 1, 6, 6, WHITE);
+      display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
+      display.fillRect(xPos + 1, yPos + 1, 6, 6, WHITE);
       if (chargingFlag == true) {
-        display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[1], 8, 8, BLACK);//Thick Ligthing Symbol
+        display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[1], 8, 8, BLACK);//Thick Ligthing Symbol
       }
       break;
     default:
-      display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
-      display->fillRect(xPos + 1, yPos + 1 + (6 - batteryIconSelect), 6, batteryIconSelect, WHITE);
-      display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[1], 8, 8, BLACK);//Thick Ligthing Symbol
+      display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[0], 8, 8, WHITE);//Empty Battery Symbol
+      display.fillRect(xPos + 1, yPos + 1 + (6 - batteryIconSelect), 6, batteryIconSelect, WHITE);
+      display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[1], 8, 8, BLACK);//Thick Ligthing Symbol
       if (chargingFlag == true) {
-        display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[2], 8, 8 - batteryIconSelect - 1, WHITE); //Thin Ligthing Symbol
+        display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[2], 8, 8 - batteryIconSelect - 1, WHITE); //Thin Ligthing Symbol
       }
       break;
   }
 }
 
-//void Taskbar::drawCableIcon(unsigned int xPos, unsigned int yPos, byte cableStatus = 0, byte rotation = 0) {
-void Taskbar::drawCableIcon(unsigned int xPos, unsigned int yPos, byte cableStatus, byte rotation) {
+//void drawCableIcon(Adafruit_SH1106 &display, unsigned int xPos, unsigned int yPos, byte cableStatus = 0, byte rotation = 0) {
+void drawCableIcon(Adafruit_SH1106 &display, unsigned int xPos, unsigned int yPos, byte cableStatus, byte rotation) {
   //add rotation later
-  display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[5], 8, 8, WHITE);
-  display->fillRect(xPos, yPos, 4, 8, BLACK);
-  display->drawBitmap(xPos, yPos, icon8x8_Battery_bmp[4], 4, 8, WHITE);
+  display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[5], 8, 8, WHITE);
+  display.fillRect(xPos, yPos, 4, 8, BLACK);
+  display.drawBitmap(xPos, yPos, icon8x8_Battery_bmp[4], 4, 8, WHITE);
 
 
 }
@@ -186,8 +166,8 @@ void Taskbar::drawCableIcon(unsigned int xPos, unsigned int yPos, byte cableStat
 
 
 
-//void Taskbar::drawTaskbar(int frame_location_offset, byte rotation = 1, bool displayFlag = false) {
-void Taskbar::drawTaskbar(int frame_location_offset, byte rotation, bool displayFlag) {
+//void drawTaskbar(Adafruit_SH1106 &display, int frame_location_offset, byte rotation = 1, bool displayFlag = false) {
+void drawTaskbar(Adafruit_SH1106 &display, int frame_location_offset, byte rotation, bool displayFlag) {
   static byte lastRotation;
   static int iconLocationsXY[taskbarIconCount][2];
   static byte visibleIconCont;
@@ -261,9 +241,9 @@ void Taskbar::drawTaskbar(int frame_location_offset, byte rotation, bool display
       batteryIconIndex = 7;
       //cableIcon
       cableIconIndex = 6;
-      display->fillRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, BLACK);
-      display->drawRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, WHITE);
-      display->drawLine(0, iconLocationsXY[0][1] + 8, 8 * visibleIconCont, iconLocationsXY[0][1] + 8, WHITE);
+      display.fillRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, BLACK);
+      display.drawRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, WHITE);
+      display.drawLine(0, iconLocationsXY[0][1] + 8, 8 * visibleIconCont, iconLocationsXY[0][1] + 8, WHITE);
 
       break;
     case (1)://Right
@@ -271,55 +251,59 @@ void Taskbar::drawTaskbar(int frame_location_offset, byte rotation, bool display
       batteryIconIndex = 0;
       //cableIcon
       cableIconIndex = 1;
-      display->fillRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, BLACK);
-      display->drawRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, WHITE);
+      display.fillRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, BLACK);
+      display.drawRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, WHITE);
       break;
     case (2)://Bottom
       //batteryIcon
       batteryIconIndex = 7;
       //cableIcon
       cableIconIndex = 6;
-      display->fillRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, BLACK);
-      display->drawRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, WHITE);
+      display.fillRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, BLACK);
+      display.drawRect(0 - 1, iconLocationsXY[0][1] - 1, 8 * visibleIconCont + 2, 10, WHITE);
       break;
     case (3)://Left
       //batteryIcon
       batteryIconIndex = 0;
       //cableIcon
       cableIconIndex = 1;
-      display->fillRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, BLACK);
-      display->drawRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, WHITE);
+      display.fillRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, BLACK);
+      display.drawRect(iconLocationsXY[0][0] - 1, 0 - 1, 10, 8 * visibleIconCont + 2, WHITE);
       break;
     default:
       //taskbar is hidden
       return ;
       break;
   }
-
+  //make These Work!
+  byte batteryPercent = 0;
+  bool chargingFlag = false;
+  byte cableStatus = 0;
+  //
   for (uint8_t iconIndex = 0; iconIndex < taskbarIconCount; iconIndex++) {
     iconXPOS = iconLocationsXY[ iconIndex ][0];
     iconYPOS = iconLocationsXY[ iconIndex ][1];
 
     if (batteryIconIndex == iconIndex) {
-      drawBatteryPowerIcon(iconXPOS, iconYPOS, batteryPercent, chargingFlag);
-      //display->setTextSize(1);
-      //display->setTextColor(WHITE);
-      //display->print("batteryPercent:"); display->println(batteryPercent);
+      drawBatteryPowerIcon(display, iconXPOS, iconYPOS, batteryPercent, chargingFlag);
+      //display.setTextSize(1);
+      //display.setTextColor(WHITE);
+      //display.print("batteryPercent:"); display.println(batteryPercent);
       continue;
     }
     if (cableIconIndex == iconIndex) {
-      drawCableIcon(iconXPOS, iconYPOS, cableStatus);
+      drawCableIcon(display, iconXPOS, iconYPOS, cableStatus);
       continue;
     }
     if (showMissingIconIfEmpty == true) {
-      display->drawBitmap(iconXPOS, iconYPOS, icon8x8_missing_icon_bmp, 8, 8, WHITE);
+      display.drawBitmap(iconXPOS, iconYPOS, icon8x8_missing_icon_bmp, 8, 8, WHITE);
       if (displayFlag) {
-        display->display();
+        display.display();
       };
     }
   }
 
   if (displayFlag) {
-    display->display();
+    display.display();
   };
 }

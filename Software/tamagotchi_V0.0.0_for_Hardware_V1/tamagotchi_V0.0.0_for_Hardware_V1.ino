@@ -348,9 +348,6 @@ ButtonPISO buttonpiso1(BUTTONPISO_DataIn, BUTTONPISO_Clk, BUTTONPISO_PL);
 
 
 Adafruit_SH1106 display(OLED_SDA, OLED_SCL);
-//(FeatureEnable_SH1106_Display==true)
-Taskbar OBJ_Taskbar( &display );
-
 
 
 //http://electronics4dogs.blogspot.com/2011/01/arduino-predefined-constants.html
@@ -2317,16 +2314,13 @@ void loop() {
     Serial.println("CheckPoint-11");
   }
 
-  OBJ_Taskbar.syncPointer_BatteryPercent( batteryPercent );
-  OBJ_Taskbar.syncPointer_ChargingFlag( chargingFlag );
-  OBJ_Taskbar.syncPointer_CableStatus( cableStatus );
   
   if (buttonpiso1.isPressed(2) == true) {//Select
     frame_location_offset --; //frameCountVariable%10;
     if (frame_location_offset < (-0)) {
       frame_location_offset = (-0);
     };
-    OBJ_Taskbar.drawTaskbar(frame_location_offset, taskbarRotation);
+    drawTaskbar(display, frame_location_offset, taskbarRotation);
     display.setCursor(4, 52);
     display.setTextSize(1.5);
     display.setTextColor(WHITE);
@@ -2337,7 +2331,7 @@ void loop() {
       frame_location_offset = (9);
     };
     if (frame_location_offset < (9)) {
-      OBJ_Taskbar.drawTaskbar(frame_location_offset, taskbarRotation);
+      drawTaskbar(display, frame_location_offset, taskbarRotation);
       display.setCursor(4, 52);
       display.setTextSize(1.5);
       display.setTextColor(WHITE);
