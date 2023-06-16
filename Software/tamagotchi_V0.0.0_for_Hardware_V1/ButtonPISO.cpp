@@ -31,7 +31,7 @@ void ButtonPISO::update() {
   // Get data from 74HC165
   //digitalWrite(clockEnablePin, LOW);
   buttonState = shiftIn(dataInPin, clockInPin, MSBFIRST);
-  Serial.println(buttonState, BIN);
+  //Serial.println(buttonState, BIN);
   //digitalWrite(clockEnablePin, HIGH);
 }
 byte ButtonPISO::getState(byte buttonID) {

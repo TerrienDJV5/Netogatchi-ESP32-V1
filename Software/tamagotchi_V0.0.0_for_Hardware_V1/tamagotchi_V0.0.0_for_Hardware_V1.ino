@@ -745,33 +745,16 @@ typedef struct {
   uint16_t globalsubimageByteLength;
   uint16_t widthGPx;//in pixels(Global)
   uint16_t heightGPx;//in pixels(Global)
-
+  
   byte subframeCompressionFlags;//size is frameCount //8 flags each frame
   bool cropSFCompression = false;
   bool rotationSFCompression = false;
-
-  uint16_t* subimageByteLength; //size is frameCount
-
-  //locxPxOffset, locyPxOffset, widthPx and HeightPx are used if "cropSFCompression" is Enabled
-  uint16_t* locxPxOffset;//size is frameCount //X Offset in pixels
-  uint16_t* locyPxOffset;//size is frameCount //Y Offset in pixels
-  uint16_t* widthPx;//size is frameCount //in pixels(Sub Image)
-  uint16_t* heightPx;//size is frameCount //in pixels(Sub Image)
-
-
-  //subframeDataRotation is used if "rotationSFCompression" is Enabled
-  uint8_t* subframeDataRotation;//size is frameCount //data rotated Clockwise 4 phases
-  /* subframeDataRotation
-     0 == 0 CW rotations Needed
-     1 == 3 CW rotations Needed
-     2 == 2 CW rotations Needed
-     3 == 1 CW rotations Needed
-  */
-  uint16_t* subimageByteOffset; //size is frameCount
-  unsigned int* frameStaydelayms;//size is frameCount// units = milliseconds
-  unsigned char* frameDataPool;//size is gifByteLength
+  
   unsigned long lastMillisecTime = 0;
 } GIFbitmapStruct;
+
+
+
 
 
 void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF);
@@ -840,9 +823,10 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
     Serial.print("bitmapGIF.frameDataPool: "); Serial.println( bitmapGIF.frameCount * (frameDataSize - 2 - 2) );
 
 
-    bitmapGIF.subFramePointers = (GIFframebitmapStruct*)malloc(bitmapGIF.frameCount);
-
-
+    //bitmapGIF.subFramePointers = (GIFframebitmapStruct*)malloc(bitmapGIF.frameCount);//Check This
+    bitmapGIF.subFramePointers = (GIFframebitmapStruct*)malloc(bitmapGIF.frameCount*32);
+    
+    
     //bitmapGIF.subimageByteOffset = (uint16_t*)malloc(bitmapGIF.frameCount);
     //bitmapGIF.frameStaydelayms = (unsigned int*)malloc(bitmapGIF.frameCount);
     bitmapGIF.subframeCompressionFlags = 0b00000000;
@@ -864,7 +848,8 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
 
       bitmapGIF.subFramePointers[ frameIndex ].frameDataPool = (unsigned char*)malloc(bitmapGIF.subFramePointers[ frameIndex ].frameByteLength);
       file.read(bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].frameByteLength);
-
+      bitmapGIF.subFramePointers[ frameIndex ].locxPxOffset = 0;
+      bitmapGIF.subFramePointers[ frameIndex ].locyPxOffset = 0;
       display.clearDisplay();
       display.drawBitmap(0, 0, bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].widthPx, bitmapGIF.subFramePointers[ frameIndex ].heightPx, WHITE);
       display.display();
@@ -920,58 +905,45 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
     bitmapGIF.heightGPx = ((file.read()) << 8) | (file.read());
 
     //allocate
-    if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression) {
-      bitmapGIF.widthPx = (uint16_t*)malloc(bitmapGIF.frameCount);
-      bitmapGIF.heightPx = (uint16_t*)malloc(bitmapGIF.frameCount);
-      bitmapGIF.subimageByteLength = (uint16_t*)malloc(bitmapGIF.frameCount);
-    }
-    if (bitmapGIF.cropSFCompression) {
-      bitmapGIF.locxPxOffset = (uint16_t*)malloc(bitmapGIF.frameCount);
-      bitmapGIF.locyPxOffset = (uint16_t*)malloc(bitmapGIF.frameCount);
-    }
-    if (bitmapGIF.rotationSFCompression) {
-      bitmapGIF.subframeDataRotation = (uint8_t*)malloc(bitmapGIF.frameCount);
-    }
-    bitmapGIF.subimageByteOffset = (uint16_t*)malloc(bitmapGIF.frameCount);
-    bitmapGIF.frameStaydelayms = (unsigned int*)malloc(bitmapGIF.frameCount);
-
+    bitmapGIF.subFramePointers = (GIFframebitmapStruct*)malloc(bitmapGIF.frameCount*32);
+    
 
     gifdataReadIndex = 0;
     imagedataSize = 0;
     for (int frameIndex = 0; frameIndex < bitmapGIF.frameCount; frameIndex++) {
       //subimageByteLength, subimageByteOffset, frameStaydelayms, locxPxOffset, locyPxOffset, widthPx, heightPx, subframeDataRotation
-      bitmapGIF.subimageByteOffset[ frameIndex ] = gifdataReadIndex;
-
+      
       if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression) {
-        bitmapGIF.subimageByteLength[ frameIndex ] = ((file.read()) << 8) | (file.read());
-        bitmapGIF.widthPx[ frameIndex ] = ((file.read()) << 8) | (file.read());
-        bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
-        bitmapGIF.heightPx[ frameIndex ] = ((file.read()) << 8) | (file.read());
-        bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
+        bitmapGIF.subFramePointers[ frameIndex ].frameByteLength = ((file.read()) << 8) | (file.read());
+        bitmapGIF.subFramePointers[ frameIndex ].widthPx = ((file.read()) << 8) | (file.read());
+        bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
+        bitmapGIF.subFramePointers[ frameIndex ].heightPx = ((file.read()) << 8) | (file.read());
+        bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
       }
       if (bitmapGIF.cropSFCompression) {
-        bitmapGIF.locxPxOffset[ frameIndex ] = ((file.read()) << 8) | (file.read());
-        bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
-        bitmapGIF.locyPxOffset[ frameIndex ] = ((file.read()) << 8) | (file.read());
-        bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
+        bitmapGIF.subFramePointers[ frameIndex ].locxPxOffset = ((file.read()) << 8) | (file.read());
+        bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
+        bitmapGIF.subFramePointers[ frameIndex ].locyPxOffset = ((file.read()) << 8) | (file.read());
+        bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
       }
       if (bitmapGIF.rotationSFCompression) {
-        bitmapGIF.subframeDataRotation[ frameIndex ] = file.read();
-        bitmapGIF.subimageByteLength[ frameIndex ] -= 1;
+        bitmapGIF.subFramePointers[ frameIndex ].subframeDataRotation = file.read();
+        bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 1;
       }
-      bitmapGIF.frameStaydelayms[ frameIndex ] = ((file.read()) << 8) | (file.read());
+      bitmapGIF.subFramePointers[ frameIndex ].frameStaydelayms = ((file.read()) << 8) | (file.read());
+      bitmapGIF.subFramePointers[ frameIndex ].frameDataPool = (unsigned char*)malloc(bitmapGIF.subFramePointers[ frameIndex ].frameByteLength);
       if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression) {
-        bitmapGIF.subimageByteLength[ frameIndex ] -= 2;
+        bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
 
-        gifdataReadIndex += bitmapGIF.subimageByteLength[ frameIndex ];
-        imagedataSize += bitmapGIF.subimageByteLength[ frameIndex ];
-        file.read( &bitmapGIF.frameDataPool[ bitmapGIF.subimageByteOffset[ frameIndex ] ], bitmapGIF.subimageByteLength[ frameIndex ] );
+        gifdataReadIndex += bitmapGIF.subFramePointers[ frameIndex ].frameByteLength;
+        imagedataSize += bitmapGIF.subFramePointers[ frameIndex ].frameByteLength;
+        file.read( bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].frameByteLength );
       } else {
-        bitmapGIF.globalsubimageByteLength -= 2;
-
-        gifdataReadIndex += bitmapGIF.globalsubimageByteLength;
-        imagedataSize += bitmapGIF.globalsubimageByteLength;
-        file.read( &bitmapGIF.frameDataPool[ bitmapGIF.subimageByteOffset[ frameIndex ] ], bitmapGIF.globalsubimageByteLength );
+        bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
+        
+        gifdataReadIndex += bitmapGIF.subFramePointers[ frameIndex ].frameByteLength;
+        imagedataSize += bitmapGIF.subFramePointers[ frameIndex ].frameByteLength;
+        file.read( bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].frameByteLength );
       }
 
     }
@@ -988,20 +960,20 @@ void display_struct_bitmapGIF(Adafruit_SH1106 &display, GIFbitmapStruct &bitmapG
   for (byte index = frame; index <= frame; index++) {
     printFreeHeap(Serial);
     Serial.print("index: "); Serial.println(index);
-    Serial.print("subimageByteOffset: "); Serial.println(bitmapGIF.subimageByteOffset[ index ]);
+    //Serial.print("subimageByteOffset: "); Serial.println(bitmapGIF.subimageByteOffset[ index ]);
     Serial.print("frameCount: "); Serial.println(bitmapGIF.frameCount);
     Serial.print("gifByteLength: "); Serial.println(bitmapGIF.gifByteLength);
 
     if (bitmapGIF.cropSFCompression | bitmapGIF.rotationSFCompression) {
       unsigned char* imageTemp;
-      imageTemp = (unsigned char*)malloc(bitmapGIF.subimageByteLength[ index ]);
-      Serial.print("subimageByteLength: "); Serial.println(bitmapGIF.subimageByteLength[ index ]);
-      memcpy(imageTemp, &bitmapGIF.frameDataPool[ bitmapGIF.subimageByteOffset[ index ] ], bitmapGIF.subimageByteLength[ index ]);
+      imageTemp = (unsigned char*)malloc(bitmapGIF.subFramePointers[ index ].frameByteLength);
+      Serial.print("bitmapGIF.subFramePointers[ index ].frameByteLength: "); Serial.println(bitmapGIF.subFramePointers[ index ].frameByteLength);
+      memcpy(imageTemp, bitmapGIF.subFramePointers[ index ].frameDataPool, bitmapGIF.subFramePointers[ index ].frameByteLength);
       if (bitmapGIF.cropSFCompression) {
-        display.drawBitmap(locx + bitmapGIF.locxPxOffset[ index ], locy + bitmapGIF.locyPxOffset[ index ], imageTemp, bitmapGIF.widthPx[ index ], bitmapGIF.heightPx[ index ], WHITE);
+        display.drawBitmap(locx + bitmapGIF.subFramePointers[ index ].locxPxOffset, locy + bitmapGIF.subFramePointers[ index ].locyPxOffset, imageTemp, bitmapGIF.subFramePointers[ index ].widthPx, bitmapGIF.subFramePointers[ index ].heightPx, WHITE);
       } else if (bitmapGIF.rotationSFCompression) {
         //add rotate
-        display.drawBitmap(locx, locy, imageTemp, bitmapGIF.widthPx[ index ], bitmapGIF.heightPx[ index ], WHITE);
+        display.drawBitmap(locx, locy, imageTemp, bitmapGIF.subFramePointers[ index ].widthPx, bitmapGIF.subFramePointers[ index ].heightPx, WHITE);
       }
       free(imageTemp);
     } else {
@@ -1148,12 +1120,12 @@ void enableWiFi();
 struct WiFiconfig {
   //six characters are not allowed (SSID): ?, ", $, [, \, ], and +
   char ssid[33];//max length 32 //Min Length 2
-  char passphrase[64];//max length 63
+  char pass[64];//max length 63
 };
 
 
 
-const char *filenameWiFi = "/Wifi_Connections.txt";
+const char *filenameWiFi = "/Wifi_Connections_2.txt";
 WiFiconfig wificonfig;
 
 /*
@@ -1174,12 +1146,12 @@ void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte st
   File file;
 #if (STORAGE_INCLUDE_SD)
   if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filename);
+    file = SD.open(filename, FILE_READ);
   }
 #endif
 #if (STORAGE_INCLUDE_SPIFFS)
   if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filename);
+    file = SPIFFS.open(filename, FILE_READ);
   }
 #endif
 
@@ -1187,19 +1159,19 @@ void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte st
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/v6/assistant to compute the capacity.
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<128> connection;
 
   // Deserialize the JSON document
-  DeserializationError error = deserializeJson(doc, file);
+  DeserializationError error = deserializeJson(connection, file);
   if (error)
     Serial.println(F("Failed to read file, using default configuration"));
 
   // Copy values from the JsonDocument to the Config
-  strlcpy(wificonfig.passphrase,                  // <- destination
-          doc["passphrase"] | "",  // <- source
-          sizeof(wificonfig.passphrase));         // <- destination's capacity
+  strlcpy(wificonfig.pass,                  // <- destination
+          connection["pass"] | "",  // <- source
+          sizeof(wificonfig.pass));         // <- destination's capacity
   strlcpy(wificonfig.ssid,                  // <- destination
-          doc["ssid"] | "",  // <- source
+          connection["ssid"] | "",  // <- source
           sizeof(wificonfig.ssid));         // <- destination's capacity
 
   // Close the file (Curiously, File's destructor doesn't close the file)
@@ -1209,32 +1181,20 @@ void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte st
 
 // Saves the configuration to a file
 void saveWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
-  // Delete existing file, otherwise the configuration is appended to the file
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    SD.remove(filename);
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    SPIFFS.remove(filename);
-  }
-#endif
-
-  // Open file for writing
   File file;
 #if (STORAGE_INCLUDE_SD)
   if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filename, FILE_WRITE);
+    SD.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+    file = SD.open(filename, FILE_WRITE);// Open file for writing
   }
 #endif
 #if (STORAGE_INCLUDE_SPIFFS)
   if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filename, FILE_WRITE);
+    SPIFFS.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+    file = SPIFFS.open(filename, FILE_WRITE);// Open file for writing
   }
 #endif
-
-
+  
   if (!file) {
     Serial.println(F("Failed to create file"));
     return;
@@ -1243,14 +1203,14 @@ void saveWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, b
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/assistant to compute the capacity.
-  StaticJsonDocument<256> doc;
+  StaticJsonDocument<128> connection;
 
   // Set the values in the document
-  doc["ssid"] = wificonfig.ssid;
-  doc["passphrase"] = wificonfig.passphrase;
+  connection["ssid"] = wificonfig.ssid;
+  connection["pass"] = wificonfig.pass;
 
   // Serialize JSON to file
-  if (serializeJson(doc, file) == 0) {
+  if (serializeJson(connection, file) == 0) {
     Serial.println(F("Failed to write to file"));
   }
 
@@ -1343,7 +1303,7 @@ void loadConfiguration(const char *filename, Config &config, byte storageDevice 
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/v6/assistant to compute the capacity.
   StaticJsonDocument<512> doc;
-
+  
   // Deserialize the JSON document
   DeserializationError error = deserializeJson(doc, file);
   if (error)
@@ -1396,17 +1356,17 @@ void saveConfiguration(const char *filename, const Config &config, byte storageD
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/assistant to compute the capacity.
-  StaticJsonDocument<256> doc;
-
+  StaticJsonDocument<512> doc;
+  
   // Set the values in the document
   doc["hostname"] = config.hostname;
   doc["port"] = config.port;
-
+  
   // Serialize JSON to file
   if (serializeJson(doc, file) == 0) {
     Serial.println(F("Failed to write to file"));
   }
-
+  
   // Close the file
   file.close();
 }
@@ -1659,8 +1619,8 @@ void setup()   {
     printFreeHeap(Serial);
   }
   delay(1000);
-  /*
-    { // Fix Me!
+  ///*
+    {
     GIFbitmapStruct boyKisserGIFTest;
 
     File fileStructBMP;
@@ -1671,11 +1631,11 @@ void setup()   {
     printFreeHeap(Serial);
 
     for(byte frame = 0; frame < boyKisserGIFTest.frameCount; frame++){
-    Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
-    display.clearDisplay();
-    display_struct_bitmapGIF(display, boyKisserGIFTest, frame, 0, 0);
-    display.display();
-    Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
+      Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
+      display.clearDisplay();
+      display_struct_bitmapGIF(display, boyKisserGIFTest, frame, 0, 0);
+      display.display();
+      Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
     }
     //free(boyKisserGIFTest);
     Serial.println("IMGbitmapStruct Test: End");
@@ -2399,7 +2359,7 @@ void loop() {
     // close the connection:
     //client.stop();
   }
-
+  
   if (WiFi.getMode() != WIFI_MODE_NULL) {
     if (WiFi.getMode() != WIFI_MODE_AP) {
       Serial.print("Local IP address: "); Serial.println(WiFi.localIP());
@@ -2420,14 +2380,14 @@ void loop() {
   batteryVoltage = vin;
   chargingFlag = false;
   //Serial.print("batteryPercent%:");Serial.println(batteryPercent);
-
-
+  
+  
   //Serial.print("ESP.getFreeHeap():");Serial.println(ESP.getFreeHeap());
   //display.print("ESP.getFreeHeap():"); display.println(ESP.getFreeHeap());
   printFreeHeap(Serial);
   display.print("FreeHeap:"); display.print(ESP.getFreeHeap()); display.print(" B"); display.println();
-
-
+  display.print("AP IP address: "); display.print( WiFi.softAPIP() ); display.println();
+  
   //update some variables
 
 
@@ -2847,7 +2807,9 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       Credentials_WiFi_Struct wifiCredential;
       strcpy(wifiCredential.ssid, STA_SSID);
       strcpy(wifiCredential.passphrase, STA_PASS);
+      readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
       saveWiFicredentials( wifiCredential );
+      readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
       
       serialport.println("Wifi Credentials Saved!");
       
@@ -2860,25 +2822,31 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       WiFi.disconnect(true);  // Disconnect from the network
       serialport.println("Wifi Disconnected!");
     }
-    if (commandSelect(commandInputs, "enableAP")) {
-      //command format: control WiFi enableAP
-      strcpy(subTargetCommand, "enableAP ");
+    if (commandSelect(commandInputs, "checkSavedInfo")) {
+      //command format: control WiFi checkSavedInfo
+      strcpy(subTargetCommand, "checkSavedInfo ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
-      startSoftAP( serialport );
+      readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
+      serialport.println("checkSavedInfo!");
     }
   }
 
 }
 
+
 void saveWiFicredentials(Credentials_WiFi_Struct &credential){
   //Wifi_Connections.txt
   //https://cplusplus.com/reference/cstdio/printf/
+  
+  /*
   File fileToAppend = SPIFFS.open("/Wifi_Connections.txt", FILE_APPEND);
   if(!fileToAppend){
     Serial.println("There was an error opening the file for appending");
     return;
   }
+  */
+  
   /*
   fileToAppend.print("{");
   fileToAppend.print(credential.ssid);
@@ -2886,7 +2854,18 @@ void saveWiFicredentials(Credentials_WiFi_Struct &credential){
   fileToAppend.print(credential.passphrase);
   fileToAppend.println("}");
   //*/
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
   
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)credential.ssid);
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
+  
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)credential.passphrase);
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
+  
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}\r\n");
+  /*
   if(fileToAppend.printf("{%s}{%s}\n", credential.ssid, credential.passphrase)){
     Serial.println("File content was appended");
   } else {
@@ -2894,6 +2873,7 @@ void saveWiFicredentials(Credentials_WiFi_Struct &credential){
   }
   fileToAppend.flush();
   fileToAppend.close();
+  */
   ;
 }
 
@@ -2977,7 +2957,7 @@ void printLoRaConfig(Stream &serialport, LoRa_E220 &e220ttl)
 
 void printParameters(Stream &serialport, struct Configuration configuration) {
   serialport.println("----------------------------------------");
-
+  
   serialport.print(F("HEAD : "));  serialport.print(configuration.COMMAND, HEX); serialport.print(" "); serialport.print(configuration.STARTING_ADDRESS, HEX); serialport.print(" "); serialport.println(configuration.LENGHT, HEX);
   serialport.println(F(" "));
   serialport.print(F("AddH : "));  serialport.println(configuration.ADDH, HEX);
@@ -3032,8 +3012,8 @@ void enableWiFi() {
 
   Serial.println("START WIFI");
   //WiFi.begin(STA_SSID, STA_PASS);
-  //wifi_status = WiFi.begin("TP-Link_0F3D", "Jerkface13597603");
-  //wifi_status = WiFi.begin("Hail Hydra", "aarsabteeros@48");
+  //wifi_status = WiFi.begin("TP-Link_0F3D", "Jerkface13597603");//control WiFi connect "TP-Link_0F3D" "Jerkface13597603"
+  //wifi_status = WiFi.begin("Hail Hydra", "aarsabteeros@48");//control WiFi connect "Hail Hydra" "aarsabteeros@48"
   //wifi_status = WiFi.begin("Test Network", "12345678");
   
   /*
@@ -3065,7 +3045,7 @@ void enableWiFi() {
   //("{&s}{&s}\n", wifiCredential.ssid, wifiCredential.passphrase)
   fileToRead.close();
   
-
+  
   
   
   wifi_status = WiFi.begin(wifiCredential.ssid, wifiCredential.passphrase);
@@ -3244,4 +3224,104 @@ unsigned char* readTCAImgF(char *inputHexText) {
   */
 
   return output;
+}
+
+
+
+/*
+ * //https://www.tutorialspoint.com/esp32_for_iot/esp32_for_iot_spiffs_storage.htm
+ */
+
+void listDir(Stream &serialport, fs::FS &fs, const char * dirname, uint8_t levels){
+   serialport.printf("Listing directory: %s\r\n", dirname);
+
+   File root = fs.open(dirname);
+   if(!root){
+      serialport.println("− failed to open directory");
+      return;
+   }
+   if(!root.isDirectory()){
+      serialport.println(" − not a directory");
+      return;
+   }
+
+   File file = root.openNextFile();
+   while(file){
+      if(file.isDirectory()){
+         serialport.print("  DIR : ");
+         serialport.println(file.name());
+         if(levels){
+            listDir(serialport, fs, file.name(), levels -1);
+         }
+      } else {
+         serialport.print("  FILE: ");
+         serialport.print(file.name());
+         serialport.print("\tSIZE: ");
+         serialport.println(file.size());
+      }
+      file = root.openNextFile();
+   }
+}
+
+void readFile(Stream &serialport, fs::FS &fs, const char * path){
+   serialport.printf("Reading file: %s\r\n", path);
+
+   File file = fs.open(path);
+   if(!file || file.isDirectory()){
+       serialport.println("− failed to open file for reading");
+       return;
+   }
+
+   serialport.println("− read from file:");
+   while(file.available()){
+      serialport.write(file.read());
+   }
+}
+
+void writeFile(Stream &serialport, fs::FS &fs, const char * path, const char * message){
+   serialport.printf("Writing file: %s\r\n", path);
+
+   File file = fs.open(path, FILE_WRITE);
+   if(!file){
+      serialport.println("− failed to open file for writing");
+      return;
+   }
+   if(file.print(message)){
+      serialport.println("− file written");
+   }else {
+      serialport.println("− frite failed");
+   }
+}
+
+void appendFile(Stream &serialport, fs::FS &fs, const char * path, const char * message){
+   serialport.printf("Appending to file: %s\r\n", path);
+
+   File file = fs.open(path, FILE_APPEND);
+   if(!file){
+      serialport.println("− failed to open file for appending");
+      return;
+   }
+   if(file.print(message)){
+      serialport.println("− message appended");
+   } else {
+      serialport.println("− append failed");
+   }
+}
+
+void renameFile(Stream &serialport, fs::FS &fs, const char * path1, const char * path2){
+   serialport.printf("Renaming file %s to %s\r\n", path1, path2);
+   if (fs.rename(path1, path2)) {
+      serialport.println("− file renamed");
+   } else {
+      serialport.println("− rename failed");
+   }
+}
+
+void deleteFile(Stream &serialport, fs::FS &fs, const char * path){
+   serialport.printf("Deleting file: %s\r\n", path);
+   if(fs.remove(path)){
+      serialport.println("− file deleted");
+   } else {
+      serialport.println("− delete failed");
+   }
 }
