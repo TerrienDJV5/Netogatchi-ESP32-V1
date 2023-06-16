@@ -2110,7 +2110,7 @@ void loop() {
     5,           /* priority of the task */
     NULL,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
-  delay(500);
+  
 
 
   if (timeConfigured==false){
