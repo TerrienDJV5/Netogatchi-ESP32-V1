@@ -676,7 +676,25 @@ static const unsigned char PROGMEM rotateImageTestIcon[] =
   B00000000, B00000000, B11111111, B11111111
 };
 
-
+static const unsigned char PROGMEM wifi16x16Icon[] =
+{
+  B11111111, B11111111,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B11111111, B11111111,
+  B10000000, B10000001,
+  B10000000, B10000001,
+  B10000000, B10000001,
+  B10000000, B10000001,
+  B10000000, B10000001,
+  B10000000, B10000001,
+  B10000000, B10000001,
+};
 
 
 
@@ -2168,7 +2186,7 @@ void loop() {
     display.print("DeBug_Status:"); display.println(showDebugMenu);
   }
 
-
+  
   //main Menu //currentMenuID==0
   if (currentMenuID == 0) {
     //
@@ -2178,6 +2196,9 @@ void loop() {
     display.drawLine(47, 7, 47 + 8, 7 + 8, WHITE);
     display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
     display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((100 - batteryPercent) * (20 / 100)), 8, BLACK);
+    if (WiFi.status() == WL_CONNECTED) {
+      display.drawBitmap(96, 0, wifi16x16Icon, 16, 16, WHITE);
+    }
     //batteryPercent, chargingFlag
     display.setCursor(0, 0);
     display.setTextSize(1);
@@ -2274,6 +2295,7 @@ void loop() {
   //Wifi menu //currentMenuID==3
   if (currentMenuID == 3) {
     //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
+    //https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/soft-access-point-class.html
     display.setCursor(0, 1 * 8);
     display.setTextSize(1);
     display.setTextColor(WHITE);
