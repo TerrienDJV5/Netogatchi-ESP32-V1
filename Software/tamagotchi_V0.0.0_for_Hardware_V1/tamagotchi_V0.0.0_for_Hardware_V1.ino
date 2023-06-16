@@ -719,22 +719,47 @@ static const unsigned char PROGMEM wifi16x16Icon[] =
 */
 
 
+
+
+
+
 /*
  * WiFi Stuff Start
  */
 
 
+
+unsigned int countNewLinesFromFile(const char *filePath, byte storageDevice = STORAGE_DEVICE_DEFAULT){
+  // Open file for reading
+  File file;
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
+    file = SD.open(filePath, FILE_READ);
+  }
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
+    file = SPIFFS.open(filePath, FILE_READ);
+  }
+#endif
+  unsigned int newLineCount = 0;
+  while(file.available()){
+    newLineCount += (file.read()=='\n');
+  }
+  file.close();
+  return newLineCount;
+}
+
+
 typedef struct {
   //six characters are not allowed (SSID): ?, ", $, [, \, ], and +
   char ssid[33];//max length 32 //Min Length 2
-  char passphrase[64];//max length 63
+  char pass[64];//max length 63
 } Credentials_WiFi_Struct;
 
 
 
-void disableWiFi();
-void enableWiFi();
-void saveWiFicredentials(Credentials_WiFi_Struct &credential);
+
 
 
 //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi-security.html
@@ -756,7 +781,17 @@ Credentials_WiFi_Struct wificonfig;
   #define STORAGE_INCLUDE_FFAT false
 */
 
+void disableWiFi();
+void enableWiFi();
+void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials);
+unsigned int getCount_of_Saved_WiFicredentials(const char *filePath = "/Wifi_Connections.txt", byte storageDevice = STORAGE_DEVICE_DEFAULT);
+void read_WiFicredentials(Credentials_WiFi_Struct &wifiCredentials, const char *filePath = "/Wifi_Connections.txt", byte storageDevice = STORAGE_DEVICE_DEFAULT, unsigned int listIndex = 0);
+
+
+
 void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, Credentials_WiFi_Struct &wifiCredentials);
+
+
 
 
 //void openFromStorageDevice(File &file, const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, uint8_t setmode = FILE_READ);
@@ -956,6 +991,92 @@ void printWiFiFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEF
   // Close the file
   file.close();
 }
+
+
+
+
+
+/*
+enum userType
+{
+   x,
+   y,
+   z
+};
+*/
+
+
+
+
+
+
+void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials){
+  // "/Wifi_Connections.txt"
+  /*
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
+  
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)wifiCredentials.ssid);
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
+  
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)wifiCredentials.pass);
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
+  
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}\r\n");
+  //*/
+  
+  appendWiFiConfiguration("/Wifi_Connections.txt", wifiCredentials);
+}
+
+unsigned int getCount_of_Saved_WiFicredentials(const char *filePath, byte storageDevice){
+  // "/Wifi_Connections.txt"
+  return (countNewLinesFromFile(filePath, storageDevice)-1);
+}
+
+void read_WiFicredentials(Credentials_WiFi_Struct &wifiCredentials, const char *filePath, byte storageDevice, unsigned int listIndex)
+{
+  //WHYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+  // "/Wifi_Connections.txt"
+  // Open file for reading
+  File file;
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
+    file = SD.open(filePath, FILE_READ);
+  }
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
+    file = SPIFFS.open(filePath, FILE_READ);
+  }
+#endif
+  const unsigned int readBufferLength = 128;
+  char readBuffer[ readBufferLength ];
+  char *scanBufferP;
+  unsigned int savedCount = getCount_of_Saved_WiFicredentials(filePath, storageDevice);
+  unsigned int newLineLocation = 0;
+  for (int index = 0; index < savedCount; index++) {
+    file.read(readBuffer, readBufferLength);
+    scanBufferP = strchr(readBuffer,'\n');
+    newLineLocation = readBufferLength-strlen(scanBufferP);
+    Serial.println("read_WiFicredentials");
+    Serial.println(index);
+    Serial.println(readBuffer);
+    Serial.println(readBufferLength);
+    Serial.println(scanBufferP);
+    Serial.println(newLineLocation);
+    Serial.println();
+    Serial.println();
+  }
+
+  strcpy(wifiCredentials.ssid, "");
+  strcpy(wifiCredentials.pass, "");
+  
+  
+  file.close();
+}
+
+
 
 
 
@@ -1787,6 +1908,22 @@ void setup()   {
   // Clear the buffer.
   display.stopscroll();
   display.clearDisplay();
+
+  //read_WiFicredentials Test
+  unsigned int savedCount = getCount_of_Saved_WiFicredentials("/Wifi_Connections.txt", SPIFFS);
+  Serial.println(savedCount);
+  Credentials_WiFi_Struct wifiCredentials;
+  for (int index = 0; index < savedCount; index++) {
+    read_WiFicredentials(wifiCredentials, "/Wifi_Connections.txt", SPIFFS, index);
+    Serial.print("ssid: ");Serial.println(wifiCredentials.ssid);
+    Serial.print("pass: ");Serial.println(wifiCredentials.pass);
+    
+    Serial.println();
+    delay(1000);
+  }
+  
+  
+  
 
 
   /*
@@ -3166,7 +3303,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       serialport.println("Saving Wifi Credentials!");
       Credentials_WiFi_Struct wifiCredential;
       strcpy(wifiCredential.ssid, STA_SSID);
-      strcpy(wifiCredential.passphrase, STA_PASS);
+      strcpy(wifiCredential.pass, STA_PASS);
       readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
       saveWiFicredentials( wifiCredential );
       readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
@@ -3192,26 +3329,6 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
     }
   }
 
-}
-
-void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials){
-  // "/Wifi_Connections.txt"
-  /*
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
-  
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)wifiCredentials.ssid);
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
-  
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)wifiCredentials.passphrase);
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
-  
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}\r\n");
-  //*/
-  
-  appendWiFiConfiguration("/Wifi_Connections.txt", wifiCredentials);
-  ;
 }
 
 
@@ -3380,13 +3497,13 @@ void enableWiFi() {
   //
   //
   //finish me!
-  //("{&s}{&s}\n", wifiCredential.ssid, wifiCredential.passphrase)
+  //("{&s}{&s}\n", wifiCredential.ssid, wifiCredential.pass)
   fileToRead.close();
   
   
   
   
-  wifi_status = WiFi.begin(wifiCredential.ssid, wifiCredential.passphrase);
+  wifi_status = WiFi.begin(wifiCredential.ssid, wifiCredential.pass);
   
   
   //
