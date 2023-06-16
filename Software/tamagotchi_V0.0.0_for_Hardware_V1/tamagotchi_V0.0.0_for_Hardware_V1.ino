@@ -2135,9 +2135,7 @@ void loop() {
   }
 #endif
   //*/
-
-
-
+  
 
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -2150,11 +2148,11 @@ void loop() {
   display.setTextColor(WHITE);
   display.print("RawButtons:"); display.println(buttonpiso1.getRAWState(), BIN);
   /*
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.println("frameCountVariable:");
-    display.print("->");display.println(frameCountVariable, DEC);
-    //*/
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.println("frameCountVariable:");
+  display.print("->");display.println(frameCountVariable, DEC);
+  //*/
   if (showDebugMenu == true) {
 #if (FeatureEnable_BT_Serial==true)
     display.setTextSize(1);
@@ -2189,325 +2187,34 @@ void loop() {
   
   //main Menu //currentMenuID==0
   if (currentMenuID == 0) {
-    //
-    display.drawRoundRect(0, 2 - 8, 128, 16 - 2 + 8, 4, WHITE);
-    display.fillRect(0, 0, 48 + 8, 16, BLACK);
-    display.drawLine(0, 7, 47, 7, WHITE);
-    display.drawLine(47, 7, 47 + 8, 7 + 8, WHITE);
-    display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
-    display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((100 - batteryPercent) * (20 / 100)), 8, BLACK);
-    display.fillRect(80, 0, 16, 16+16, BLACK);
-    if ((WiFi.getMode() == WIFI_MODE_STA) or (WiFi.getMode() == WIFI_MODE_APSTA)) {
-      display.fillRect(80, 0, 16, 16, WHITE);
-      display.drawBitmap(80, 0, wifi16x16Icon, 16, 16, BLACK);
-      if (WiFi.status() == WL_CONNECTED) {
-        display.fillRect(80, 0, 16, 16, BLACK);
-        display.drawBitmap(80, 0, wifi16x16Icon, 16, 16, WHITE);
-      }
-    }
-    if ((WiFi.getMode() == WIFI_MODE_AP) or (WiFi.getMode() == WIFI_MODE_APSTA)) {
-      display.drawBitmap(80, 16, wifi16x16Icon, 16, 16, WHITE);
-    }
-    //batteryPercent, chargingFlag
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("FPS~:"); display.print( system_Frame_FPS ); display.println();
-    display.print("RawButtons:"); display.println(buttonpiso1.getRAWState(), BIN);
-    display.print("battery%:"); display.print(batteryPercent); display.print(", "); display.print(batteryVoltage); display.println("V");
-    display.print("ShowingVCB_frame:"); display.println(frameCountVariable % 32);
-    display.drawBitmap(0, 8, visableCharacterBuffer[ frameCountVariable % 32 ], 32, 56, WHITE);
-
+    menu_MAIN();
   }
   //selection menu //currentMenuID==1
   if (currentMenuID == 1) {
-    int buttonDrawCount = 4;
-    int buttonDrawWidth = display.width() - 2;
-    int buttonDrawHeight = 16;//display.height()/4;
-    int optionNameID = 0;
-    char printOptionsBuffer[33];
-    memset(printOptionsBuffer, '\0', 33);
-    static int oN_IDDisplay_offset;
-
-    if (buttonpiso1.isTapped(0) == true) {//UP
-      sm_selectedID--;
-      if (sm_selectedID + 1 == oN_IDDisplay_offset) {
-        oN_IDDisplay_offset = sm_selectedID;
-      };
-    };
-    if (buttonpiso1.isTapped(5) == true) {//DOWN
-      sm_selectedID++;
-      if ((sm_selectedID - oN_IDDisplay_offset) == buttonDrawCount) {
-        oN_IDDisplay_offset = sm_selectedID - (buttonDrawCount - 1);
-      };
-    };
-    if (buttonpiso1.isTapped(2) == true) {//Select
-      currentMenuID = sm_selectedID;
-    };
-
-
-
-    for (int buttonDrawIndex = 0; buttonDrawIndex < buttonDrawCount; buttonDrawIndex++) {
-      optionNameID = oN_IDDisplay_offset + buttonDrawIndex;
-      display.setCursor(4, 4 + buttonDrawHeight * buttonDrawIndex);
-      display.setTextSize(1.5);
-      if ((sm_selectedID) != optionNameID) {
-        display.drawRoundRect(0, buttonDrawHeight * buttonDrawIndex, buttonDrawWidth, buttonDrawHeight - 2, buttonDrawHeight / 4, WHITE);
-        display.setTextColor(WHITE);
-      } else {
-        display.fillRoundRect(0, buttonDrawHeight * buttonDrawIndex, buttonDrawWidth, buttonDrawHeight - 2, buttonDrawHeight / 4, WHITE);
-        display.setTextColor(BLACK);
-      };
-      strcpy(printOptionsBuffer, smOptionName_List[ optionNameID ]);
-      display.print("Opt "); display.print(optionNameID); display.print(":"); display.println(printOptionsBuffer);
-    }
+    menu_SELECTION();
   }
   //Lora menu //currentMenuID==2
   if (currentMenuID == 2) {
-    //https://github.com/xreef/EByte_LoRa_E220_Series_Library
-    display.setCursor(0, 1 * 8);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("LoRa Menu"); display.println();
-    // If something available
-    if (e220ttl.available() > 1) {
-      Serial.println("Message received!");
-      display.println("Message received!");
-
-      // read the String message
-      #ifdef ENABLE_RSSI
-      ResponseContainer rc = e220ttl.receiveMessageRSSI();
-      #else
-      ResponseContainer rc = e220ttl.receiveMessage();
-      #endif
-      
-      // Is something goes wrong print error
-      if (rc.status.code != 1) {
-        Serial.println(rc.status.getResponseDescription());
-        display.println(rc.status.getResponseDescription());
-      } else {
-        // Print the data received
-        Serial.println(rc.status.getResponseDescription());
-        Serial.println(rc.data);
-        display.println(rc.status.getResponseDescription());
-        display.println(rc.data);
-        #ifdef ENABLE_RSSI
-        Serial.print("RSSI: "); Serial.println(rc.rssi, DEC);
-        display.print("RSSI: "); display.println(rc.rssi, DEC);
-        #endif
-      }
-    }
-    display.setCursor(0, 5 * 8);
+    menu_LORA();
   }
 
 
   //Wifi menu //currentMenuID==3
   if (currentMenuID == 3) {
-    //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
-    //https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/soft-access-point-class.html
-    display.setCursor(0, 1 * 8);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("WiFi Menu"); display.println();
-    if (buttonpiso1.isTapped(3) == true) {//A
-      if (WiFi.getMode() == WIFI_MODE_NULL) {
-        enableWiFi();
-        //wifiSerialSetup();
-      } else {
-        disableWiFi();
-      }
-    }
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("WiFi connected");
-      Serial.println("IP address: ");
-      Serial.println(WiFi.localIP());
-    }
-    if (WiFi.status() != WL_CONNECTED) {
-      if (WiFi.getMode() != WIFI_MODE_NULL) {
-        int n;
-        int showOnScreenConnection = 7;
-        if ((millis() - lastScanTimer) > 60000) {
-          n = WiFi.scanNetworks();
-          lastScanTimer = millis();
-        }
-        display.print("Connections: "); display.println(n);
-        for (int index = 0; index < n; index++) {
-          display.print(WiFi.SSID(index)); display.print(" RRSI: "); display.println(WiFi.RSSI(index));
-        }
-      }
-    }
-
-
-    Serial.print("WiFi.getMode():"); Serial.print(WiFi.getMode()); Serial.print(", ");
-    if (WiFi.getMode() == WIFI_MODE_NULL) {
-      Serial.println("WiFi.getMode() == WIFI_MODE_NULL");
-    };
-    if (WiFi.getMode() == WIFI_MODE_STA) {
-      Serial.println("WiFi.getMode() == WIFI_MODE_STA");
-    };
-    if (WiFi.getMode() == WIFI_MODE_AP) {
-      Serial.println("WiFi.getMode() == WIFI_MODE_AP");
-    };
-    if (WiFi.getMode() == WIFI_MODE_APSTA) {
-      Serial.println("WiFi.getMode() == WIFI_MODE_APSTA");
-    };
-    if (WiFi.getMode() == WIFI_MODE_MAX) {
-      Serial.println("WiFi.getMode() == WIFI_MODE_MAX");
-    };
-
-    if (WiFi.getMode() == WIFI_MODE_NULL) {
-      display.println("WiFi.getMode() == WIFI_MODE_NULL");
-    };
-    if (WiFi.getMode() == WIFI_MODE_STA) {
-      display.println("WiFi.getMode() == WIFI_MODE_STA");
-    };
-    if (WiFi.getMode() == WIFI_MODE_AP) {
-      display.println("WiFi.getMode() == WIFI_MODE_AP");
-    };
-    if (WiFi.getMode() == WIFI_MODE_APSTA) {
-      display.println("WiFi.getMode() == WIFI_MODE_APSTA");
-    };
-    if (WiFi.getMode() == WIFI_MODE_MAX) {
-      display.println("WiFi.getMode() == WIFI_MODE_MAX");
-    };
-
-
+    menu_WIFI();
+    
   }
 
   //IR menu //currentMenuID==5
   if (currentMenuID == 5) {
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("IR Menu"); display.println();
-    display.print("Functionality Not yet added!"); display.println();
-
+    menu_IR();    
   }
 
 
 
   //SPIFFs menu //currentMenuID==8
   if (currentMenuID == 8) {
-    //https://techtutorialsx.com/2019/02/23/esp32-arduino-list-all-files-in-the-spiffs-file-system/
-    display.setCursor(0, 1 * 8);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("SPIFFs Menu"); display.println();
-    unsigned int fileCount = 0;
-    int fileSelect = 0;
-    unsigned int fileDisplayOffset = 0;
-    unsigned int fileDisplayOffsetMax = 7;
-    unsigned int currentNameSaveCount = 8;
-    unsigned int extendNameSaveCountSize = 4;
-    unsigned int maxFileNameLength = 32;
-    char *savedFileNames;
-    char *savedFileNamesExtendBuffer;
-    savedFileNames = (char *)malloc( currentNameSaveCount * maxFileNameLength );
-    memset(savedFileNames, '\0', currentNameSaveCount * maxFileNameLength);
-    Serial.println("CheckPoint-00");
-    File root = SPIFFS.open("/");
-    Serial.println("CheckPoint-01");
-    File file = root.openNextFile();
-    Serial.println("CheckPoint-02");
-    while (file) {
-      //extend Main List Length
-      Serial.println("Extending File Name List!");
-      printFreeHeap(Serial);
-      if (fileCount > currentNameSaveCount) {
-        //allocate buffer
-        //copy to buffer
-        //extend main list
-        //add items back to Main List
-        //free up allocated buffer
-        Serial.println("CheckPoint-03");
-        savedFileNamesExtendBuffer = (char *)malloc( currentNameSaveCount * maxFileNameLength );
-        Serial.println("CheckPoint-04");
-        memcpy(savedFileNamesExtendBuffer, savedFileNames, currentNameSaveCount * maxFileNameLength);
-        Serial.println("CheckPoint-05");
-        free(savedFileNames);
-        Serial.println("CheckPoint-06");
-        /*
-          for (int index = 0; index < currentNameSaveCount; index++){
-          savedFileNamesExtendBuffer[ index ] = savedFileNames[ index ];
-          }
-          //*/
-        currentNameSaveCount += extendNameSaveCountSize;
-        savedFileNames = (char *)malloc( currentNameSaveCount * maxFileNameLength );
-        Serial.println("CheckPoint-07");
-        memset(savedFileNames, '\0', currentNameSaveCount * maxFileNameLength);
-        Serial.println("CheckPoint-08");
-        for (int index = 0; index < (currentNameSaveCount - extendNameSaveCountSize); index++) {
-          savedFileNames[ index ] = savedFileNamesExtendBuffer[ index ];
-        }
-        Serial.println("CheckPoint-09");
-        free(savedFileNamesExtendBuffer);//frees Memory
-        Serial.println("CheckPoint-0a");
-      }
-      printFreeHeap(Serial);
-      Serial.println("CheckPoint-0b");
-      //add to main List
-      strcpy(&savedFileNames[ fileCount * maxFileNameLength ], file.name()); //savedFileNames[ fileCount ] = file.name();
-      Serial.println("CheckPoint-0c");
-      Serial.print("FILE: ");
-      Serial.println(file.name());
-
-      fileCount++;
-      file = root.openNextFile();
-      Serial.println("CheckPoint-0d");
-    }
-    Serial.println("CheckPoint-0e");
-    file.close();
-    root.close();
-    while (currentMenuID == 8) {
-      Serial.println("CheckPoint-0f");
-      display.clearDisplay();
-      display.setCursor(0, 0);
-      display.setTextSize(1);
-      display.setTextColor(WHITE);
-
-      if (disableButtonPISO_update == false) {
-        buttonpiso1.update();
-      };
-      printButtonPISODebug();
-
-
-      if (buttonpiso1.isTapped(0) == true) {//UP
-        fileSelect--;
-        if (fileSelect + 1 <= fileDisplayOffset) {
-          fileDisplayOffset = fileSelect;
-        }
-      }
-      if (buttonpiso1.isTapped(5) == true) {//DOWN
-        fileSelect++;
-        if ((fileSelect - fileDisplayOffset) >= fileDisplayOffsetMax) {
-          fileDisplayOffset = fileSelect - (fileDisplayOffsetMax - 1);
-        }
-      }
-      display.println(fileSelect);
-      char printBuffer[32];
-      for (int index = 0; index < fileDisplayOffsetMax; index++) {
-        //
-        display.setCursor(0, 8 * index);
-        strncpy(printBuffer, &savedFileNames[ (fileDisplayOffset + index)*maxFileNameLength ], maxFileNameLength);
-        if ((fileDisplayOffset + index) == fileSelect) {
-          display.fillRect(0, 8 * (fileSelect - fileDisplayOffset), display.width(), 8, WHITE);
-          display.setTextColor(BLACK);
-          display.println(printBuffer);
-        } else {
-          display.setTextColor(WHITE);
-          display.println(printBuffer);
-        }
-      }
-      display.display();
-      //
-      if (buttonpiso1.isTapped(7) == true) {//B
-        currentMenuID = 0;//previousMenuID;
-        break;
-      };
-    }
-    Serial.println("CheckPoint-10");
-    //free(savedFileNames);//frees Memory
-    Serial.println("CheckPoint-11");
+    menu_SPIFFS();
   }
 
   
@@ -2553,14 +2260,7 @@ void loop() {
   }
   
   //display.print("CPU Freq: ");display.println(getCpuFrequencyMhz());
-
-
-
-
-
-
-
-
+  
   //checkPoint
   //ToDo
   //make a file Viewer
@@ -2572,10 +2272,6 @@ void loop() {
   //UI
   
   checkAllDebugInputs();
-  
-
-  
-  
   
   //Serial.print("ESP.getFreeHeap():");Serial.println(ESP.getFreeHeap());
   //display.print("ESP.getFreeHeap():"); display.println(ESP.getFreeHeap());
@@ -2595,10 +2291,321 @@ void loop() {
 }
 
 
+
+
 void printFreeHeap(Stream &serialport) {
   serialport.print("ESP.getFreeHeap():");
   serialport.println(ESP.getFreeHeap());
 }
+
+void menu_MAIN(){
+  display.drawRoundRect(0, 2 - 8, 128, 16 - 2 + 8, 4, WHITE);
+  display.fillRect(0, 0, 48 + 8, 16, BLACK);
+  display.drawLine(0, 7, 47, 7, WHITE);
+  display.drawLine(47, 7, 47 + 8, 7 + 8, WHITE);
+  display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
+  display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((100 - batteryPercent) * (20 / 100)), 8, BLACK);
+  display.fillRect(80, 0, 16, 16+16, BLACK);
+  if ((WiFi.getMode() == WIFI_MODE_STA) or (WiFi.getMode() == WIFI_MODE_APSTA)) {
+    display.fillRect(80, 0, 16, 16, WHITE);
+    display.drawBitmap(80, 0, wifi16x16Icon, 16, 16, BLACK);
+    if (WiFi.status() == WL_CONNECTED) {
+      display.fillRect(80, 0, 16, 16, BLACK);
+      display.drawBitmap(80, 0, wifi16x16Icon, 16, 16, WHITE);
+    }
+  }
+  if ((WiFi.getMode() == WIFI_MODE_AP) or (WiFi.getMode() == WIFI_MODE_APSTA)) {
+    display.drawBitmap(80, 16, wifi16x16Icon, 16, 16, WHITE);
+  }
+  //batteryPercent, chargingFlag
+  display.setCursor(0, 0);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("FPS~:"); display.print( system_Frame_FPS ); display.println();
+  display.print("RawButtons:"); display.println(buttonpiso1.getRAWState(), BIN);
+  display.print("battery%:"); display.print(batteryPercent); display.print(", "); display.print(batteryVoltage); display.println("V");
+  display.print("ShowingVCB_frame:"); display.println(frameCountVariable % 32);
+  display.drawBitmap(0, 8, visableCharacterBuffer[ frameCountVariable % 32 ], 32, 56, WHITE);
+}
+
+
+void menu_SELECTION(){
+  int buttonDrawCount = 4;
+  int buttonDrawWidth = display.width() - 2;
+  int buttonDrawHeight = 16;//display.height()/4;
+  int optionNameID = 0;
+  char printOptionsBuffer[33];
+  memset(printOptionsBuffer, '\0', 33);
+  static int oN_IDDisplay_offset;
+  
+  if (buttonpiso1.isTapped(0) == true) {//UP
+    sm_selectedID--;
+    if (sm_selectedID + 1 == oN_IDDisplay_offset) {
+      oN_IDDisplay_offset = sm_selectedID;
+    };
+  };
+  if (buttonpiso1.isTapped(5) == true) {//DOWN
+    sm_selectedID++;
+    if ((sm_selectedID - oN_IDDisplay_offset) == buttonDrawCount) {
+      oN_IDDisplay_offset = sm_selectedID - (buttonDrawCount - 1);
+    };
+  };
+  if (buttonpiso1.isTapped(2) == true) {//Select
+    currentMenuID = sm_selectedID;
+  };
+  for (int buttonDrawIndex = 0; buttonDrawIndex < buttonDrawCount; buttonDrawIndex++) {
+    optionNameID = oN_IDDisplay_offset + buttonDrawIndex;
+    display.setCursor(4, 4 + buttonDrawHeight * buttonDrawIndex);
+    display.setTextSize(1.5);
+    if ((sm_selectedID) != optionNameID) {
+      display.drawRoundRect(0, buttonDrawHeight * buttonDrawIndex, buttonDrawWidth, buttonDrawHeight - 2, buttonDrawHeight / 4, WHITE);
+      display.setTextColor(WHITE);
+    } else {
+      display.fillRoundRect(0, buttonDrawHeight * buttonDrawIndex, buttonDrawWidth, buttonDrawHeight - 2, buttonDrawHeight / 4, WHITE);
+      display.setTextColor(BLACK);
+    };
+    strcpy(printOptionsBuffer, smOptionName_List[ optionNameID ]);
+    display.print("Opt "); display.print(optionNameID); display.print(":"); display.println(printOptionsBuffer);
+  }
+}
+
+
+void menu_LORA(){
+  //https://github.com/xreef/EByte_LoRa_E220_Series_Library
+  display.setCursor(0, 1 * 8);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("LoRa Menu"); display.println();
+  // If something available
+  if (e220ttl.available() > 1) {
+    Serial.println("Message received!");
+    display.println("Message received!");
+    // read the String message
+    #ifdef ENABLE_RSSI
+    ResponseContainer rc = e220ttl.receiveMessageRSSI();
+    #else
+    ResponseContainer rc = e220ttl.receiveMessage();
+    #endif
+    
+    // Is something goes wrong print error
+    if (rc.status.code != 1) {
+      Serial.println(rc.status.getResponseDescription());
+      display.println(rc.status.getResponseDescription());
+    } else {
+      // Print the data received
+      Serial.println(rc.status.getResponseDescription());
+      Serial.println(rc.data);
+      display.println(rc.status.getResponseDescription());
+      display.println(rc.data);
+      #ifdef ENABLE_RSSI
+      Serial.print("RSSI: "); Serial.println(rc.rssi, DEC);
+      display.print("RSSI: "); display.println(rc.rssi, DEC);
+      #endif
+    }
+  }
+  display.setCursor(0, 5 * 8);
+}
+
+void menu_SPIFFS(){
+  //https://techtutorialsx.com/2019/02/23/esp32-arduino-list-all-files-in-the-spiffs-file-system/
+  display.setCursor(0, 1 * 8);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("SPIFFs Menu"); display.println();
+  unsigned int fileCount = 0;
+  int fileSelect = 0;
+  unsigned int fileDisplayOffset = 0;
+  unsigned int fileDisplayOffsetMax = 7;
+  unsigned int currentNameSaveCount = 8;
+  unsigned int extendNameSaveCountSize = 4;
+  unsigned int maxFileNameLength = 32;
+  char *savedFileNames;
+  char *savedFileNamesExtendBuffer;
+  savedFileNames = (char *)malloc( currentNameSaveCount * maxFileNameLength );
+  memset(savedFileNames, '\0', currentNameSaveCount * maxFileNameLength);
+  Serial.println("CheckPoint-00");
+  File root = SPIFFS.open("/");
+  Serial.println("CheckPoint-01");
+  File file = root.openNextFile();
+  Serial.println("CheckPoint-02");
+  while (file) {
+    //extend Main List Length
+    Serial.println("Extending File Name List!");
+    printFreeHeap(Serial);
+    if (fileCount > currentNameSaveCount) {
+      //allocate buffer
+      //copy to buffer
+      //extend main list
+      //add items back to Main List
+      //free up allocated buffer
+      Serial.println("CheckPoint-03");
+      savedFileNamesExtendBuffer = (char *)malloc( currentNameSaveCount * maxFileNameLength );
+      Serial.println("CheckPoint-04");
+      memcpy(savedFileNamesExtendBuffer, savedFileNames, currentNameSaveCount * maxFileNameLength);
+      Serial.println("CheckPoint-05");
+      free(savedFileNames);
+      Serial.println("CheckPoint-06");
+      /*
+        for (int index = 0; index < currentNameSaveCount; index++){
+        savedFileNamesExtendBuffer[ index ] = savedFileNames[ index ];
+        }
+        //*/
+      currentNameSaveCount += extendNameSaveCountSize;
+      savedFileNames = (char *)malloc( currentNameSaveCount * maxFileNameLength );
+      Serial.println("CheckPoint-07");
+      memset(savedFileNames, '\0', currentNameSaveCount * maxFileNameLength);
+      Serial.println("CheckPoint-08");
+      for (int index = 0; index < (currentNameSaveCount - extendNameSaveCountSize); index++) {
+        savedFileNames[ index ] = savedFileNamesExtendBuffer[ index ];
+      }
+      Serial.println("CheckPoint-09");
+      free(savedFileNamesExtendBuffer);//frees Memory
+      Serial.println("CheckPoint-0a");
+    }
+    printFreeHeap(Serial);
+    Serial.println("CheckPoint-0b");
+    //add to main List
+    strcpy(&savedFileNames[ fileCount * maxFileNameLength ], file.name()); //savedFileNames[ fileCount ] = file.name();
+    Serial.println("CheckPoint-0c");
+    Serial.print("FILE: ");
+    Serial.println(file.name());
+    
+    fileCount++;
+    file = root.openNextFile();
+    Serial.println("CheckPoint-0d");
+  }
+  Serial.println("CheckPoint-0e");
+  file.close();
+  root.close();
+  while (currentMenuID == 8) {
+    Serial.println("CheckPoint-0f");
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    
+    if (disableButtonPISO_update == false) {
+      buttonpiso1.update();
+    };
+    printButtonPISODebug();
+    
+    
+    if (buttonpiso1.isTapped(0) == true) {//UP
+      fileSelect--;
+      if (fileSelect + 1 <= fileDisplayOffset) {
+        fileDisplayOffset = fileSelect;
+      }
+    }
+    if (buttonpiso1.isTapped(5) == true) {//DOWN
+      fileSelect++;
+      if ((fileSelect - fileDisplayOffset) >= fileDisplayOffsetMax) {
+        fileDisplayOffset = fileSelect - (fileDisplayOffsetMax - 1);
+      }
+    }
+    display.println(fileSelect);
+    char printBuffer[32];
+    for (int index = 0; index < fileDisplayOffsetMax; index++) {
+      //
+      display.setCursor(0, 8 * index);
+      strncpy(printBuffer, &savedFileNames[ (fileDisplayOffset + index)*maxFileNameLength ], maxFileNameLength);
+      if ((fileDisplayOffset + index) == fileSelect) {
+        display.fillRect(0, 8 * (fileSelect - fileDisplayOffset), display.width(), 8, WHITE);
+        display.setTextColor(BLACK);
+        display.println(printBuffer);
+      } else {
+        display.setTextColor(WHITE);
+        display.println(printBuffer);
+      }
+    }
+    display.display();
+    //
+    if (buttonpiso1.isTapped(7) == true) {//B
+      currentMenuID = 0;//previousMenuID;
+      break;
+    };
+  }
+  Serial.println("CheckPoint-10");
+  //free(savedFileNames);//frees Memory
+  Serial.println("CheckPoint-11");
+}
+
+void menu_WIFI(){
+  //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
+  //https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/soft-access-point-class.html
+  display.setCursor(0, 1 * 8);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("WiFi Menu"); display.println();
+  if (buttonpiso1.isTapped(3) == true) {//A
+    if (WiFi.getMode() == WIFI_MODE_NULL) {
+      enableWiFi();
+      //wifiSerialSetup();
+    } else {
+      disableWiFi();
+    }
+  }
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+  }
+  if (WiFi.status() != WL_CONNECTED) {
+    if (WiFi.getMode() != WIFI_MODE_NULL) {
+      int n;
+      int showOnScreenConnection = 7;
+      if ((millis() - lastScanTimer) > 60000) {
+        n = WiFi.scanNetworks();
+        lastScanTimer = millis();
+      }
+      display.print("Connections: "); display.println(n);
+      for (int index = 0; index < n; index++) {
+        display.print(WiFi.SSID(index)); display.print(" RRSI: "); display.println(WiFi.RSSI(index));
+      }
+    }
+  }
+  
+  Serial.print("WiFi.getMode():"); Serial.print(WiFi.getMode()); Serial.print(", ");
+  if (WiFi.getMode() == WIFI_MODE_NULL) {
+    Serial.println("WiFi.getMode() == WIFI_MODE_NULL");
+  };
+  if (WiFi.getMode() == WIFI_MODE_STA) {
+    Serial.println("WiFi.getMode() == WIFI_MODE_STA");
+  };
+  if (WiFi.getMode() == WIFI_MODE_AP) {
+    Serial.println("WiFi.getMode() == WIFI_MODE_AP");
+  };
+  if (WiFi.getMode() == WIFI_MODE_APSTA) {
+    Serial.println("WiFi.getMode() == WIFI_MODE_APSTA");
+  };
+  if (WiFi.getMode() == WIFI_MODE_MAX) {
+    Serial.println("WiFi.getMode() == WIFI_MODE_MAX");
+  };
+  
+  if (WiFi.getMode() == WIFI_MODE_NULL) {
+    display.println("WiFi.getMode() == WIFI_MODE_NULL");
+  };
+  if (WiFi.getMode() == WIFI_MODE_STA) {
+    display.println("WiFi.getMode() == WIFI_MODE_STA");
+  };
+  if (WiFi.getMode() == WIFI_MODE_AP) {
+    display.println("WiFi.getMode() == WIFI_MODE_AP");
+  };
+  if (WiFi.getMode() == WIFI_MODE_APSTA) {
+    display.println("WiFi.getMode() == WIFI_MODE_APSTA");
+  };
+  if (WiFi.getMode() == WIFI_MODE_MAX) {
+    display.println("WiFi.getMode() == WIFI_MODE_MAX");
+  };
+}
+
+void menu_IR(){
+  display.setCursor(0, 0);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("IR Menu"); display.println();
+  display.print("Functionality Not yet added!"); display.println();
+}
+
 
 
 
