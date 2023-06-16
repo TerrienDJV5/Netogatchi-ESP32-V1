@@ -155,6 +155,7 @@
 //https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
 
 
+
 #include "WiFiType.h"
 
 //StaticJsonDocument<512> saved_wifi_json;
@@ -172,8 +173,9 @@ WiFiClient SerialWiFiclient;
 
 
 
-
 //other Stuff Support
+
+#include "time.h"
 
 #include "driver/adc.h"
 #include "driver/dac.h"//https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32s2/api-reference/peripherals/dac.html
@@ -586,7 +588,48 @@ byte cableStatus = 0;
 byte taskbarRotation = 1;//1
 int frame_location_offset = 16;
 
+//timeSettings
+//time(), gmtime(), localtime(), mktime(), gettimeofday()
+//https://lastminuteengineers.com/esp32-ntp-server-date-time-tutorial/
+const char* ntpServer = "pool.ntp.org";
+const long  gmtOffset_sec = (-4)*60*60;
+const int   daylightOffset_sec = 3600;
+bool timeConfigured = false;
 
+
+void printLocalTime(Stream &serialport){
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    serialport.println("Failed to obtain time");
+    return;
+  }
+  serialport.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+  serialport.print("Day of week: ");
+  serialport.println(&timeinfo, "%A");
+  serialport.print("Month: ");
+  serialport.println(&timeinfo, "%B");
+  serialport.print("Day of Month: ");
+  serialport.println(&timeinfo, "%d");
+  serialport.print("Year: ");
+  serialport.println(&timeinfo, "%Y");
+  serialport.print("Hour: ");
+  serialport.println(&timeinfo, "%H");
+  serialport.print("Hour (12 hour format): ");
+  serialport.println(&timeinfo, "%I");
+  serialport.print("Minute: ");
+  serialport.println(&timeinfo, "%M");
+  serialport.print("Second: ");
+  serialport.println(&timeinfo, "%S");
+
+  serialport.println("Time variables");
+  char timeHour[3];
+  strftime(timeHour,3, "%H", &timeinfo);
+  serialport.println(timeHour);
+  char timeWeekDay[10];
+  strftime(timeWeekDay,10, "%A", &timeinfo);
+  serialport.println(timeWeekDay);
+  serialport.println();
+}
 
 
 
@@ -1140,6 +1183,8 @@ WiFiconfig wificonfig;
   #define STORAGE_INCLUDE_FFAT false
 */
 
+void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, WiFiconfig &wificonfig);
+
 // Loads the configuration from a file
 void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
   // Open file for reading
@@ -1154,8 +1199,10 @@ void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte st
     file = SPIFFS.open(filename, FILE_READ);
   }
 #endif
-
-
+  unsigned char jsonChar[file.size()+1];
+  file.read(jsonChar, file.size());
+  loadWiFiConfigurationCharArray((char*)jsonChar, file.size(), wificonfig);
+  /*
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/v6/assistant to compute the capacity.
@@ -1175,8 +1222,34 @@ void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte st
           sizeof(wificonfig.ssid));         // <- destination's capacity
 
   // Close the file (Curiously, File's destructor doesn't close the file)
+  //*/
   file.close();
 }
+
+
+// Loads the configuration from a charArray
+void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, WiFiconfig &wificonfig) {
+  // Allocate a temporary JsonDocument
+  // Don't forget to change the capacity to match your requirements.
+  // Use https://arduinojson.org/v6/assistant to compute the capacity.
+  StaticJsonDocument<128> connection;
+
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(connection, jsonChar);
+  if (error)
+    Serial.println(F("Failed to read JsonCharArray, using default configuration"));
+
+  // Copy values from the JsonDocument to the Config
+  strlcpy(wificonfig.pass,                  // <- destination
+          connection["pass"] | "",  // <- source
+          sizeof(wificonfig.pass));         // <- destination's capacity
+  strlcpy(wificonfig.ssid,                  // <- destination
+          connection["ssid"] | "",  // <- source
+          sizeof(wificonfig.ssid));         // <- destination's capacity
+  ;
+}
+
+
 
 
 // Saves the configuration to a file
@@ -1203,7 +1276,7 @@ void saveWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, b
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/assistant to compute the capacity.
-  StaticJsonDocument<128> connection;
+  DynamicJsonDocument connection(128);
 
   // Set the values in the document
   connection["ssid"] = wificonfig.ssid;
@@ -1217,6 +1290,46 @@ void saveWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, b
   // Close the file
   file.close();
 }
+
+// Append the configuration to a file
+void appendWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+  File file;
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
+    SD.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+    file = SD.open(filename, FILE_APPEND);// Open file for writing
+  }
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
+    SPIFFS.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+    file = SPIFFS.open(filename, FILE_APPEND);// Open file for writing
+  }
+#endif
+  
+  if (!file) {
+    Serial.println(F("Failed to create file"));
+    return;
+  }
+
+  // Allocate a temporary JsonDocument
+  // Don't forget to change the capacity to match your requirements.
+  // Use https://arduinojson.org/assistant to compute the capacity.
+  DynamicJsonDocument connection(128);
+
+  // Set the values in the document
+  connection["ssid"] = wificonfig.ssid;
+  connection["pass"] = wificonfig.pass;
+
+  // Serialize JSON to file
+  if (serializeJson(connection, file) == 0) {
+    Serial.println(F("Failed to Append to file"));
+  }
+
+  // Close the file
+  file.close();
+}
+
 
 // Prints the content of a file to the Serial
 void printWiFiFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
@@ -1434,6 +1547,10 @@ void printModuleInformation(Stream &serialport, struct ModuleInformation moduleI
 
 
 
+
+
+
+
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 TaskHandle_t Task3;
@@ -1642,7 +1759,7 @@ void setup()   {
   Serial.println("IMGbitmapStruct Test: End");
   }
   //*/
-  delay(5000);
+  delay(1500);
 
 
 
@@ -1851,7 +1968,7 @@ void setup()   {
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
     Task1code,   /* Task function. */
-    "batteryCheck",     /* name of task. */
+    "batteryPercentCheck",     /* name of task. */
     1000,       /* Stack size of task */
     NULL,        /* parameter of the task */
     5,           /* priority of the task */
@@ -1862,10 +1979,10 @@ void setup()   {
   //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
     Task2code,   /* Task function. */
-    "Task2",     /* name of task. */
-    1000,       /* Stack size of task */
+    "GetTime",     /* name of task. */
+    4096,       /* Stack size of task */
     NULL,        /* parameter of the task */
-    2,           /* priority of the task */
+    6,           /* priority of the task */
     &Task2,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
   delay(500);
@@ -1891,6 +2008,7 @@ void setup()   {
 //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html
 
 void Task1code( void * pvParameters ) {
+  //batteryPercentCheck
   for (;;) {
     Serial.print("Task1 running on core "); Serial.println(xPortGetCoreID());
     //Calculate Battery Percentage
@@ -1910,13 +2028,17 @@ void Task1code( void * pvParameters ) {
 }
 
 void Task2code( void * pvParameters ) {
+  //GetTime
   for (;;) {
     Serial.print("Task2 running on core "); Serial.println(xPortGetCoreID());
+    printLocalTime(Serial);
     delay(2000);
   }
   Serial.println("Ending Task2");
   vTaskDelete( NULL );
 }
+
+
 
 void Task3code( void * pvParameters ) {
   for (;;) {
@@ -1971,6 +2093,14 @@ void loop() {
     NULL,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
   delay(500);
+
+
+  if (timeConfigured==false){
+    if (WiFi.status() != WL_CONNECTED){
+      configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+      timeConfigured = true;
+    }
+  }
   
   
 
@@ -2019,6 +2149,7 @@ void loop() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("CurrentMenuID:"); display.println(currentMenuID, DEC);
+    /*
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Wifi_Status:"); display.println("UNKNOWN");
@@ -2028,6 +2159,7 @@ void loop() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Time_Status:"); display.println("UNKNOWN");
+    */
     //display.setTextSize(1);
     //display.setTextColor(WHITE);
     //display.print("tamagotchi_Status:"); display.println("UNKNOWN");
@@ -2383,10 +2515,12 @@ void loop() {
       currentMenuID = 1;
     }
   }
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.print("currentMenuID:"); display.println(currentMenuID);
-
+  if (!(currentMenuID==0 | currentMenuID==1)){
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.print("currentMenuID:"); display.println(currentMenuID);
+  }
+  
   //display.print("CPU Freq: ");display.println(getCpuFrequencyMhz());
 
 
@@ -2945,6 +3079,10 @@ void saveWiFicredentials(Credentials_WiFi_Struct &credential){
   fileToAppend.flush();
   fileToAppend.close();
   */
+  WiFiconfig wificonfig;
+  strcmp(wificonfig.ssid, credential.ssid);
+  strcmp(wificonfig.pass, credential.passphrase);
+  appendWiFiConfiguration("/Wifi_Connections.txt", wificonfig);
   ;
 }
 
@@ -3074,6 +3212,7 @@ void disableWiFi() {
 
 void enableWiFi() {
   //https://docs.arduino.cc/library-examples/wifi-library/ScanNetworks
+  Serial.println("enableWiFi()");
   WiFi.disconnect(false);  // Reconnect the network
   if (WiFi.getMode() == WIFI_MODE_NULL) {
     WiFi.mode(WIFI_STA);
