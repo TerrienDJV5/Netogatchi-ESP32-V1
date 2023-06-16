@@ -592,7 +592,7 @@ int frame_location_offset = 16;
 //time(), gmtime(), localtime(), mktime(), gettimeofday()
 //https://lastminuteengineers.com/esp32-ntp-server-date-time-tutorial/
 const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = (-4)*60*60;
+const long  gmtOffset_sec = (-5)*60*60;
 const int   daylightOffset_sec = 3600;
 bool timeConfigured = false;
 
