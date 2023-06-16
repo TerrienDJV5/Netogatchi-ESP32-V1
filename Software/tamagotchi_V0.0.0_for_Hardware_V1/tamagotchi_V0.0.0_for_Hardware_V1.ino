@@ -2196,8 +2196,17 @@ void loop() {
     display.drawLine(47, 7, 47 + 8, 7 + 8, WHITE);
     display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
     display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((100 - batteryPercent) * (20 / 100)), 8, BLACK);
-    if (WiFi.status() == WL_CONNECTED) {
-      display.drawBitmap(96, 0, wifi16x16Icon, 16, 16, WHITE);
+    display.fillRect(80, 0, 16, 16+16, BLACK);
+    if ((WiFi.getMode() == WIFI_MODE_STA) or (WiFi.getMode() == WIFI_MODE_APSTA)) {
+      display.fillRect(80, 0, 16, 16, WHITE);
+      display.drawBitmap(80, 0, wifi16x16Icon, 16, 16, BLACK);
+      if (WiFi.status() == WL_CONNECTED) {
+        display.fillRect(80, 0, 16, 16, BLACK);
+        display.drawBitmap(80, 0, wifi16x16Icon, 16, 16, WHITE);
+      }
+    }
+    if ((WiFi.getMode() == WIFI_MODE_AP) or (WiFi.getMode() == WIFI_MODE_APSTA)) {
+      display.drawBitmap(80, 16, wifi16x16Icon, 16, 16, WHITE);
     }
     //batteryPercent, chargingFlag
     display.setCursor(0, 0);
