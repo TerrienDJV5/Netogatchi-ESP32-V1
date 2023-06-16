@@ -7,17 +7,16 @@
 #include <Arduino.h>
 class ButtonPISO {
   private:
-    byte dataInPin;
-    byte clockInPin;
-    byte loadPin;
-    uint8_t buttonState;
-    uint8_t buttonLastState;
-    
+    volatile byte dataInPin;
+    volatile byte clockInPin;
+    volatile byte loadPin;
+    volatile uint8_t buttonState;
+    volatile uint8_t buttonLastState;
+    byte getState(byte buttonID);
   public:
     ButtonPISO(byte dataInPin, byte clockInPin, byte loadPin);
     void init();
     void update();
-    byte getState(byte buttonID);
     bool isPressed(byte buttonID);
     bool isHeld(byte buttonID);
     bool isTapped(byte buttonID);

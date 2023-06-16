@@ -3,13 +3,16 @@
 //Date Created: april 20 2023 4:28PM
 
 #include "ButtonPISO.h"
-ButtonPISO::ButtonPISO(byte dataInPin, byte clockInPin, byte loadPin) {
+ButtonPISO::ButtonPISO(byte dataInPin, byte clockInPin, byte loadPin)
+{
   this->dataInPin = dataInPin;
   this->clockInPin = clockInPin;
   this->loadPin = loadPin;
   init();
 }
-void ButtonPISO::init() {
+
+void ButtonPISO::init()
+{
   // Setup 74HC165 connections
   pinMode(loadPin, OUTPUT);
   digitalWrite(loadPin, HIGH);
@@ -17,7 +20,9 @@ void ButtonPISO::init() {
   pinMode(dataInPin, INPUT);
   update();
 }
-void ButtonPISO::update() {
+
+void ButtonPISO::update()
+{
   buttonLastState = buttonState;
   // Write pulse to load pin
   digitalWrite(clockInPin, LOW);
@@ -31,25 +36,37 @@ void ButtonPISO::update() {
   // Get data from 74HC165
   //digitalWrite(clockEnablePin, LOW);
   buttonState = shiftIn(dataInPin, clockInPin, MSBFIRST);
-  //Serial.println(buttonState, BIN);
   //digitalWrite(clockEnablePin, HIGH);
 }
-byte ButtonPISO::getState(byte buttonID) {
-  //update();
+
+//Private
+byte ButtonPISO::getState(byte buttonID)
+{
   return bitRead(buttonState, buttonID);
 }
-bool ButtonPISO::isPressed(byte buttonID) {
+
+
+bool ButtonPISO::isPressed(byte buttonID)
+{
   return (getState(buttonID) == HIGH);
 }
-bool ButtonPISO::isHeld(byte buttonID) {
+
+bool ButtonPISO::isHeld(byte buttonID)
+{
   return ((bitRead(buttonState, buttonID) == HIGH) and (bitRead(buttonLastState, buttonID)==HIGH));
 }
-bool ButtonPISO::isTapped(byte buttonID) {
+
+bool ButtonPISO::isTapped(byte buttonID)
+{
   return ((bitRead(buttonState, buttonID) == HIGH) and (bitRead(buttonLastState, buttonID)==LOW));
 }
-byte ButtonPISO::getRAWState(){
+
+byte ButtonPISO::getRAWState()
+{
   return buttonState;
 }
-void ButtonPISO::overrideButtonState(byte buttonID, bool newState){
+
+void ButtonPISO::overrideButtonState(byte buttonID, bool newState)
+{
   bitWrite(buttonState, buttonID, newState);
 }
