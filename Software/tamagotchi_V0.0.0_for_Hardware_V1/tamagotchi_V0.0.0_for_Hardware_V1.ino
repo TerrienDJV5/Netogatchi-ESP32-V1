@@ -564,12 +564,27 @@ static unsigned long lastScanTimer;
 
 
 
+
+
+
 //character variables
 const unsigned int characterPixelWidth = 32;//4 bytes
 const unsigned int characterPixelHeight = 56;
 const unsigned int characterFrameByteSize = ((characterPixelWidth % 8 + characterPixelWidth) >> 3) * characterPixelHeight;
 const unsigned int characterBufferFrameCount = 32;
 static unsigned char visableCharacterBuffer[ characterBufferFrameCount ][ characterFrameByteSize ];
+
+//Sprite Storage/Memory (_gMSB)(__GMSB__)
+const unsigned int spritePagePixelWidth = 1024;
+const unsigned int spritePagePixelHeight = 1024;
+const byte spritePagePixelData_Bit_Length = 1;
+#define CAL_BUFF_BYTE_SIZE__GMSB__(pixW, pixH, pixDataBitL) ( int(pixW/((8)/pixDataBitL))*pixH )//(PixelWidth, PixelHeight, PixelData_Bit_Length)
+unsigned int calculateBufferByteSize_gMSB( unsigned int pixW, unsigned int pixH, byte pixDataBitL ){return ( int(pixW/((8)/pixDataBitL))*pixH );};
+
+
+static unsigned char global_Master_Sprite_Buffer[ CAL_BUFF_BYTE_SIZE__GMSB__( spritePagePixelWidth, spritePagePixelHeight, spritePagePixelData_Bit_Length ) ];
+
+
 
 
 
@@ -697,8 +712,16 @@ static const unsigned char PROGMEM wifi16x16Icon[] =
   B10000000, B10000001,
 };
 
+/*
+
+   End of Sprites Sheet and Tiles Sheet
+
+*/
 
 
+/*
+ * WiFi Stuff Start
+ */
 
 
 typedef struct {
@@ -707,10 +730,238 @@ typedef struct {
   char passphrase[64];//max length 63
 } Credentials_WiFi_Struct;
 
+
+
+void disableWiFi();
+void enableWiFi();
 void saveWiFicredentials(Credentials_WiFi_Struct &credential);
 
 
+//https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi-security.html
 
+
+const char *filenameWiFi = "/Wifi_Connections_2.txt";
+Credentials_WiFi_Struct wificonfig;
+
+
+/*
+  #define STORAGE_SELECT_SD 0
+  #define STORAGE_SELECT_SPIFFS 1
+  #define STORAGE_SELECT_SDFAT 2
+  #define STORAGE_SELECT_FFAT 3
+
+  #define STORAGE_INCLUDE_SD false
+  #define STORAGE_INCLUDE_SPIFFS true
+  #define STORAGE_INCLUDE_SDFAT false
+  #define STORAGE_INCLUDE_FFAT false
+*/
+
+void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, Credentials_WiFi_Struct &wifiCredentials);
+
+
+//void openFromStorageDevice(File &file, const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, uint8_t setmode = FILE_READ);
+//void openFromStorageDevice(File &file, const String &filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, uint8_t setmode = FILE_READ){return openFromStorageDevice(filename.c_str(), storageDevice, setmode);};
+
+//void openFromStorageDevice(File &file, const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, const char* setmode = FILE_READ);
+//void openFromStorageDevice(File &file, const String &filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, const char* setmode = FILE_READ){return openFromStorageDevice(filename.c_str(), storageDevice, setmode);};
+
+
+void openFromStorageDevice(File &file, const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, const char* setmode = FILE_READ){
+  #if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
+    file = SD.open(filename, setmode);
+  }
+  #endif
+  #if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
+    file = SPIFFS.open(filename, setmode);
+  }
+  #endif
+}
+
+
+
+// Loads the configuration from a file
+void loadWiFiConfiguration(const char *filename, Credentials_WiFi_Struct &wifiCredentials, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+  // Open file for reading
+  File file;
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
+    file = SD.open(filename, FILE_READ);
+  }
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
+    file = SPIFFS.open(filename, FILE_READ);
+  }
+#endif
+  unsigned char jsonChar[file.size()+1];
+  file.read(jsonChar, file.size());
+  loadWiFiConfigurationCharArray((char*)jsonChar, file.size(), wifiCredentials);
+  /*
+  // Allocate a temporary JsonDocument
+  // Don't forget to change the capacity to match your requirements.
+  // Use https://arduinojson.org/v6/assistant to compute the capacity.
+  StaticJsonDocument<128> connection;
+
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(connection, file);
+  if (error)
+    Serial.println(F("Failed to read file, using default configuration"));
+
+  // Copy values from the JsonDocument to the Config
+  strlcpy(wificonfig.pass,                  // <- destination
+          connection["pass"] | "",  // <- source
+          sizeof(wificonfig.pass));         // <- destination's capacity
+  strlcpy(wificonfig.ssid,                  // <- destination
+          connection["ssid"] | "",  // <- source
+          sizeof(wificonfig.ssid));         // <- destination's capacity
+
+  // Close the file (Curiously, File's destructor doesn't close the file)
+  //*/
+  file.close();
+}
+
+
+// Loads the configuration from a charArray
+void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, Credentials_WiFi_Struct &wifiCredentials) {
+  // Allocate a temporary JsonDocument
+  // Don't forget to change the capacity to match your requirements.
+  // Use https://arduinojson.org/v6/assistant to compute the capacity.
+  StaticJsonDocument<128> connection;
+
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(connection, jsonChar);
+  if (error)
+    Serial.println(F("Failed to read JsonCharArray, using default configuration"));
+
+  // Copy values from the JsonDocument to the Config
+  strlcpy(wifiCredentials.pass,                  // <- destination
+          connection["pass"] | "",  // <- source
+          sizeof(wifiCredentials.pass));         // <- destination's capacity
+  strlcpy(wifiCredentials.ssid,                  // <- destination
+          connection["ssid"] | "",  // <- source
+          sizeof(wifiCredentials.ssid));         // <- destination's capacity
+  ;
+}
+
+
+
+
+// Saves the configuration to a file
+void saveWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+  File file;
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
+    SD.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+    file = SD.open(filename, FILE_WRITE);// Open file for writing
+  }
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
+    SPIFFS.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+    file = SPIFFS.open(filename, FILE_WRITE);// Open file for writing
+  }
+#endif
+  
+  if (!file) {
+    Serial.println(F("Failed to create file"));
+    return;
+  }
+
+  // Allocate a temporary JsonDocument
+  // Don't forget to change the capacity to match your requirements.
+  // Use https://arduinojson.org/assistant to compute the capacity.
+  DynamicJsonDocument connection(128);
+
+  // Set the values in the document
+  connection["ssid"] = wifiCredentials.ssid;
+  connection["pass"] = wifiCredentials.pass;
+
+  // Serialize JSON to file
+  if (serializeJson(connection, file) == 0) {
+    Serial.println(F("Failed to write to file"));
+  }
+
+  // Close the file
+  file.close();
+}
+
+// Append the configuration to a file
+void appendWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+  File file;
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
+    SD.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+    file = SD.open(filename, FILE_APPEND);// Open file for writing
+  }
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
+    SPIFFS.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+    file = SPIFFS.open(filename, FILE_APPEND);// Open file for writing
+  }
+#endif
+  
+  if (!file) {
+    Serial.println(F("Failed to create file"));
+    return;
+  }
+
+  // Allocate a temporary JsonDocument
+  // Don't forget to change the capacity to match your requirements.
+  // Use https://arduinojson.org/assistant to compute the capacity.
+  DynamicJsonDocument connection(128);
+  
+  // Set the values in the document
+  connection["ssid"] = wifiCredentials.ssid;
+  connection["pass"] = wifiCredentials.pass;
+
+  // Serialize JSON to file
+  if (serializeJson(connection, file) == 0) {
+    Serial.println(F("Failed to Append to file"));
+  }
+
+  // Close the file
+  file.close();
+}
+
+
+// Prints the content of a file to the Serial
+void printWiFiFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+  // Open file for reading
+  File file;
+#if (STORAGE_INCLUDE_SD)
+  if (storageDevice == STORAGE_SELECT_SD) {
+    file = SD.open(filename);
+  }
+#endif
+#if (STORAGE_INCLUDE_SPIFFS)
+  if (storageDevice == STORAGE_SELECT_SPIFFS) {
+    file = SPIFFS.open(filename);
+  }
+#endif
+
+  if (!file) {
+    Serial.println(F("Failed to read file"));
+    return;
+  }
+
+  // Extract each characters by one by one
+  while (file.available()) {
+    Serial.print((char)file.read());
+  }
+  Serial.println();
+
+  // Close the file
+  file.close();
+}
+
+
+
+/*
+ * WiFi Stuff End
+ */
 
 
 
@@ -1173,212 +1424,11 @@ void readbitmapdatFile(Adafruit_SH1106 &display, File &fileBMP) {
    SERIAL_8O2   8-bit Odd  parity 2 stop bit
 */
 
-void disableWiFi();
-void enableWiFi();
-
-
-
-//https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi-security.html
-struct WiFiconfig {
-  //six characters are not allowed (SSID): ?, ", $, [, \, ], and +
-  char ssid[33];//max length 32 //Min Length 2
-  char pass[64];//max length 63
-};
-
-
-
-const char *filenameWiFi = "/Wifi_Connections_2.txt";
-WiFiconfig wificonfig;
-
-/*
-  #define STORAGE_SELECT_SD 0
-  #define STORAGE_SELECT_SPIFFS 1
-  #define STORAGE_SELECT_SDFAT 2
-  #define STORAGE_SELECT_FFAT 3
-
-  #define STORAGE_INCLUDE_SD false
-  #define STORAGE_INCLUDE_SPIFFS true
-  #define STORAGE_INCLUDE_SDFAT false
-  #define STORAGE_INCLUDE_FFAT false
-*/
-
-void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, WiFiconfig &wificonfig);
-
-// Loads the configuration from a file
-void loadWiFiConfiguration(const char *filename, WiFiconfig &wificonfig, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
-  // Open file for reading
-  File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filename, FILE_READ);
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filename, FILE_READ);
-  }
-#endif
-  unsigned char jsonChar[file.size()+1];
-  file.read(jsonChar, file.size());
-  loadWiFiConfigurationCharArray((char*)jsonChar, file.size(), wificonfig);
-  /*
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/v6/assistant to compute the capacity.
-  StaticJsonDocument<128> connection;
-
-  // Deserialize the JSON document
-  DeserializationError error = deserializeJson(connection, file);
-  if (error)
-    Serial.println(F("Failed to read file, using default configuration"));
-
-  // Copy values from the JsonDocument to the Config
-  strlcpy(wificonfig.pass,                  // <- destination
-          connection["pass"] | "",  // <- source
-          sizeof(wificonfig.pass));         // <- destination's capacity
-  strlcpy(wificonfig.ssid,                  // <- destination
-          connection["ssid"] | "",  // <- source
-          sizeof(wificonfig.ssid));         // <- destination's capacity
-
-  // Close the file (Curiously, File's destructor doesn't close the file)
-  //*/
-  file.close();
-}
-
-
-// Loads the configuration from a charArray
-void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, WiFiconfig &wificonfig) {
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/v6/assistant to compute the capacity.
-  StaticJsonDocument<128> connection;
-
-  // Deserialize the JSON document
-  DeserializationError error = deserializeJson(connection, jsonChar);
-  if (error)
-    Serial.println(F("Failed to read JsonCharArray, using default configuration"));
-
-  // Copy values from the JsonDocument to the Config
-  strlcpy(wificonfig.pass,                  // <- destination
-          connection["pass"] | "",  // <- source
-          sizeof(wificonfig.pass));         // <- destination's capacity
-  strlcpy(wificonfig.ssid,                  // <- destination
-          connection["ssid"] | "",  // <- source
-          sizeof(wificonfig.ssid));         // <- destination's capacity
-  ;
-}
 
 
 
 
-// Saves the configuration to a file
-void saveWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
-  File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    SD.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-    file = SD.open(filename, FILE_WRITE);// Open file for writing
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    SPIFFS.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-    file = SPIFFS.open(filename, FILE_WRITE);// Open file for writing
-  }
-#endif
-  
-  if (!file) {
-    Serial.println(F("Failed to create file"));
-    return;
-  }
 
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/assistant to compute the capacity.
-  DynamicJsonDocument connection(128);
-
-  // Set the values in the document
-  connection["ssid"] = wificonfig.ssid;
-  connection["pass"] = wificonfig.pass;
-
-  // Serialize JSON to file
-  if (serializeJson(connection, file) == 0) {
-    Serial.println(F("Failed to write to file"));
-  }
-
-  // Close the file
-  file.close();
-}
-
-// Append the configuration to a file
-void appendWiFiConfiguration(const char *filename, const WiFiconfig &wificonfig, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
-  File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    SD.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-    file = SD.open(filename, FILE_APPEND);// Open file for writing
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    SPIFFS.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-    file = SPIFFS.open(filename, FILE_APPEND);// Open file for writing
-  }
-#endif
-  
-  if (!file) {
-    Serial.println(F("Failed to create file"));
-    return;
-  }
-
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/assistant to compute the capacity.
-  DynamicJsonDocument connection(128);
-
-  // Set the values in the document
-  connection["ssid"] = wificonfig.ssid;
-  connection["pass"] = wificonfig.pass;
-
-  // Serialize JSON to file
-  if (serializeJson(connection, file) == 0) {
-    Serial.println(F("Failed to Append to file"));
-  }
-
-  // Close the file
-  file.close();
-}
-
-
-// Prints the content of a file to the Serial
-void printWiFiFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
-  // Open file for reading
-  File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filename);
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filename);
-  }
-#endif
-
-  if (!file) {
-    Serial.println(F("Failed to read file"));
-    return;
-  }
-
-  // Extract each characters by one by one
-  while (file.available()) {
-    Serial.print((char)file.read());
-  }
-  Serial.println();
-
-  // Close the file
-  file.close();
-}
 
 
 
@@ -1799,35 +1849,7 @@ void setup()   {
 
 
 
-  {
-  File fileBMP;
-  fileBMP = SPIFFS.open("/batteryBig_bitmapimg.dat");
-  Serial.println("File Content:");
-  while (fileBMP.available()) {
-    unsigned char* imageloadlocation;
-    unsigned int imageDataLength = 0;
-    load_bitmapdat_File(imageloadlocation, imageDataLength, batteryIconBigWidth, batteryIconBigHeight, fileBMP);
-    batteryIconBigImage = (unsigned char*)malloc(imageDataLength + 1);
-    memcpy(&batteryIconBigImage[0], imageloadlocation, imageDataLength);
-  }
-  fileBMP.close();
-  }
-
-  {
-  File fileBMP;
-  fileBMP = SPIFFS.open("/Neco-Arc_bitmapimg.dat");
-  Serial.println("File Content:");
-  while (fileBMP.available()) {
-    unsigned char* imageloadlocation;
-    unsigned int imageDataLength = 0;
-    unsigned int imageWidth = 0;
-    unsigned int imageHeight = 0;
-    load_bitmapdat_File(imageloadlocation, imageDataLength, imageWidth, imageHeight, fileBMP);
-    //adds to charater Buffer
-    memcpy(&visableCharacterBuffer[ 0 ], imageloadlocation, imageDataLength);//4*56
-  }
-  fileBMP.close();
-  }
+  
 
   printFreeHeap(Serial);
 
@@ -1965,6 +1987,41 @@ void setup()   {
   printFreeHeap(Serial);
   /*
    * Startup Tests Ends
+   */
+
+  /*
+   * Load Sprites Start
+   */
+  {
+  File fileBMP;
+  fileBMP = SPIFFS.open("/batteryBig_bitmapimg.dat");
+  while (fileBMP.available()) {
+    unsigned char* imageloadlocation;
+    unsigned int imageDataLength = 0;
+    load_bitmapdat_File(imageloadlocation, imageDataLength, batteryIconBigWidth, batteryIconBigHeight, fileBMP);
+    batteryIconBigImage = (unsigned char*)malloc(imageDataLength + 1);
+    memcpy(&batteryIconBigImage[0], imageloadlocation, imageDataLength);
+  }
+  fileBMP.close();
+  }
+
+  {
+  File fileBMP;
+  fileBMP = SPIFFS.open("/Neco-Arc_bitmapimg.dat");
+  while (fileBMP.available()) {
+    unsigned char* imageloadlocation;
+    unsigned int imageDataLength = 0;
+    unsigned int imageWidth = 0;
+    unsigned int imageHeight = 0;
+    load_bitmapdat_File(imageloadlocation, imageDataLength, imageWidth, imageHeight, fileBMP);
+    //adds to charater Buffer
+    memcpy(&visableCharacterBuffer[ 0 ], imageloadlocation, imageDataLength);//4*56
+  }
+  fileBMP.close();
+  }
+  
+  /*
+   * Load Sprites End
    */
   
   
@@ -3137,50 +3194,23 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
 
 }
 
-
-void saveWiFicredentials(Credentials_WiFi_Struct &credential){
-  //Wifi_Connections.txt
-  //https://cplusplus.com/reference/cstdio/printf/
-  
+void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials){
+  // "/Wifi_Connections.txt"
   /*
-  File fileToAppend = SPIFFS.open("/Wifi_Connections.txt", FILE_APPEND);
-  if(!fileToAppend){
-    Serial.println("There was an error opening the file for appending");
-    return;
-  }
-  */
-  
-  /*
-  fileToAppend.print("{");
-  fileToAppend.print(credential.ssid);
-  fileToAppend.print("}{");
-  fileToAppend.print(credential.passphrase);
-  fileToAppend.println("}");
-  //*/
   appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
   
   appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)credential.ssid);
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)wifiCredentials.ssid);
   appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
   
   appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)credential.passphrase);
+  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)wifiCredentials.passphrase);
   appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
   
   appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}\r\n");
-  /*
-  if(fileToAppend.printf("{%s}{%s}\n", credential.ssid, credential.passphrase)){
-    Serial.println("File content was appended");
-  } else {
-    Serial.println("File append failed");
-  }
-  fileToAppend.flush();
-  fileToAppend.close();
-  */
-  WiFiconfig wificonfig;
-  strcmp(wificonfig.ssid, credential.ssid);
-  strcmp(wificonfig.pass, credential.passphrase);
-  appendWiFiConfiguration("/Wifi_Connections.txt", wificonfig);
+  //*/
+  
+  appendWiFiConfiguration("/Wifi_Connections.txt", wifiCredentials);
   ;
 }
 
