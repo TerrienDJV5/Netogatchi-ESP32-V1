@@ -1436,6 +1436,8 @@ void printModuleInformation(Stream &serialport, struct ModuleInformation moduleI
 
 TaskHandle_t Task1;
 TaskHandle_t Task2;
+TaskHandle_t Task3;
+TaskHandle_t Task4;
 
 //https://forum.arduino.cc/t/how-can-i-do-dual-core-task-use-same-memory-esp32-rtos/702929/24?page=2 //https://youtu.be/ywbq1qR-fY0?t=1206
 QueueHandle_t queue;
@@ -1620,27 +1622,26 @@ void setup()   {
   }
   delay(1000);
   ///*
-    {
-    GIFbitmapStruct boyKisserGIFTest;
-
-    File fileStructBMP;
-    fileStructBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
-    load_struct_bitmapGIF_dat_File(fileStructBMP, boyKisserGIFTest);
-    Serial.println(fileStructBMP);
-    fileStructBMP.close();//Dies Here!
-    printFreeHeap(Serial);
-
-    for(byte frame = 0; frame < boyKisserGIFTest.frameCount; frame++){
-      Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
-      display.clearDisplay();
-      display_struct_bitmapGIF(display, boyKisserGIFTest, frame, 0, 0);
-      display.display();
-      Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
-    }
-    //free(boyKisserGIFTest);
-    Serial.println("IMGbitmapStruct Test: End");
-    }
-    //*/
+  {
+  GIFbitmapStruct boyKisserGIFTest;
+  File fileStructBMP;
+  fileStructBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
+  load_struct_bitmapGIF_dat_File(fileStructBMP, boyKisserGIFTest);
+  Serial.println(fileStructBMP);
+  fileStructBMP.close();
+  printFreeHeap(Serial);
+  
+  for(byte frame = 0; frame < boyKisserGIFTest.frameCount; frame++){
+    Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
+    display.clearDisplay();
+    display_struct_bitmapGIF(display, boyKisserGIFTest, frame, 0, 0);
+    display.display();
+    Serial.print("Frame: ");Serial.print(frame);Serial.print("/");Serial.println(boyKisserGIFTest.frameCount);
+  }
+  //free(boyKisserGIFTest);
+  Serial.println("IMGbitmapStruct Test: End");
+  }
+  //*/
   delay(5000);
 
 
@@ -1850,10 +1851,10 @@ void setup()   {
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
     Task1code,   /* Task function. */
-    "Task1",     /* name of task. */
+    "batteryCheck",     /* name of task. */
     1000,       /* Stack size of task */
     NULL,        /* parameter of the task */
-    1,           /* priority of the task */
+    5,           /* priority of the task */
     &Task1,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
   delay(500);
@@ -1866,27 +1867,84 @@ void setup()   {
     NULL,        /* parameter of the task */
     2,           /* priority of the task */
     &Task2,      /* Task handle to keep track of created task */
-    0);          /* pin task to core 1 */
+    0);          /* pin task to core 0 */
+  delay(500);
+
+  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+  xTaskCreatePinnedToCore(
+    Task3code,   /* Task function. */
+    "Task3",     /* name of task. */
+    1000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    3,           /* priority of the task */
+    &Task3,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 0 */
   delay(500);
 
   printFreeHeap(Serial);
+  Serial.println("Exiting Setup!");
+  delay(5000);
+  
 }
 
-
+//https://techtutorialsx.com/2017/05/06/esp32-arduino-creating-a-task/
+//https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html
 
 void Task1code( void * pvParameters ) {
-  Serial.print("Task1 running on core "); Serial.println(xPortGetCoreID());
   for (;;) {
+    Serial.print("Task1 running on core "); Serial.println(xPortGetCoreID());
+    //Calculate Battery Percentage
+    
+    double vin = calculateVoltageDivider(100000, 100000, batteryVoltageDivider);
+    double maxVin = 4.1;
+    double minVin = 3.3;
+    batteryPercent = (byte)mapdouble((double)vin, (double)minVin, (double)maxVin, (double)0.0, (double)100.0);
+    batteryVoltage = vin;
+    chargingFlag = false;
+    //Serial.print("batteryPercent%:");Serial.println(batteryPercent);
+    
     delay(1000);
   }
+  Serial.println("Ending Task1");
+  vTaskDelete( NULL );
 }
 
 void Task2code( void * pvParameters ) {
-  Serial.print("Task2 running on core "); Serial.println(xPortGetCoreID());
   for (;;) {
+    Serial.print("Task2 running on core "); Serial.println(xPortGetCoreID());
     delay(2000);
   }
+  Serial.println("Ending Task2");
+  vTaskDelete( NULL );
 }
+
+void Task3code( void * pvParameters ) {
+  for (;;) {
+    Serial.print("Task3 running on core "); Serial.println(xPortGetCoreID());
+    delay(3000);
+  }
+  Serial.println("Ending Task3");
+  vTaskDelete( NULL );
+}
+
+void Task4code( void * pvParameters ) {
+  for (;;) {
+    Serial.print("Task4 running on core "); Serial.println(xPortGetCoreID());
+    delay(4000);
+  }
+  Serial.println("Ending Task4");
+  vTaskDelete( NULL );
+} 
+
+void Task5code( void * pvParameters ) {
+  Serial.print("Task5 running on core "); Serial.println(xPortGetCoreID());
+  delay(1000);
+  Serial.println("Ending Task5");
+  vTaskDelete( NULL );
+}
+
+
+
 
 
 //Try esp32's inner Temp Sensor
@@ -1895,11 +1953,26 @@ void Task2code( void * pvParameters ) {
 void loop() {
   // put your main code here, to run repeatedly:
   Serial.print("loop() running on core "); Serial.println(xPortGetCoreID());
+  
+  
   //calculate FPS
   system_Frame_FPS = (double)(1 / ((double)(frameEndTime - frameStartTime) / 1000000));
   //\/ start Frame Here \/
-
   frameStartTime = micros();
+  
+  
+  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+  xTaskCreatePinnedToCore(
+    Task5code,   /* Task function. */
+    "Task5",     /* name of task. */
+    1000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    5,           /* priority of the task */
+    NULL,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 0 */
+  delay(500);
+  
+  
 
   ///*
 #if (FeatureEnable_IR_RXTX_Control==true)
@@ -2332,7 +2405,39 @@ void loop() {
   //IR
   //Sensors
   //UI
+  
+  checkAllDebugInputs();
+  
 
+  
+  
+  
+  //Serial.print("ESP.getFreeHeap():");Serial.println(ESP.getFreeHeap());
+  //display.print("ESP.getFreeHeap():"); display.println(ESP.getFreeHeap());
+  printFreeHeap(Serial);
+  display.print("FreeHeap:"); display.print(ESP.getFreeHeap()); display.print(" B"); display.println();
+  display.print("AP IP address: "); display.print( WiFi.softAPIP() ); display.println();
+  
+  //update some variables
+
+
+  //update Frame
+  display.display();
+  //update frame count variable
+  frameCountVariable++;
+  //update frame End Time
+  frameEndTime = micros();
+}
+
+
+void printFreeHeap(Stream &serialport) {
+  serialport.print("ESP.getFreeHeap():");
+  serialport.println(ESP.getFreeHeap());
+}
+
+
+
+void checkAllDebugInputs(){
   //https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
 
 
@@ -2368,42 +2473,8 @@ void loop() {
       Serial.print("SoftAP IP address: "); Serial.println(WiFi.softAPIP());
     };
   }
-
-
-
-  //Calculate Battery Percentage
-
-  double vin = calculateVoltageDivider(100000, 100000, batteryVoltageDivider);
-  double maxVin = 4.1;
-  double minVin = 3.3;
-  batteryPercent = (byte)mapdouble((double)vin, (double)minVin, (double)maxVin, (double)0.0, (double)100.0);
-  batteryVoltage = vin;
-  chargingFlag = false;
-  //Serial.print("batteryPercent%:");Serial.println(batteryPercent);
-  
-  
-  //Serial.print("ESP.getFreeHeap():");Serial.println(ESP.getFreeHeap());
-  //display.print("ESP.getFreeHeap():"); display.println(ESP.getFreeHeap());
-  printFreeHeap(Serial);
-  display.print("FreeHeap:"); display.print(ESP.getFreeHeap()); display.print(" B"); display.println();
-  display.print("AP IP address: "); display.print( WiFi.softAPIP() ); display.println();
-  
-  //update some variables
-
-
-  //update Frame
-  display.display();
-  //update frame count variable
-  frameCountVariable++;
-  //update frame End Time
-  frameEndTime = micros();
 }
 
-
-void printFreeHeap(Stream &serialport) {
-  serialport.print("ESP.getFreeHeap():");
-  serialport.println(ESP.getFreeHeap());
-}
 
 
 #define MAXDEBUG_TARGETCOMMAND_LENGTH 64
