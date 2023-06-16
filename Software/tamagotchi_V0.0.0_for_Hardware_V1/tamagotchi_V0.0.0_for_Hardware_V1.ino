@@ -1036,7 +1036,7 @@ unsigned int getCount_of_Saved_WiFicredentials(const char *filePath, byte storag
 
 void read_WiFicredentials(Credentials_WiFi_Struct &wifiCredentials, const char *filePath, byte storageDevice, unsigned int listIndex)
 {
-  //WHYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+  //WHYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY, just make this use Only SPIFFS
   // "/Wifi_Connections.txt"
   // Open file for reading
   File file;
