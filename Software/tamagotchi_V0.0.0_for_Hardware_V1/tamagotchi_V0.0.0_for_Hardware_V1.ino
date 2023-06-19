@@ -758,6 +758,11 @@ typedef struct {
 } Credentials_WiFi_Struct;
 
 
+typedef struct {
+  unsigned int length;
+  Credentials_WiFi_Struct *credentials;
+} List_WiFi_Credentials_Struct;
+
 
 
 
@@ -767,6 +772,8 @@ typedef struct {
 
 const char *filenameWiFi = "/Wifi_Connections_2.txt";
 Credentials_WiFi_Struct wificonfig;
+List_WiFi_Credentials_Struct wifiCredentialList;
+//make Functions that convert Json to Structs
 
 
 /*
