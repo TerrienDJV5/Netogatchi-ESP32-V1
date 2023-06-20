@@ -1705,6 +1705,7 @@ void printScrollText(Adafruit_SH1106 &display, char textInput[], unsigned int te
 
 
 
+
 //https://www.freertos.org/a00106.html
 TaskHandle_t Task1;
 TaskHandle_t Task2;
@@ -1718,6 +1719,8 @@ TaskHandle_t Task8;
 TaskHandle_t Task9;
 TaskHandle_t Task10;
 
+
+TaskHandle_t TaskLoRa;
 TaskHandle_t TaskIRDecode;
 TaskHandle_t Task_WiFi_LoRa_Bridge;
 TaskHandle_t TaskWiFiMultiConnect;
@@ -2165,14 +2168,14 @@ void setup()   {
     0);          /* pin task to core 0 */
   delay(500);
 
-  //create a task that will be executed in the Task3code() function, with priority 3 and executed on core 0
+  //create a task that will be executed in the TaskLoRacode() function, with priority 5 and executed on core 0
   xTaskCreatePinnedToCore(
-    Task3code,   /* Task function. */
-    "Task3",     /* name of task. */
-    1000,       /* Stack size of task */
+    TaskLoRacode,   /* Task function. */
+    "TaskLoRa",     /* name of task. */
+    5000,       /* Stack size of task */
     NULL,        /* parameter of the task */
-    3,           /* priority of the task */
-    &Task3,      /* Task handle to keep track of created task */
+    5,           /* priority of the task */
+    &TaskLoRa,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
   delay(500);
 
@@ -2260,12 +2263,46 @@ void Task2code( void * pvParameters ) {
 
 
 
-void Task3code( void * pvParameters ) {
-  Serial.print("Task3 running on core "); Serial.println(xPortGetCoreID());
+void TaskLoRacode( void * pvParameters ) {
+  Serial.print("TaskLoRa running on core "); Serial.println(xPortGetCoreID());
   for (;;) {
-    delay(3000);
+    // If something available
+    if (e220ttl.available() > 1) {
+      Serial.println("Message received!");
+      // read the String message
+      #ifdef ENABLE_RSSI
+      ResponseContainer rc = e220ttl.receiveMessageRSSI();
+      #else
+      ResponseContainer rc = e220ttl.receiveMessage();
+      #endif
+      
+      // Is something goes wrong print error
+      if (rc.status.code != 1) {
+        Serial.println(rc.status.getResponseDescription());
+      } else {
+        // Print the data received
+        Serial.println(rc.status.getResponseDescription());
+        Serial.println(rc.data);
+        #ifdef ENABLE_RSSI
+        Serial.print("RSSI: "); Serial.println(rc.rssi, DEC);
+        #endif
+      }
+      {
+      // Send message
+      ResponseStatus rs = e220ttl.sendBroadcastFixedMessage(23, "Message Received");
+      // Check If there is some problem of succesfully send
+      Serial.println(rs.getResponseDescription());
+      }
+    }
+    {
+    // Send message
+    ResponseStatus rs = e220ttl.sendBroadcastFixedMessage(23, "Hello, world?");
+    // Check If there is some problem of succesfully send
+    Serial.println(rs.getResponseDescription());
+    }
+    delay(1000);
   }
-  Serial.println("Ending Task3");
+  Serial.println("Ending TaskLoRa");
   vTaskDelete( NULL );
 }
 
@@ -2280,7 +2317,7 @@ void Task4code( void * pvParameters ) {
 
 void Task5code( void * pvParameters ) {
   Serial.print("Task5 running on core "); Serial.println(xPortGetCoreID());
-  delay(3000);
+  delay(1000);
   Serial.println("Ending Task5");
   vTaskDelete( NULL );
 }
@@ -2317,6 +2354,7 @@ void TaskWiFiLoRaBridgeFunc( void * pvParameters ) {
     Serial.print("TaskWiFiBridgeSTAtoAPFunc running on core "); Serial.println(xPortGetCoreID());
     Serial.print("TaskWiFiBridgeLoRatoAPFunc running on core "); Serial.println(xPortGetCoreID());
     Serial.print("TaskWiFiBridgeSTAtoLoRaFunc running on core "); Serial.println(xPortGetCoreID());
+    
     delay(10000);
   }
   Serial.println("Ending TaskWiFiBridgeSTAtoAPFunc");
@@ -2551,6 +2589,30 @@ void loop()
   frameEndTime = micros();
 }
 
+
+
+
+
+/*
+void display_connected_devices()
+{
+  //https://www.upesy.com/blogs/tutorials/how-create-a-wifi-acces-point-with-esp32
+    wifi_sta_list_t wifi_sta_list;
+    tcpip_adapter_sta_list_t adapter_sta_list;
+    esp_wifi_ap_get_sta_list(&wifi_sta_list);
+    tcpip_adapter_get_sta_list(&wifi_sta_list, &adapter_sta_list);
+
+    if (adapter_sta_list.num > 0)
+        Serial.println("-----------");
+    for (uint8_t i = 0; i < adapter_sta_list.num; i++)
+    {
+        tcpip_adapter_sta_info_t station = adapter_sta_list.sta[i];
+        Serial.print((String)"[+] Device " + i + " | MAC : ");
+        Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X", station.mac[0], station.mac[1], station.mac[2], station.mac[3], station.mac[4], station.mac[5]);
+        Serial.println((String) " | IP " + ip4addr_ntoa(&(station.ip)));
+    }
+}
+//*/
 
 
 
