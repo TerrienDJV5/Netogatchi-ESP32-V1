@@ -158,7 +158,14 @@
 
 #include "WiFiType.h"
 
-//StaticJsonDocument<512> saved_wifi_json;
+
+//https://randomnerdtutorials.com/esp32-wifimulti/
+#include <WiFiMulti.h>
+
+WiFiMulti wifiMulti;
+// WiFi connect timeout per AP. Increase when connecting takes longer.
+const uint32_t connectTimeoutMs = 10000;
+
 
 
 int wifi_status = WL_IDLE_STATUS;
@@ -759,8 +766,7 @@ typedef struct {
 //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi-security.html
 
 
-const char *filenameWiFi = "/Wifi_Connections_2.txt";
-Credentials_WiFi_Struct wificonfig;
+const char *filenameWiFi = "/Wifi_Connections.txt";
 List_WiFi_Credentials_Struct wifiCredentialList;
 //make Functions that convert Json to Structs
 
@@ -782,46 +788,8 @@ void enableWiFi();
 
 
 
-void loadWiFiConfiguration(const char *filename, Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs);
-void appendWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs);
-void saveWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs);
 
 void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, Credentials_WiFi_Struct &wifiCredentials);
-
-
-
-
-// Loads the configuration from a file
-void loadWiFiConfiguration(const char *filename, Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs) {
-  // Open file for reading
-  File file;
-  file = fs.open(filename, FILE_READ);
-  unsigned char jsonChar[file.size()+1];
-  file.read(jsonChar, file.size());
-  loadWiFiConfigurationCharArray((char*)jsonChar, file.size(), wifiCredentials);
-  /*
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/v6/assistant to compute the capacity.
-  StaticJsonDocument<128> connection;
-
-  // Deserialize the JSON document
-  DeserializationError error = deserializeJson(connection, file);
-  if (error)
-    Serial.println(F("Failed to read file, using default configuration"));
-
-  // Copy values from the JsonDocument to the Config
-  strlcpy(wificonfig.pass,                  // <- destination
-          connection["pass"] | "",  // <- source
-          sizeof(wificonfig.pass));         // <- destination's capacity
-  strlcpy(wificonfig.ssid,                  // <- destination
-          connection["ssid"] | "",  // <- source
-          sizeof(wificonfig.ssid));         // <- destination's capacity
-
-  // Close the file (Curiously, File's destructor doesn't close the file)
-  //*/
-  file.close();
-}
 
 
 // Loads the configuration from a charArray
@@ -845,92 +813,6 @@ void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, Creden
           sizeof(wifiCredentials.ssid));         // <- destination's capacity
   ;
 }
-
-
-
-
-// Saves the configuration to a file
-void saveWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs) {
-  File file;
-  fs.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-  file = fs.open(filename, FILE_WRITE);// Open file for writing
-  
-  if (!file) {
-    Serial.println(F("Failed to create file"));
-    return;
-  }
-  
-  
-  
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/assistant to compute the capacity.
-  DynamicJsonDocument connection(128);
-
-  // Set the values in the document
-  connection["ssid"] = wifiCredentials.ssid;
-  connection["pass"] = wifiCredentials.pass;
-
-  // Serialize JSON to file
-  if (serializeJson(connection, file) == 0) {
-    Serial.println(F("Failed to write to file"));
-  }
-
-  // Close the file
-  file.close();
-}
-
-// Append the configuration to a file
-void appendWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs) {
-  File file;
-  file = fs.open(filename, FILE_APPEND);// Open file for writing
-  
-  if (!file) {
-    Serial.println(F("Failed to create file"));
-    return;
-  }
-
-  // Allocate a temporary JsonDocument
-  // Don't forget to change the capacity to match your requirements.
-  // Use https://arduinojson.org/assistant to compute the capacity.
-  DynamicJsonDocument connection(128);
-  
-  // Set the values in the document
-  connection["ssid"] = wifiCredentials.ssid;
-  connection["pass"] = wifiCredentials.pass;
-
-  // Serialize JSON to file
-  if (serializeJson(connection, file) == 0) {
-    Serial.println(F("Failed to Append to file"));
-  }
-
-  // Close the file
-  file.close();
-}
-
-
-// Prints the content of a file to the Serial
-void printWiFiFile(const char *filename, fs::FS &fs) {
-  // Open file for reading
-  File file;
-  file = fs.open(filename);
-  
-
-  if (!file) {
-    Serial.println(F("Failed to read file"));
-    return;
-  }
-
-  // Extract each characters by one by one
-  while (file.available()) {
-    Serial.print((char)file.read());
-  }
-  Serial.println();
-
-  // Close the file
-  file.close();
-}
-
 
 
 
@@ -1804,6 +1686,8 @@ TaskHandle_t Task8;
 TaskHandle_t Task9;
 TaskHandle_t Task10;
 
+TaskHandle_t TaskWiFiBridge;
+
 
 
 
@@ -1919,16 +1803,7 @@ void setup()   {
 
   // Clear the buffer.
   display.stopscroll();
-  display.clearDisplay();
-
-  for (int index = 0; index < wifiCredentialList.length; index++) { 
-    Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
-    Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
-    
-    Serial.println();
-    delay(1000);
-  }
-  
+  display.clearDisplay();  
   
   
 
@@ -2199,25 +2074,30 @@ void setup()   {
   Serial.println(F("Print config file..."));
   printFile(filename);
 
-  /*
-  // Should load default config if run for the first time
-  Serial.println(F("Loading WiFi configuration..."));
-  loadWiFiConfiguration(filenameWiFi, wificonfig, SPIFFS);
-
-  // Create configuration file
-  Serial.println(F("Saving WiFi configuration..."));
-  saveWiFiConfiguration(filenameWiFi, wificonfig, SPIFFS);
-
-  // Dump config file
-  Serial.println(F("Print WiFi config file..."));
-  printWiFiFile(filenameWiFi, SPIFFS);
-  //*/
   
   //Load WiFiCredentialsList
   loadWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
   //Save WiFiCredentialsList
   saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
 
+  for (int index = 0; index < wifiCredentialList.length; index++) { 
+    Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
+    wifiMulti.addAP(wifiCredentialList.credentials[ index ].ssid, wifiCredentialList.credentials[ index ].pass);
+    Serial.println();
+    delay(100);
+  }
+  
+  
+  // Connect to Wi-Fi using wifiMulti (connects to the SSID with strongest connection)
+  Serial.println("Connecting Wifi...");
+  if(wifiMulti.run() == WL_CONNECTED) {
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+  }
+  
   /*
      Task Handles
   */
@@ -2251,6 +2131,17 @@ void setup()   {
     NULL,        /* parameter of the task */
     3,           /* priority of the task */
     &Task3,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 0 */
+  delay(500);
+
+  //create a task that will be executed in the Task3code() function, with priority 3 and executed on core 0
+  xTaskCreatePinnedToCore(
+    TaskWiFiBridgeFunc,   /* Task function. */
+    "TaskWiFiBridgeFunc",     /* name of task. */
+    1000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    2,           /* priority of the task */
+    &TaskWiFiBridge,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
   delay(500);
 
@@ -2330,7 +2221,16 @@ void Task5code( void * pvParameters ) {
 }
 
 
-
+void TaskWiFiBridgeFunc( void * pvParameters ) {
+  //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
+  //https://randomnerdtutorials.com/esp32-wifimulti/
+  for (;;) {
+    Serial.print("TaskWiFiBridgeFunc running on core "); Serial.println(xPortGetCoreID());
+    delay(3000);
+  }
+  Serial.println("Ending TaskWiFiBridgeFunc");
+  vTaskDelete( NULL );
+}
 
 
 
@@ -2536,7 +2436,17 @@ void loop()
   
   //update some variables
 
-
+  //if the connection to the stongest hotstop is lost, it will connect to the next network on the list
+  if (wifiMulti.run(connectTimeoutMs) == WL_CONNECTED) {
+    Serial.print("WiFi connected: ");
+    Serial.print(WiFi.SSID());
+    Serial.print(" ");
+    Serial.println(WiFi.RSSI());
+  }
+  else {
+    Serial.println("WiFi not connected!");
+  }
+  
   //update Frame
   display.display();
   //update frame count variable
