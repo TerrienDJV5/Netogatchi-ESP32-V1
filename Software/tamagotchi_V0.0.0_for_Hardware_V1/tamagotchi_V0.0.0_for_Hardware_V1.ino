@@ -848,13 +848,8 @@ void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_S
   credentialList[ "Length" ] = wifiCredentialList.length;
   for (int index = 0; index < wifiCredentialList.length; index++) {
     // Set the values in the document
-    credential["ssid"] = wifiCredentialList.credentials[ index ].ssid;
-    credential["pass"] = wifiCredentialList.credentials[ index ].pass;
-    // Serialize JSON to buffer
-    if (serializeJson(credential, credentialBuffer) == 0) {
-      Serial.println(F("Failed to write Json to Buffer"));
-    }
-    credentialList[ index ] = credentialBuffer;
+    credentialList[ index ]["ssid"] = wifiCredentialList.credentials[ index ].ssid;
+    credentialList[ index ]["pass"] = wifiCredentialList.credentials[ index ].pass;
   }
   // Close the file
   file.close();
@@ -869,21 +864,18 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
     Serial.println(F("Failed to create file"));
     return;
   }
-  DynamicJsonDocument credential(128);
   DynamicJsonDocument credentialList(file.size());
   //DynamicJsonDocument credentialList(128 * wifiCredentialList.length);
   deserializeJson(credentialList, file);
   wifiCredentialList.length = credentialList[ "Length" ];
   wifiCredentialList.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList.length);
   for (int index = 0; index < wifiCredentialList.length; index++) {
-    // DeSerialize JSON
-    deserializeJson(credential, credentialList[ index ]);
     // Set the values in the document
     strlcpy(wifiCredentialList.credentials[ index ].ssid,                  // <- destination
-          credential["ssid"],  // <- source
+          credentialList[ index ]["ssid"],  // <- source
           sizeof(wifiCredentialList.credentials[ index ].ssid));         // <- destination's capacity
     strlcpy(wifiCredentialList.credentials[ index ].pass,                  // <- destination
-          credential["pass"],  // <- source
+          credentialList[ index ]["pass"],  // <- source
           sizeof(wifiCredentialList.credentials[ index ].pass));         // <- destination's capacity
   }
   
