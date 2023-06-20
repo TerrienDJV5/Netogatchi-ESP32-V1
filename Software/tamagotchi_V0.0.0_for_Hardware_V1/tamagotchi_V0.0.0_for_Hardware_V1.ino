@@ -2296,6 +2296,10 @@ void TaskIRDecodeFunc( void * pvParameters ) {
 void TaskWiFiLoRaBridgeFunc( void * pvParameters ) {
   //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
   //https://randomnerdtutorials.com/esp32-wifimulti/
+  //Create Clients
+  //Create Server
+  //Have Clients Send Data To Server, and Server Will Redirect it to The Internet
+  
   for (;;) {
     Serial.print("TaskWiFiBridgeSTAtoAPFunc running on core "); Serial.println(xPortGetCoreID());
     Serial.print("TaskWiFiBridgeLoRatoAPFunc running on core "); Serial.println(xPortGetCoreID());
