@@ -68,6 +68,10 @@
 #include "esp_attr.h" //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/memory-types.html
 
 
+
+
+
+
 //Define Simple Functions
 #define ARRAY_LEN(array) ((sizeof(array))/(sizeof(array[0])))
 
@@ -835,8 +839,9 @@ void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiC
 
 // Saves the CredentialsList to a file
 void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs) {
+  Serial.println("File Will Be Saved!");
   File file;
-  fs.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+  //fs.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
   file = fs.open(filename, FILE_WRITE);// Open file for writing
   
   if (!file) {
@@ -846,16 +851,18 @@ void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_S
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/assistant to compute the capacity.
-  DynamicJsonDocument credential(128);
   DynamicJsonDocument credentialList(128 * wifiCredentialList.length);
-  char credentialBuffer[128];
-  memset(credentialBuffer, '\0', 128);
   credentialList[ "Length" ] = wifiCredentialList.length;
   for (int index = 0; index < wifiCredentialList.length; index++) {
+    Serial.print("index: ");Serial.println(index);
     // Set the values in the document
-    credentialList[ index ]["ssid"] = wifiCredentialList.credentials[ index ].ssid;
-    credentialList[ index ]["pass"] = wifiCredentialList.credentials[ index ].pass;
+    credentialList["info"][ index ]["ssid"] = wifiCredentialList.credentials[ index ].ssid;
+    credentialList["info"][ index ]["pass"] = wifiCredentialList.credentials[ index ].pass;
   }
+  serializeJson(credentialList, file);
+  serializeJson(credentialList, Serial);
+  Serial.println();
+  
   // Close the file
   file.close();
 }
@@ -864,28 +871,39 @@ void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_S
 void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs) {
   File file;
   file = fs.open(filename, FILE_READ);// Open file for writing
-  
+  Serial.println("File Has Been Read");
   if (!file) {
     Serial.println(F("Failed to create file"));
     return;
   }
-  DynamicJsonDocument credentialList(file.size());
+  //DynamicJsonDocument credentialList(file.available()*2);
+  DynamicJsonDocument credentialList(file.size()*2);
+  Serial.println("DynamicJsonDocument");
+  //StaticJsonDocument<1024> credentialList;
   //DynamicJsonDocument credentialList(128 * wifiCredentialList.length);
   deserializeJson(credentialList, file);
+  Serial.println("deserializeJson");
+  
+  
   wifiCredentialList.length = credentialList[ "Length" ];
+  Serial.println("Length");
   wifiCredentialList.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList.length);
+  Serial.print("length: ");Serial.println(wifiCredentialList.length);
+  Serial.println("malloc");
   for (int index = 0; index < wifiCredentialList.length; index++) {
+    Serial.print("index: ");Serial.println(index);
     // Set the values in the document
     strlcpy(wifiCredentialList.credentials[ index ].ssid,                  // <- destination
-          credentialList[ index ]["ssid"],  // <- source
+          credentialList["info"][ index ]["ssid"],  // <- source
           sizeof(wifiCredentialList.credentials[ index ].ssid));         // <- destination's capacity
     strlcpy(wifiCredentialList.credentials[ index ].pass,                  // <- destination
-          credentialList[ index ]["pass"],  // <- source
+          credentialList["info"][ index ]["pass"],  // <- source
           sizeof(wifiCredentialList.credentials[ index ].pass));         // <- destination's capacity
   }
-  
   // Close the file
   file.close();
+  
+  
 }
 
 // Loads the CredentialsList from a file
@@ -903,23 +921,35 @@ void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiC
   if (isINList){
     return;
   }
+  Serial.println(wifiCredential.ssid);
+  Serial.println(wifiCredential.pass);
+  Serial.println(wifiCredentialList.length);
   List_WiFi_Credentials_Struct wifiCredentialList_Temp;
   wifiCredentialList_Temp.length = wifiCredentialList.length;
   wifiCredentialList_Temp.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList_Temp.length);
   for (int index = 0; index < wifiCredentialList.length; index++) {
     strcpy(wifiCredentialList_Temp.credentials[ index ].ssid, wifiCredentialList.credentials[ index ].ssid);
     strcpy(wifiCredentialList_Temp.credentials[ index ].pass, wifiCredentialList.credentials[ index ].pass);
+    Serial.print(wifiCredentialList_Temp.credentials[ index ].ssid);Serial.print(", ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print(wifiCredentialList_Temp.credentials[ index ].pass);Serial.print(", ");Serial.println(wifiCredentialList.credentials[ index ].pass);
   }
   free(wifiCredentialList.credentials);
   wifiCredentialList.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList.length + 1);
   for (int index = 0; index < wifiCredentialList_Temp.length; index++) {
     strcpy(wifiCredentialList.credentials[ index ].ssid, wifiCredentialList_Temp.credentials[ index ].ssid);
     strcpy(wifiCredentialList.credentials[ index ].pass, wifiCredentialList_Temp.credentials[ index ].pass);
+    Serial.print(wifiCredentialList.credentials[ index ].ssid);Serial.print(", ");Serial.println(wifiCredentialList_Temp.credentials[ index ].ssid);
+    Serial.print(wifiCredentialList.credentials[ index ].pass);Serial.print(", ");Serial.println(wifiCredentialList_Temp.credentials[ index ].pass);
   }
   free(wifiCredentialList_Temp.credentials);
   strcpy(wifiCredentialList.credentials[ wifiCredentialList.length ].ssid, wifiCredential.ssid);
   strcpy(wifiCredentialList.credentials[ wifiCredentialList.length ].pass, wifiCredential.pass);
+  Serial.println(wifiCredential.ssid);
+  Serial.println(wifiCredential.pass);
+  Serial.println(wifiCredentialList.credentials[ wifiCredentialList.length ].ssid);
+  Serial.println(wifiCredentialList.credentials[ wifiCredentialList.length ].pass);
   wifiCredentialList.length += 1;
+  Serial.println(wifiCredentialList.length);
   
 }
 
@@ -946,20 +976,8 @@ enum userType
 
 void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials){
   // "/Wifi_Connections.txt"
-  /*
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
-  
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)wifiCredentials.ssid);
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
-  
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "{");
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", (char*)wifiCredentials.pass);
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}");
-  
-  appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}\r\n");
-  //*/
-  
+  Serial.println(wifiCredentials.ssid);
+  Serial.println(wifiCredentials.pass);
   saveWiFiCredentialToWiFiCredentialsList(wifiCredentialList, wifiCredentials);
   saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
 }
@@ -1485,6 +1503,9 @@ struct Config {
   int port;
 };
 
+void printFile(const char *filename, fs::FS &fs);
+
+
 const char *filename = "/config.txt";  // <- SD library uses 8.3 filenames
 Config config;                         // <- global configuration object
 
@@ -1589,20 +1610,11 @@ void saveConfiguration(const char *filename, const Config &config, byte storageD
 }
 
 // Prints the content of a file to the Serial
-void printFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+void printFile(const char *filename, fs::FS &fs) {
   // Open file for reading
   File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filename);
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filename);
-  }
-#endif
-
+  file = fs.open(filename);
+  
   if (!file) {
     Serial.println(F("Failed to read file"));
     return;
@@ -1706,7 +1718,8 @@ TaskHandle_t Task8;
 TaskHandle_t Task9;
 TaskHandle_t Task10;
 
-TaskHandle_t TaskWiFiBridge;
+TaskHandle_t TaskIRDecode;
+TaskHandle_t Task_WiFi_LoRa_Bridge;
 TaskHandle_t TaskWiFiMultiConnect;
 
 
@@ -1883,10 +1896,10 @@ void setup()   {
   printFreeHeap(Serial);
   test_bitmapgif_dat_FBF();
   
-  delay(1000);
+  delay(500);
   test_bitmapgif_dat_GIF();
   
-  delay(1500);
+  delay(500);
 
 
 
@@ -2080,11 +2093,11 @@ void setup()   {
 
   startSoftAP( Serial );
   //WiFi Setup Complete
-
+  Serial.println("Complete WiFi Setup!");
+  
 #ifdef _TEST_ADAFRUIT_SH1106
   setupTest(disptestBitFramelay);
 #endif
-
   // Should load default config if run for the first time
   Serial.println(F("Loading configuration..."));
   loadConfiguration(filename, config);
@@ -2095,17 +2108,18 @@ void setup()   {
 
   // Dump config file
   Serial.println(F("Print config file..."));
-  printFile(filename);
+  printFile(filename, SPIFFS);
   
-  
-  printFile("/Wifi_Connections.txt");
+  printFile("/Wifi_Connections.txt", SPIFFS);
   //Load WiFiCredentialsList
+  Serial.println(F("Loading WiFi configuration..."));
   loadWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
   //Save WiFiCredentialsList
+  Serial.println(F("Saving WiFi configuration..."));
   saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
-  printFile("/Wifi_Connections.txt");
+  printFile("/Wifi_Connections.txt", SPIFFS);
   
-
+  Serial.println(F("Reading WiFi configuration..."));
   for (int index = 0; index < wifiCredentialList.length; index++) { 
     Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
     Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
@@ -2117,12 +2131,14 @@ void setup()   {
   
   // Connect to Wi-Fi using wifiMulti (connects to the SSID with strongest connection)
   Serial.println("Connecting Wifi...");
+  /*
   if(wifiMulti.run() == WL_CONNECTED) {
     Serial.println("");
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
   }
+  */
   
   /*
      Task Handles
@@ -2131,7 +2147,7 @@ void setup()   {
   xTaskCreatePinnedToCore(
     Task1code,   /* Task function. */
     "BatteryStatusCheck",     /* name of task. */
-    1000,       /* Stack size of task */
+    2048,       /* Stack size of task */
     NULL,        /* parameter of the task */
     5,           /* priority of the task */
     &Task1,      /* Task handle to keep track of created task */
@@ -2160,22 +2176,33 @@ void setup()   {
     0);          /* pin task to core 0 */
   delay(500);
 
-  //create a task that will be executed in the Task3code() function, with priority 3 and executed on core 0
+  //create a task that will be executed in the Task3code() function, with priority 99 and executed on core 0
   xTaskCreatePinnedToCore(
-    TaskWiFiBridgeFunc,   /* Task function. */
-    "TaskWiFiBridgeFunc",     /* name of task. */
+    TaskIRDecodeFunc,   /* Task function. */
+    "TaskIRDecodeFunc",     /* name of task. */
+    1000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    99,           /* priority of the task */
+    &TaskIRDecode,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 0 */
+  delay(500);
+  
+  //create a task that will be executed in the Task3code() function, with priority 2 and executed on core 0
+  xTaskCreatePinnedToCore(
+    TaskWiFiLoRaBridgeFunc,   /* Task function. */
+    "TaskWiFiLoRaBridgeFunc",     /* name of task. */
     1000,       /* Stack size of task */
     NULL,        /* parameter of the task */
     2,           /* priority of the task */
-    &TaskWiFiBridge,      /* Task handle to keep track of created task */
+    &Task_WiFi_LoRa_Bridge,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
   delay(500);
 
-  //create a task that will be executed in the Task3code() function, with priority 3 and executed on core 0
+  //create a task that will be executed in the Task3code() function, with priority 99 and executed on core 0
   xTaskCreatePinnedToCore(
     TaskWiFiMultiConnectFunc,   /* Task function. */
     "TaskWiFiMultiConnectFunc",     /* name of task. */
-    1000,       /* Stack size of task */
+    2000,       /* Stack size of task */
     NULL,        /* parameter of the task */
     99,           /* priority of the task */
     &TaskWiFiMultiConnect,      /* Task handle to keep track of created task */
@@ -2185,7 +2212,7 @@ void setup()   {
 
   printFreeHeap(Serial);
   Serial.println("Exiting Setup!");
-  delay(5000);
+  delay(2500);
 }
 
 //https://techtutorialsx.com/2017/05/06/esp32-arduino-creating-a-task/
@@ -2253,27 +2280,55 @@ void Task4code( void * pvParameters ) {
 
 void Task5code( void * pvParameters ) {
   Serial.print("Task5 running on core "); Serial.println(xPortGetCoreID());
-  delay(1000);
+  delay(3000);
   Serial.println("Ending Task5");
   vTaskDelete( NULL );
 }
 
 
-void TaskWiFiBridgeFunc( void * pvParameters ) {
+void TaskIRDecodeFunc( void * pvParameters ) {
+  Serial.print("TaskIRDecodeFunc running on core "); Serial.println(xPortGetCoreID());
+  for (;;) {
+    ///*
+    #if (FeatureEnable_IR_RXTX_Control==true)
+    if (IrReceiver.decode()) {
+      Serial.print("IR_Receiver:");
+      Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print "old" raw data
+      // USE NEW 3.x FUNCTIONS
+      IrReceiver.printIRResultShort(&Serial); // Print complete received data in one line
+      IrReceiver.printIRSendUsage(&Serial);   // Print the statement required to send this data
+      
+      IrReceiver.resume(); // Enable receiving of the next value
+    }
+    #endif
+    //*/
+    delay(3000);
+  }
+  Serial.println("Ending TaskIRDecodeFunc");
+  vTaskDelete( NULL );
+}
+
+
+
+void TaskWiFiLoRaBridgeFunc( void * pvParameters ) {
   //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
   //https://randomnerdtutorials.com/esp32-wifimulti/
   for (;;) {
-    Serial.print("TaskWiFiBridgeFunc running on core "); Serial.println(xPortGetCoreID());
-    delay(3000);
+    Serial.print("TaskWiFiBridgeSTAtoAPFunc running on core "); Serial.println(xPortGetCoreID());
+    Serial.print("TaskWiFiBridgeLoRatoAPFunc running on core "); Serial.println(xPortGetCoreID());
+    Serial.print("TaskWiFiBridgeSTAtoLoRaFunc running on core "); Serial.println(xPortGetCoreID());
+    delay(10000);
   }
-  Serial.println("Ending TaskWiFiBridgeFunc");
+  Serial.println("Ending TaskWiFiBridgeSTAtoAPFunc");
   vTaskDelete( NULL );
 }
+
 
 void TaskWiFiMultiConnectFunc( void * pvParameters ) {
   Serial.print("TaskWiFiMultiConnectFunc running on core "); Serial.println(xPortGetCoreID());
   for (;;) {
     //if the connection to the stongest hotstop is lost, it will connect to the next network on the list
+    /*
     if (wifiMulti.run(connectTimeoutMs) == WL_CONNECTED) {
       Serial.print("WiFi connected: ");
       Serial.print(WiFi.SSID());
@@ -2283,6 +2338,7 @@ void TaskWiFiMultiConnectFunc( void * pvParameters ) {
     else {
       Serial.println("WiFi not connected!");
     }
+    //*/
     delay(10000);
   }
   Serial.println("Ending TaskWiFiMultiConnectFunc");
@@ -2312,10 +2368,11 @@ void loop()
   
   
   //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+  Serial.println("Try Creating Task5!");
   xTaskCreatePinnedToCore(
     Task5code,   /* Task function. */
     "Task5",     /* name of task. */
-    1000,       /* Stack size of task */
+    1024,       /* Stack size of task */
     NULL,        /* parameter of the task */
     5,           /* priority of the task */
     &Task5,      /* Task handle to keep track of created task */
@@ -2332,19 +2389,7 @@ void loop()
   
   
 
-  ///*
-#if (FeatureEnable_IR_RXTX_Control==true)
-  if (IrReceiver.decode()) {
-    Serial.print("IR_Receiver:");
-    Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print "old" raw data
-    // USE NEW 3.x FUNCTIONS
-    IrReceiver.printIRResultShort(&Serial); // Print complete received data in one line
-    IrReceiver.printIRSendUsage(&Serial);   // Print the statement required to send this data
-
-    IrReceiver.resume(); // Enable receiving of the next value
-  }
-#endif
-  //*/
+  
   
   if (disableButtonPISO_update == false) {
     buttonpiso1.update();
@@ -2488,10 +2533,10 @@ void loop()
   
   checkAllDebugInputs();
   
-  //Serial.print("ESP.getFreeHeap():");Serial.println(ESP.getFreeHeap());
-  //display.print("ESP.getFreeHeap():"); display.println(ESP.getFreeHeap());
   printFreeHeap(Serial);
+  printHeapFrag(Serial);
   display.print("FreeHeap:"); display.print(ESP.getFreeHeap()); display.print(" B"); display.println();
+  display.print("HeapFrag:"); display.print(getFragmentation()); display.print(" %"); display.println();
   display.print("AP IP address: "); display.print( WiFi.softAPIP() ); display.println();
   
   //update some variables
@@ -2526,6 +2571,10 @@ void printFreeHeap(Stream &serialport) {
   serialport.println(ESP.getFreeHeap());
 }
 
+void printHeapFrag(Stream &serialport) {
+  serialport.print("HeapFrag:"); serialport.print(getFragmentation()); serialport.print("%"); serialport.println();
+}  
+
 void menu_MAIN(){
   {
     display.drawRoundRect(0, 2 - 8, 128, 16 - 2 + 8, 4, WHITE);
@@ -2535,7 +2584,7 @@ void menu_MAIN(){
   }
   {
     display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
-    display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((100) - (batteryPercent) * (20 / 100)), 8, BLACK);
+    display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((batteryPercent) * (20 / 100)), 8, BLACK);
   }
   
   display.fillRect(80, 0, 16, 16+16, BLACK);
@@ -3287,7 +3336,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
       saveWiFicredentials( wifiCredential );
       readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
-      
+      saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
       serialport.println("Wifi Credentials Saved!");
       
     }
@@ -3556,6 +3605,15 @@ void printButtonPISODebug() {
   if (buttonpiso1.isPressed(7) == true) {//B
     Serial.println("Button 7 was Pressed!");
   };
+}
+
+
+// Computes the heap fragmentation percentage.
+//inline float getFragmentation() {
+float getFragmentation() {
+  //https://github.com/bblanchon/cpp4arduino/blob/master/HeapFragmentation/MemoryInfo.h
+  //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/heap_debug.html
+  return 100 - heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) * 100.0 / heap_caps_get_total_size(MALLOC_CAP_8BIT);
 }
 
 

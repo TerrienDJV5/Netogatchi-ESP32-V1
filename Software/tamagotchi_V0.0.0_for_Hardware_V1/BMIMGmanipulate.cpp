@@ -22,77 +22,41 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   unsigned char imageOutput[8];
   memset(imageOutput,0,8);
   //
-  imageOutput[ 0 ] = ((imageIN8x8[0]>>7) & B00000001);
-  imageOutput[ 1 ] = ((imageIN8x8[0]>>6) & B00000001);
-  imageOutput[ 2 ] = ((imageIN8x8[0]>>5) & B00000001);
-  imageOutput[ 3 ] = ((imageIN8x8[0]>>4) & B00000001);
-  imageOutput[ 4 ] = ((imageIN8x8[0]>>3) & B00000001);
-  imageOutput[ 5 ] = ((imageIN8x8[0]>>2) & B00000001);
-  imageOutput[ 6 ] = ((imageIN8x8[0]>>1) & B00000001);
-  imageOutput[ 7 ] = ((imageIN8x8[0]   ) & B00000001);
+  imageOutput[ 0 ] = ((imageIN8x8[0]>>7) & B00000001) | ((imageIN8x8[1]>>6) & B00000010);
+  imageOutput[ 1 ] = ((imageIN8x8[0]>>6) & B00000001) | ((imageIN8x8[1]>>5) & B00000010);
+  imageOutput[ 2 ] = ((imageIN8x8[0]>>5) & B00000001) | ((imageIN8x8[1]>>4) & B00000010);
+  imageOutput[ 3 ] = ((imageIN8x8[0]>>4) & B00000001) | ((imageIN8x8[1]>>3) & B00000010);
+  imageOutput[ 4 ] = ((imageIN8x8[0]>>3) & B00000001) | ((imageIN8x8[1]>>2) & B00000010);
+  imageOutput[ 5 ] = ((imageIN8x8[0]>>2) & B00000001) | ((imageIN8x8[1]>>1) & B00000010);
+  imageOutput[ 6 ] = ((imageIN8x8[0]>>1) & B00000001) | ((imageIN8x8[1]   ) & B00000010);
+  imageOutput[ 7 ] = ((imageIN8x8[0]   ) & B00000001) | ((imageIN8x8[1]<<1) & B00000010);
   //
-  imageOutput[ 0 ] += ((imageIN8x8[1]>>6) & B00000010);
-  imageOutput[ 1 ] += ((imageIN8x8[1]>>5) & B00000010);
-  imageOutput[ 2 ] += ((imageIN8x8[1]>>4) & B00000010);
-  imageOutput[ 3 ] += ((imageIN8x8[1]>>3) & B00000010);
-  imageOutput[ 4 ] += ((imageIN8x8[1]>>2) & B00000010);
-  imageOutput[ 5 ] += ((imageIN8x8[1]>>1) & B00000010);
-  imageOutput[ 6 ] += ((imageIN8x8[1]   ) & B00000010);
-  imageOutput[ 7 ] += ((imageIN8x8[1]<<1) & B00000010);
+  imageOutput[ 0 ] += ((imageIN8x8[2]>>5) & B00000100) | ((imageIN8x8[3]>>4) & B00001000);
+  imageOutput[ 1 ] += ((imageIN8x8[2]>>4) & B00000100) | ((imageIN8x8[3]>>3) & B00001000);
+  imageOutput[ 2 ] += ((imageIN8x8[2]>>3) & B00000100) | ((imageIN8x8[3]>>2) & B00001000);
+  imageOutput[ 3 ] += ((imageIN8x8[2]>>2) & B00000100) | ((imageIN8x8[3]>>1) & B00001000);
+  imageOutput[ 4 ] += ((imageIN8x8[2]>>1) & B00000100) | ((imageIN8x8[3]   ) & B00001000);
+  imageOutput[ 5 ] += ((imageIN8x8[2]   ) & B00000100) | ((imageIN8x8[3]<<1) & B00001000);
+  imageOutput[ 6 ] += ((imageIN8x8[2]<<1) & B00000100) | ((imageIN8x8[3]<<2) & B00001000);
+  imageOutput[ 7 ] += ((imageIN8x8[2]<<2) & B00000100) | ((imageIN8x8[3]<<3) & B00001000);
   //
-  imageOutput[ 0 ] += ((imageIN8x8[2]>>5) & B00000100);
-  imageOutput[ 1 ] += ((imageIN8x8[2]>>4) & B00000100);
-  imageOutput[ 2 ] += ((imageIN8x8[2]>>3) & B00000100);
-  imageOutput[ 3 ] += ((imageIN8x8[2]>>2) & B00000100);
-  imageOutput[ 4 ] += ((imageIN8x8[2]>>1) & B00000100);
-  imageOutput[ 5 ] += ((imageIN8x8[2]   ) & B00000100);
-  imageOutput[ 6 ] += ((imageIN8x8[2]<<1) & B00000100);
-  imageOutput[ 7 ] += ((imageIN8x8[2]<<2) & B00000100);
+  imageOutput[ 0 ] += ((imageIN8x8[4]>>3) & B00010000) | ((imageIN8x8[5]>>2) & B00100000);
+  imageOutput[ 1 ] += ((imageIN8x8[4]>>2) & B00010000) | ((imageIN8x8[5]>>1) & B00100000);
+  imageOutput[ 2 ] += ((imageIN8x8[4]>>1) & B00010000) | ((imageIN8x8[5]   ) & B00100000);
+  imageOutput[ 3 ] += ((imageIN8x8[4]   ) & B00010000) | ((imageIN8x8[5]<<1) & B00100000);
+  imageOutput[ 4 ] += ((imageIN8x8[4]<<1) & B00010000) | ((imageIN8x8[5]<<2) & B00100000);
+  imageOutput[ 5 ] += ((imageIN8x8[4]<<2) & B00010000) | ((imageIN8x8[5]<<3) & B00100000);
+  imageOutput[ 6 ] += ((imageIN8x8[4]<<3) & B00010000) | ((imageIN8x8[5]<<4) & B00100000);
+  imageOutput[ 7 ] += ((imageIN8x8[4]<<4) & B00010000) | ((imageIN8x8[5]<<5) & B00100000);
   //
-  imageOutput[ 0 ] += ((imageIN8x8[3]>>4) & B00001000);
-  imageOutput[ 1 ] += ((imageIN8x8[3]>>3) & B00001000);
-  imageOutput[ 2 ] += ((imageIN8x8[3]>>2) & B00001000);
-  imageOutput[ 3 ] += ((imageIN8x8[3]>>1) & B00001000);
-  imageOutput[ 4 ] += ((imageIN8x8[3]   ) & B00001000);
-  imageOutput[ 5 ] += ((imageIN8x8[3]<<1) & B00001000);
-  imageOutput[ 6 ] += ((imageIN8x8[3]<<2) & B00001000);
-  imageOutput[ 7 ] += ((imageIN8x8[3]<<3) & B00001000);
-  //
-  imageOutput[ 0 ] += ((imageIN8x8[4]>>3) & B00010000);
-  imageOutput[ 1 ] += ((imageIN8x8[4]>>2) & B00010000);
-  imageOutput[ 2 ] += ((imageIN8x8[4]>>1) & B00010000);
-  imageOutput[ 3 ] += ((imageIN8x8[4]   ) & B00010000);
-  imageOutput[ 4 ] += ((imageIN8x8[4]<<1) & B00010000);
-  imageOutput[ 5 ] += ((imageIN8x8[4]<<2) & B00010000);
-  imageOutput[ 6 ] += ((imageIN8x8[4]<<3) & B00010000);
-  imageOutput[ 7 ] += ((imageIN8x8[4]<<4) & B00010000);
-  //
-  imageOutput[ 0 ] += ((imageIN8x8[5]>>2) & B00100000);
-  imageOutput[ 1 ] += ((imageIN8x8[5]>>1) & B00100000);
-  imageOutput[ 2 ] += ((imageIN8x8[5]   ) & B00100000);
-  imageOutput[ 3 ] += ((imageIN8x8[5]<<1) & B00100000);
-  imageOutput[ 4 ] += ((imageIN8x8[5]<<2) & B00100000);
-  imageOutput[ 5 ] += ((imageIN8x8[5]<<3) & B00100000);
-  imageOutput[ 6 ] += ((imageIN8x8[5]<<4) & B00100000);
-  imageOutput[ 7 ] += ((imageIN8x8[5]<<5) & B00100000);
-  //
-  imageOutput[ 0 ] += ((imageIN8x8[6]>>1) & B01000000);
-  imageOutput[ 1 ] += ((imageIN8x8[6]   ) & B01000000);
-  imageOutput[ 2 ] += ((imageIN8x8[6]<<1) & B01000000);
-  imageOutput[ 3 ] += ((imageIN8x8[6]<<2) & B01000000);
-  imageOutput[ 4 ] += ((imageIN8x8[6]<<3) & B01000000);
-  imageOutput[ 5 ] += ((imageIN8x8[6]<<4) & B01000000);
-  imageOutput[ 6 ] += ((imageIN8x8[6]<<5) & B01000000);
-  imageOutput[ 7 ] += ((imageIN8x8[6]<<6) & B01000000);
-  //
-  imageOutput[ 0 ] += ((imageIN8x8[7]   ) & B10000000);
-  imageOutput[ 1 ] += ((imageIN8x8[7]<<1) & B10000000);
-  imageOutput[ 2 ] += ((imageIN8x8[7]<<2) & B10000000);
-  imageOutput[ 3 ] += ((imageIN8x8[7]<<3) & B10000000);
-  imageOutput[ 4 ] += ((imageIN8x8[7]<<4) & B10000000);
-  imageOutput[ 5 ] += ((imageIN8x8[7]<<5) & B10000000);
-  imageOutput[ 6 ] += ((imageIN8x8[7]<<6) & B10000000);
-  imageOutput[ 7 ] += ((imageIN8x8[7]<<7) & B10000000);
+  imageOutput[ 0 ] += ((imageIN8x8[6]>>1) & B01000000) | ((imageIN8x8[7]   ) & B10000000);
+  imageOutput[ 1 ] += ((imageIN8x8[6]   ) & B01000000) | ((imageIN8x8[7]<<1) & B10000000);
+  imageOutput[ 2 ] += ((imageIN8x8[6]<<1) & B01000000) | ((imageIN8x8[7]<<2) & B10000000);
+  imageOutput[ 3 ] += ((imageIN8x8[6]<<2) & B01000000) | ((imageIN8x8[7]<<3) & B10000000);
+  imageOutput[ 4 ] += ((imageIN8x8[6]<<3) & B01000000) | ((imageIN8x8[7]<<4) & B10000000);
+  imageOutput[ 5 ] += ((imageIN8x8[6]<<4) & B01000000) | ((imageIN8x8[7]<<5) & B10000000);
+  imageOutput[ 6 ] += ((imageIN8x8[6]<<5) & B01000000) | ((imageIN8x8[7]<<6) & B10000000);
+  imageOutput[ 7 ] += ((imageIN8x8[6]<<6) & B01000000) | ((imageIN8x8[7]<<7) & B10000000);
   memmove(imageIN8x8, imageOutput, 8);
 }
 
