@@ -729,19 +729,9 @@ static const unsigned char PROGMEM wifi16x16Icon[] =
 
 
 
-unsigned int countNewLinesFromFile(const char *filePath, byte storageDevice = STORAGE_DEVICE_DEFAULT){
+unsigned int countNewLinesFromFile(const char *filePath, fs::FS &fs){
   // Open file for reading
-  File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filePath, FILE_READ);
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filePath, FILE_READ);
-  }
-#endif
+  File file = fs.open(filePath, FILE_READ);
   unsigned int newLineCount = 0;
   while(file.available()){
     newLineCount += (file.read()=='\n');
@@ -762,7 +752,6 @@ typedef struct {
   unsigned int length;
   Credentials_WiFi_Struct *credentials;
 } List_WiFi_Credentials_Struct;
-
 
 
 
@@ -790,53 +779,23 @@ List_WiFi_Credentials_Struct wifiCredentialList;
 
 void disableWiFi();
 void enableWiFi();
-void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials);
-unsigned int getCount_of_Saved_WiFicredentials(const char *filePath = "/Wifi_Connections.txt", byte storageDevice = STORAGE_DEVICE_DEFAULT);
-void read_WiFicredentials(Credentials_WiFi_Struct &wifiCredentials, const char *filePath = "/Wifi_Connections.txt", byte storageDevice = STORAGE_DEVICE_DEFAULT, unsigned int listIndex = 0);
 
 
+
+void loadWiFiConfiguration(const char *filename, Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs);
+void appendWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs);
+void saveWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs);
 
 void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, Credentials_WiFi_Struct &wifiCredentials);
 
 
 
 
-//void openFromStorageDevice(File &file, const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, uint8_t setmode = FILE_READ);
-//void openFromStorageDevice(File &file, const String &filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, uint8_t setmode = FILE_READ){return openFromStorageDevice(filename.c_str(), storageDevice, setmode);};
-
-//void openFromStorageDevice(File &file, const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, const char* setmode = FILE_READ);
-//void openFromStorageDevice(File &file, const String &filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, const char* setmode = FILE_READ){return openFromStorageDevice(filename.c_str(), storageDevice, setmode);};
-
-
-void openFromStorageDevice(File &file, const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT, const char* setmode = FILE_READ){
-  #if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filename, setmode);
-  }
-  #endif
-  #if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filename, setmode);
-  }
-  #endif
-}
-
-
-
 // Loads the configuration from a file
-void loadWiFiConfiguration(const char *filename, Credentials_WiFi_Struct &wifiCredentials, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+void loadWiFiConfiguration(const char *filename, Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs) {
   // Open file for reading
   File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filename, FILE_READ);
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filename, FILE_READ);
-  }
-#endif
+  file = fs.open(filename, FILE_READ);
   unsigned char jsonChar[file.size()+1];
   file.read(jsonChar, file.size());
   loadWiFiConfigurationCharArray((char*)jsonChar, file.size(), wifiCredentials);
@@ -891,26 +850,18 @@ void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, Creden
 
 
 // Saves the configuration to a file
-void saveWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+void saveWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs) {
   File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    SD.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-    file = SD.open(filename, FILE_WRITE);// Open file for writing
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    SPIFFS.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-    file = SPIFFS.open(filename, FILE_WRITE);// Open file for writing
-  }
-#endif
+  fs.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+  file = fs.open(filename, FILE_WRITE);// Open file for writing
   
   if (!file) {
     Serial.println(F("Failed to create file"));
     return;
   }
-
+  
+  
+  
   // Allocate a temporary JsonDocument
   // Don't forget to change the capacity to match your requirements.
   // Use https://arduinojson.org/assistant to compute the capacity.
@@ -930,20 +881,9 @@ void saveWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &
 }
 
 // Append the configuration to a file
-void appendWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+void appendWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct &wifiCredentials, fs::FS &fs) {
   File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    SD.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-    file = SD.open(filename, FILE_APPEND);// Open file for writing
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    SPIFFS.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
-    file = SPIFFS.open(filename, FILE_APPEND);// Open file for writing
-  }
-#endif
+  file = fs.open(filename, FILE_APPEND);// Open file for writing
   
   if (!file) {
     Serial.println(F("Failed to create file"));
@@ -970,19 +910,11 @@ void appendWiFiConfiguration(const char *filename, const Credentials_WiFi_Struct
 
 
 // Prints the content of a file to the Serial
-void printWiFiFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEFAULT) {
+void printWiFiFile(const char *filename, fs::FS &fs) {
   // Open file for reading
   File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filename);
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filename);
-  }
-#endif
+  file = fs.open(filename);
+  
 
   if (!file) {
     Serial.println(F("Failed to read file"));
@@ -998,6 +930,122 @@ void printWiFiFile(const char *filename, byte storageDevice = STORAGE_DEVICE_DEF
   // Close the file
   file.close();
 }
+
+
+
+
+
+void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials);
+
+
+//to make Reading and writeing faster checkt this out 
+//https://github.com/bblanchon/ArduinoStreamUtils
+
+
+void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs);
+void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs);
+void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential);
+
+// Saves the CredentialsList to a file
+void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs) {
+  File file;
+  fs.remove(filename);// Delete existing file, otherwise the configuration is appended to the file
+  file = fs.open(filename, FILE_WRITE);// Open file for writing
+  
+  if (!file) {
+    Serial.println(F("Failed to create file"));
+    return;
+  }
+  // Allocate a temporary JsonDocument
+  // Don't forget to change the capacity to match your requirements.
+  // Use https://arduinojson.org/assistant to compute the capacity.
+  DynamicJsonDocument credential(128);
+  DynamicJsonDocument credentialList(128 * wifiCredentialList.length);
+  char credentialBuffer[128];
+  memset(credentialBuffer, '\0', 128);
+  credentialList[ "Length" ] = wifiCredentialList.length;
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    // Set the values in the document
+    credential["ssid"] = wifiCredentialList.credentials[ index ].ssid;
+    credential["pass"] = wifiCredentialList.credentials[ index ].pass;
+    // Serialize JSON to buffer
+    if (serializeJson(credential, credentialBuffer) == 0) {
+      Serial.println(F("Failed to write Json to Buffer"));
+    }
+    credentialList[ index ] = credentialBuffer;
+  }
+  // Close the file
+  file.close();
+}
+
+// Loads the CredentialsList from a file
+void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs) {
+  File file;
+  file = fs.open(filename, FILE_READ);// Open file for writing
+  
+  if (!file) {
+    Serial.println(F("Failed to create file"));
+    return;
+  }
+  DynamicJsonDocument credential(128);
+  DynamicJsonDocument credentialList(file.size());
+  //DynamicJsonDocument credentialList(128 * wifiCredentialList.length);
+  deserializeJson(credentialList, file);
+  wifiCredentialList.length = credentialList[ "Length" ];
+  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList.length);
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    // DeSerialize JSON
+    deserializeJson(credential, credentialList[ index ]);
+    // Set the values in the document
+    strlcpy(wifiCredentialList.credentials[ index ].ssid,                  // <- destination
+          credential["ssid"],  // <- source
+          sizeof(wifiCredentialList.credentials[ index ].ssid));         // <- destination's capacity
+    strlcpy(wifiCredentialList.credentials[ index ].pass,                  // <- destination
+          credential["pass"],  // <- source
+          sizeof(wifiCredentialList.credentials[ index ].pass));         // <- destination's capacity
+  }
+  
+  //deserializeJson(credential, credentialBuffer);
+  // Close the file
+  file.close();
+}
+
+// Loads the CredentialsList from a file
+void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential) {
+  bool isINList = false;
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    if (wifiCredentialList.credentials[ index ].ssid == wifiCredential.ssid){
+      strlcpy(wifiCredentialList.credentials[ index ].pass,                  // <- destination
+          wifiCredential.pass,  // <- source
+          sizeof(wifiCredentialList.credentials[ index ].pass));         // <- destination's capacity
+      isINList = true;
+      break;
+    }
+  }
+  if (isINList){
+    return;
+  }
+  List_WiFi_Credentials_Struct wifiCredentialList_Temp;
+  wifiCredentialList_Temp.length = wifiCredentialList.length;
+  wifiCredentialList_Temp.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList_Temp.length);
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    strcpy(wifiCredentialList_Temp.credentials[ index ].ssid, wifiCredentialList.credentials[ index ].ssid);
+    strcpy(wifiCredentialList_Temp.credentials[ index ].pass, wifiCredentialList.credentials[ index ].pass);
+  }
+  free(wifiCredentialList.credentials);
+  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList.length + 1);
+  for (int index = 0; index < wifiCredentialList_Temp.length; index++) {
+    strcpy(wifiCredentialList.credentials[ index ].ssid, wifiCredentialList_Temp.credentials[ index ].ssid);
+    strcpy(wifiCredentialList.credentials[ index ].pass, wifiCredentialList_Temp.credentials[ index ].pass);
+  }
+  free(wifiCredentialList_Temp.credentials);
+  strcpy(wifiCredentialList.credentials[ wifiCredentialList.length ].ssid, wifiCredential.ssid);
+  strcpy(wifiCredentialList.credentials[ wifiCredentialList.length ].pass, wifiCredential.pass);
+  wifiCredentialList.length += 1;
+  
+}
+
+
 
 
 
@@ -1033,55 +1081,12 @@ void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials){
   appendFile(Serial, SPIFFS, "/Wifi_Connections.txt", "}\r\n");
   //*/
   
-  appendWiFiConfiguration("/Wifi_Connections.txt", wifiCredentials);
+  saveWiFiCredentialToWiFiCredentialsList(wifiCredentialList, wifiCredentials);
+  saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
 }
 
-unsigned int getCount_of_Saved_WiFicredentials(const char *filePath, byte storageDevice){
-  // "/Wifi_Connections.txt"
-  return (countNewLinesFromFile(filePath, storageDevice)-1);
-}
 
-void read_WiFicredentials(Credentials_WiFi_Struct &wifiCredentials, const char *filePath, byte storageDevice, unsigned int listIndex)
-{
-  //WHYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY, just make this use Only SPIFFS
-  // "/Wifi_Connections.txt"
-  // Open file for reading
-  File file;
-#if (STORAGE_INCLUDE_SD)
-  if (storageDevice == STORAGE_SELECT_SD) {
-    file = SD.open(filePath, FILE_READ);
-  }
-#endif
-#if (STORAGE_INCLUDE_SPIFFS)
-  if (storageDevice == STORAGE_SELECT_SPIFFS) {
-    file = SPIFFS.open(filePath, FILE_READ);
-  }
-#endif
-  const unsigned int readBufferLength = 128;
-  char readBuffer[ readBufferLength ];
-  char *scanBufferP;
-  unsigned int savedCount = getCount_of_Saved_WiFicredentials(filePath, storageDevice);
-  unsigned int newLineLocation = 0;
-  for (int index = 0; index < savedCount; index++) {
-    file.read(readBuffer, readBufferLength);
-    scanBufferP = strchr(readBuffer,'\n');
-    newLineLocation = readBufferLength-strlen(scanBufferP);
-    Serial.println("read_WiFicredentials");
-    Serial.println(index);
-    Serial.println(readBuffer);
-    Serial.println(readBufferLength);
-    Serial.println(scanBufferP);
-    Serial.println(newLineLocation);
-    Serial.println();
-    Serial.println();
-  }
 
-  strcpy(wifiCredentials.ssid, "");
-  strcpy(wifiCredentials.pass, "");
-  
-  
-  file.close();
-}
 
 
 
@@ -1916,14 +1921,9 @@ void setup()   {
   display.stopscroll();
   display.clearDisplay();
 
-  //read_WiFicredentials Test
-  unsigned int savedCount = getCount_of_Saved_WiFicredentials("/Wifi_Connections.txt", SPIFFS);
-  Serial.println(savedCount);
-  Credentials_WiFi_Struct wifiCredentials;
-  for (int index = 0; index < savedCount; index++) {
-    read_WiFicredentials(wifiCredentials, "/Wifi_Connections.txt", SPIFFS, index);
-    Serial.print("ssid: ");Serial.println(wifiCredentials.ssid);
-    Serial.print("pass: ");Serial.println(wifiCredentials.pass);
+  for (int index = 0; index < wifiCredentialList.length; index++) { 
+    Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
     
     Serial.println();
     delay(1000);
@@ -2199,18 +2199,24 @@ void setup()   {
   Serial.println(F("Print config file..."));
   printFile(filename);
 
-
+  /*
   // Should load default config if run for the first time
   Serial.println(F("Loading WiFi configuration..."));
-  loadWiFiConfiguration(filenameWiFi, wificonfig);
+  loadWiFiConfiguration(filenameWiFi, wificonfig, SPIFFS);
 
   // Create configuration file
   Serial.println(F("Saving WiFi configuration..."));
-  saveWiFiConfiguration(filenameWiFi, wificonfig);
+  saveWiFiConfiguration(filenameWiFi, wificonfig, SPIFFS);
 
   // Dump config file
   Serial.println(F("Print WiFi config file..."));
-  printWiFiFile(filenameWiFi);
+  printWiFiFile(filenameWiFi, SPIFFS);
+  //*/
+  
+  //Load WiFiCredentialsList
+  loadWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
+  //Save WiFiCredentialsList
+  saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
 
   /*
      Task Handles
