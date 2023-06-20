@@ -17,8 +17,9 @@ unsigned int BMIMGmanipulate::calculateMinimunByteForBitWidth( unsigned int bitW
   return (bitWidth%8 + bitWidth)>>3; //(n>>3) === abs(n/8)
 }
 
-unsigned char* BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[8]){
-  static unsigned char imageOutput[8];
+
+void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
+  unsigned char imageOutput[8];
   memset(imageOutput,0,8);
   //
   imageOutput[ 0 ] = ((imageIN8x8[0]>>7) & B00000001);
@@ -92,7 +93,7 @@ unsigned char* BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8
   imageOutput[ 5 ] += ((imageIN8x8[7]<<5) & B10000000);
   imageOutput[ 6 ] += ((imageIN8x8[7]<<6) & B10000000);
   imageOutput[ 7 ] += ((imageIN8x8[7]<<7) & B10000000);
-  return imageOutput;
+  memmove(imageIN8x8, imageOutput, 8);
 }
 
 
@@ -113,10 +114,10 @@ unsigned char* BMIMGmanipulate::rotate16x16ImageClockwise(unsigned char imageIN1
     memcpy(&sectorX1Y1[ index*1 ], &imageIN16x16[ index*2+1*16+1 ], 1);
   }
   
-  memmove(sectorX0Y0, rotate8x8ImageClockwise( sectorX0Y0 ), 8);
-  memmove(sectorX1Y0, rotate8x8ImageClockwise( sectorX1Y0 ), 8);
-  memmove(sectorX0Y1, rotate8x8ImageClockwise( sectorX0Y1 ), 8);
-  memmove(sectorX1Y1, rotate8x8ImageClockwise( sectorX1Y1 ), 8);
+  rotate8x8ImageClockwise( sectorX0Y0 );
+  rotate8x8ImageClockwise( sectorX1Y0 );
+  rotate8x8ImageClockwise( sectorX0Y1 );
+  rotate8x8ImageClockwise( sectorX1Y1 );
   
   //Rotate Sectors
   unsigned char sectorStorage[8];
@@ -244,7 +245,7 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
   //unsigned char sectorX1Y0[ sectorByteSize ];
   //unsigned char sectorX0Y1[ sectorByteSize ];
   //unsigned char sectorX1Y1[ sectorByteSize ];
-
+  
   unsigned char* sectorX0Y0;
   unsigned char* sectorX1Y0;
   unsigned char* sectorX0Y1;
@@ -396,8 +397,9 @@ void BMIMGmanipulate::rotateBitImageClockwise(unsigned char imageOUT[], unsigned
   
   if ( (imgLargestValue <= 8) and (imgLargestValue > 0) ){
     Serial.println("resized8x8");
-    imageTMP2 = rotate8x8ImageClockwise( imageTMP1 );
-    memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 8 )*8);
+    rotate8x8ImageClockwise( imageTMP1 );
+    //imageTMP2 = rotate8x8ImageClockwise( imageTMP1 );
+    //memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 8 )*8);
   }
   if ( (imgLargestValue <= 16) and (imgLargestValue > 8) ){
     Serial.println("resized16x16");

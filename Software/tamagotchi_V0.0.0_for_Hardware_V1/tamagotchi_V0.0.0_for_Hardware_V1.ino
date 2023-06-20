@@ -62,6 +62,11 @@
 //Check this out?
 //https://github.com/olikraus/u8g2
 
+#include "FreeRTOSConfig.h" //https://www.freertos.org/a00106.html
+#define INCLUDE_eTaskGetState true
+
+#include "esp_attr.h" //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/memory-types.html
+
 
 //Define Simple Functions
 #define ARRAY_LEN(array) ((sizeof(array))/(sizeof(array[0])))
@@ -1033,14 +1038,37 @@ void display_struct_bitmapIMG(Adafruit_SH1106 &display, IMGbitmapStruct &bitmapI
 }
 
 
+typedef struct {
+  int x;
+  int y;
+} Position2D_int_Struct;
+
+typedef struct {
+  long x;
+  long y;
+} Position2D_long_Struct;
+
+typedef struct {
+  int x;
+  int y;
+  int z;
+} Position3D_int_Struct;
+
+typedef struct {
+  long x;
+  long y;
+  long z;
+} Position3D_long_Struct;
 
 
 typedef struct {
-  uint16_t locxPxOffset = 0; //X Offset in pixels
-  uint16_t locyPxOffset = 0; //Y Offset in pixels
+  //uint16_t locxPxOffset = 0; //X Offset in pixels
+  //uint16_t locyPxOffset = 0; //Y Offset in pixels
+  Position2D_int_Struct locPxOffset;//X&Y Offset in pixels
   uint16_t widthPx;//in pixels(Global)
   uint16_t heightPx;//in pixels(Global)
-
+  
+  
   //subframeDataRotation is used if "rotationSFCompression" is Enabled
   uint8_t subframeDataRotation = 0; //data rotated Clockwise 4 phases
   /* subframeDataRotation
@@ -1168,8 +1196,8 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
 
       bitmapGIF.subFramePointers[ frameIndex ].frameDataPool = (unsigned char*)malloc(bitmapGIF.subFramePointers[ frameIndex ].frameByteLength);
       file.read(bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].frameByteLength);
-      bitmapGIF.subFramePointers[ frameIndex ].locxPxOffset = 0;
-      bitmapGIF.subFramePointers[ frameIndex ].locyPxOffset = 0;
+      bitmapGIF.subFramePointers[ frameIndex ].locPxOffset.x = 0;
+      bitmapGIF.subFramePointers[ frameIndex ].locPxOffset.y = 0;
       display.clearDisplay();
       display.drawBitmap(0, 0, bitmapGIF.subFramePointers[ frameIndex ].frameDataPool, bitmapGIF.subFramePointers[ frameIndex ].widthPx, bitmapGIF.subFramePointers[ frameIndex ].heightPx, WHITE);
       display.display();
@@ -1241,9 +1269,9 @@ void load_struct_bitmapGIF_dat_File(File &file, GIFbitmapStruct &bitmapGIF) {
         bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
       }
       if (bitmapGIF.cropSFCompression) {
-        bitmapGIF.subFramePointers[ frameIndex ].locxPxOffset = ((file.read()) << 8) | (file.read());
+        bitmapGIF.subFramePointers[ frameIndex ].locPxOffset.x = ((file.read()) << 8) | (file.read());
         bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
-        bitmapGIF.subFramePointers[ frameIndex ].locyPxOffset = ((file.read()) << 8) | (file.read());
+        bitmapGIF.subFramePointers[ frameIndex ].locPxOffset.y = ((file.read()) << 8) | (file.read());
         bitmapGIF.subFramePointers[ frameIndex ].frameByteLength -= 2;
       }
       if (bitmapGIF.rotationSFCompression) {
@@ -1290,7 +1318,7 @@ void display_struct_bitmapGIF(Adafruit_SH1106 &display, GIFbitmapStruct &bitmapG
       Serial.print("bitmapGIF.subFramePointers[ index ].frameByteLength: "); Serial.println(bitmapGIF.subFramePointers[ index ].frameByteLength);
       memcpy(imageTemp, bitmapGIF.subFramePointers[ index ].frameDataPool, bitmapGIF.subFramePointers[ index ].frameByteLength);
       if (bitmapGIF.cropSFCompression) {
-        display.drawBitmap(locx + bitmapGIF.subFramePointers[ index ].locxPxOffset, locy + bitmapGIF.subFramePointers[ index ].locyPxOffset, imageTemp, bitmapGIF.subFramePointers[ index ].widthPx, bitmapGIF.subFramePointers[ index ].heightPx, WHITE);
+        display.drawBitmap(locx + bitmapGIF.subFramePointers[ index ].locPxOffset.x, locy + bitmapGIF.subFramePointers[ index ].locPxOffset.y, imageTemp, bitmapGIF.subFramePointers[ index ].widthPx, bitmapGIF.subFramePointers[ index ].heightPx, WHITE);
       } else if (bitmapGIF.rotationSFCompression) {
         //add rotate
         display.drawBitmap(locx, locy, imageTemp, bitmapGIF.subFramePointers[ index ].widthPx, bitmapGIF.subFramePointers[ index ].heightPx, WHITE);
@@ -1307,7 +1335,7 @@ void display_struct_bitmapGIF(Adafruit_SH1106 &display, GIFbitmapStruct &bitmapG
         uint32_t getMaxAllocHeap(); //largest block of heap that can be allocated at once
       */
       printFreeHeap(Serial);
-      display.drawBitmap(bitmapGIF.subFramePointers[ index ].locxPxOffset, bitmapGIF.subFramePointers[ index ].locyPxOffset, bitmapGIF.subFramePointers[ index ].frameDataPool, bitmapGIF.subFramePointers[ index ].widthPx, bitmapGIF.subFramePointers[ index ].heightPx, WHITE);
+      display.drawBitmap(bitmapGIF.subFramePointers[ index ].locPxOffset.x, bitmapGIF.subFramePointers[ index ].locPxOffset.y, bitmapGIF.subFramePointers[ index ].frameDataPool, bitmapGIF.subFramePointers[ index ].widthPx, bitmapGIF.subFramePointers[ index ].heightPx, WHITE);
     }
     printFreeHeap(Serial);
   }
@@ -1665,7 +1693,7 @@ void printScrollText(Adafruit_SH1106 &display, char textInput[], unsigned int te
 
 
 
-
+//https://www.freertos.org/a00106.html
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 TaskHandle_t Task3;
@@ -1679,6 +1707,9 @@ TaskHandle_t Task9;
 TaskHandle_t Task10;
 
 TaskHandle_t TaskWiFiBridge;
+TaskHandle_t TaskWiFiMultiConnect;
+
+
 
 
 
@@ -2065,12 +2096,15 @@ void setup()   {
   // Dump config file
   Serial.println(F("Print config file..."));
   printFile(filename);
-
   
+  
+  printFile("/Wifi_Connections.txt");
   //Load WiFiCredentialsList
   loadWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
   //Save WiFiCredentialsList
   saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
+  printFile("/Wifi_Connections.txt");
+  
 
   for (int index = 0; index < wifiCredentialList.length; index++) { 
     Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
@@ -2137,6 +2171,18 @@ void setup()   {
     0);          /* pin task to core 0 */
   delay(500);
 
+  //create a task that will be executed in the Task3code() function, with priority 3 and executed on core 0
+  xTaskCreatePinnedToCore(
+    TaskWiFiMultiConnectFunc,   /* Task function. */
+    "TaskWiFiMultiConnectFunc",     /* name of task. */
+    1000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    99,           /* priority of the task */
+    &TaskWiFiMultiConnect,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 0 */
+  delay(500);
+  
+
   printFreeHeap(Serial);
   Serial.println("Exiting Setup!");
   delay(5000);
@@ -2146,13 +2192,13 @@ void setup()   {
 //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html
 
 void Task1code( void * pvParameters ) {
+  Serial.print("Task1 running on core "); Serial.println(xPortGetCoreID());
   //BatteryStatusCheck
   double vin;
   double maxVin;
   double minVin;
   for (;;) {
     if (autoUPdateBatteryVariables){
-      Serial.print("Task1 running on core "); Serial.println(xPortGetCoreID());
       //Calculate Battery Percentage
       
       vin = calculateVoltageDivider(100000, 100000, batteryVoltageDivider);
@@ -2175,9 +2221,9 @@ void Task1code( void * pvParameters ) {
 }
 
 void Task2code( void * pvParameters ) {
+  Serial.print("Task2 running on core "); Serial.println(xPortGetCoreID());
   //GetTime
   for (;;) {
-    Serial.print("Task2 running on core "); Serial.println(xPortGetCoreID());
     printLocalTime(Serial);
     delay(10000);
   }
@@ -2188,8 +2234,8 @@ void Task2code( void * pvParameters ) {
 
 
 void Task3code( void * pvParameters ) {
+  Serial.print("Task3 running on core "); Serial.println(xPortGetCoreID());
   for (;;) {
-    Serial.print("Task3 running on core "); Serial.println(xPortGetCoreID());
     delay(3000);
   }
   Serial.println("Ending Task3");
@@ -2197,8 +2243,8 @@ void Task3code( void * pvParameters ) {
 }
 
 void Task4code( void * pvParameters ) {
+  Serial.print("Task4 running on core "); Serial.println(xPortGetCoreID());
   for (;;) {
-    Serial.print("Task4 running on core "); Serial.println(xPortGetCoreID());
     delay(4000);
   }
   Serial.println("Ending Task4");
@@ -2221,6 +2267,25 @@ void TaskWiFiBridgeFunc( void * pvParameters ) {
     delay(3000);
   }
   Serial.println("Ending TaskWiFiBridgeFunc");
+  vTaskDelete( NULL );
+}
+
+void TaskWiFiMultiConnectFunc( void * pvParameters ) {
+  Serial.print("TaskWiFiMultiConnectFunc running on core "); Serial.println(xPortGetCoreID());
+  for (;;) {
+    //if the connection to the stongest hotstop is lost, it will connect to the next network on the list
+    if (wifiMulti.run(connectTimeoutMs) == WL_CONNECTED) {
+      Serial.print("WiFi connected: ");
+      Serial.print(WiFi.SSID());
+      Serial.print(" ");
+      Serial.println(WiFi.RSSI());
+    }
+    else {
+      Serial.println("WiFi not connected!");
+    }
+    delay(10000);
+  }
+  Serial.println("Ending TaskWiFiMultiConnectFunc");
   vTaskDelete( NULL );
 }
 
@@ -2281,12 +2346,12 @@ void loop()
 #endif
   //*/
   
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
   if (disableButtonPISO_update == false) {
     buttonpiso1.update();
   };
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  
   printButtonPISODebug();
   display.setCursor(0, 0);
   display.setTextSize(1);
@@ -2361,9 +2426,11 @@ void loop()
   if (currentMenuID == 8) {
     menu_SPIFFS();
   }
-
   
+  
+  {
   if (buttonpiso1.isPressed(2) == true) {//Select
+    batteryPercent = 100;
     frame_location_offset --; //frameCountVariable%10;
     if (frame_location_offset < (-0)) {
       frame_location_offset = (-0);
@@ -2386,6 +2453,7 @@ void loop()
       display.println("TaskBarDrawn:");
     }
   };
+  }
   if (buttonpiso1.isTapped(1) == true) {//start
     if (currentMenuID == 0) {
       previousMenuID = currentMenuID;
@@ -2428,16 +2496,7 @@ void loop()
   
   //update some variables
 
-  //if the connection to the stongest hotstop is lost, it will connect to the next network on the list
-  if (wifiMulti.run(connectTimeoutMs) == WL_CONNECTED) {
-    Serial.print("WiFi connected: ");
-    Serial.print(WiFi.SSID());
-    Serial.print(" ");
-    Serial.println(WiFi.RSSI());
-  }
-  else {
-    Serial.println("WiFi not connected!");
-  }
+  
   
   //update Frame
   display.display();
@@ -2468,12 +2527,17 @@ void printFreeHeap(Stream &serialport) {
 }
 
 void menu_MAIN(){
-  display.drawRoundRect(0, 2 - 8, 128, 16 - 2 + 8, 4, WHITE);
-  display.fillRect(0, 0, 48 + 8, 16, BLACK);
-  display.drawLine(0, 7, 47, 7, WHITE);
-  display.drawLine(47, 7, 47 + 8, 7 + 8, WHITE);
-  display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
-  display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((100 - batteryPercent) * (20 / 100)), 8, BLACK);
+  {
+    display.drawRoundRect(0, 2 - 8, 128, 16 - 2 + 8, 4, WHITE);
+    display.fillRect(0, 0, 48 + 8, 16, BLACK);
+    display.drawLine(0, 7, 47, 7, WHITE);
+    display.drawLine(47, 7, 47 + 8, 7 + 8, WHITE);
+  }
+  {
+    display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
+    display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((100) - (batteryPercent) * (20 / 100)), 8, BLACK);
+  }
+  
   display.fillRect(80, 0, 16, 16+16, BLACK);
   if ((WiFi.getMode() == WIFI_MODE_STA) or (WiFi.getMode() == WIFI_MODE_APSTA)) {
     display.fillRect(80, 0, 16, 16, WHITE);
@@ -2696,6 +2760,7 @@ void menu_SPIFFS(){
   Serial.println("CheckPoint-10");
   //free(savedFileNames);//frees Memory
   Serial.println("CheckPoint-11");
+  vTaskDelete( NULL );
 }
 
 void menu_WIFI(){
