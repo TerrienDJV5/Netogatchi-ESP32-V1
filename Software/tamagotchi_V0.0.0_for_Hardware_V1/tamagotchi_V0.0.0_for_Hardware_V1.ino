@@ -1005,7 +1005,6 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
           sizeof(wifiCredentialList.credentials[ index ].pass));         // <- destination's capacity
   }
   
-  //deserializeJson(credential, credentialBuffer);
   // Close the file
   file.close();
 }
@@ -1052,6 +1051,7 @@ void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiC
 
 
 /*
+//https://playground.arduino.cc/Code/Enum/
 enum userType
 {
    x,
