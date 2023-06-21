@@ -2592,7 +2592,7 @@ void loop()
   printFreeHeap(Serial);
   printHeapFrag(Serial);
   display.print("FreeHeap:"); display.print(ESP.getFreeHeap()); display.print(" B"); display.println();
-  display.print("HeapFrag:"); display.print(getFragmentation()); display.print(" %"); display.println();
+  display.print("HeapFrag:"); display.print(getFragmentation()); display.print("%"); display.println();
   display.print("AP IP address: "); display.print( WiFi.softAPIP() ); display.println();
   
   //update some variables
@@ -2664,13 +2664,14 @@ void loop()
     Position2D_int_Struct bGUIInputIconLength;
     bGUIInputIconLength.x = 4;
     bGUIInputIconLength.y = 8;
-
-    //if buttonInput Mode is PISO
-    display.fillRect(bGUIInputIconPos.x, bGUIInputIconPos.y, bGUIInputIconLength.x, bGUIInputIconLength.y, BLACK);
-    display.drawBitmap(bGUIInputIconPos.x, bGUIInputIconPos.y, buttonInputIcon4x8[0], bGUIInputIconLength.x, bGUIInputIconLength.y, WHITE);
+    
     //if buttonInput Mode is HTTPS
     display.fillRect(bGUIInputIconPos.x, bGUIInputIconPos.y, bGUIInputIconLength.x, bGUIInputIconLength.y, BLACK);
     display.drawBitmap(bGUIInputIconPos.x, bGUIInputIconPos.y, buttonInputIcon4x8[1], bGUIInputIconLength.x, bGUIInputIconLength.y, WHITE);
+    
+    //if buttonInput Mode is PISO
+    display.fillRect(bGUIInputIconPos.x, bGUIInputIconPos.y, bGUIInputIconLength.x, bGUIInputIconLength.y, BLACK);
+    display.drawBitmap(bGUIInputIconPos.x, bGUIInputIconPos.y, buttonInputIcon4x8[0], bGUIInputIconLength.x, bGUIInputIconLength.y, WHITE);
     
     
     Position2D_int_Struct bGUIButtonPos;
@@ -2829,7 +2830,7 @@ void menu_MAIN(){
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.print("FPS~:"); display.print( system_Frame_FPS ); display.println();
-  display.print("RawButtons:"); display.println(buttonpiso1.getRAWState(), BIN);
+  //display.print("RawButtons:"); display.println(buttonpiso1.getRAWState(), BIN);
   display.print("battery:"); display.print(batteryPercent); display.print("%, "); display.print(batteryVoltage); display.println("V");
   display.print("ShowingVCB_frame:"); display.println(frameCountVariable % 32);
   display.drawBitmap(0, 8, visableCharacterBuffer[ frameCountVariable % 32 ], 32, 56, WHITE);
@@ -2837,12 +2838,14 @@ void menu_MAIN(){
 
 
 void menu_SELECTION(){
+  display.clearDisplay();
   int buttonDrawCount = 4;
   int buttonDrawWidth = display.width() - 2;
   int buttonDrawHeight = 16;//display.height()/4;
   int optionNameID = 0;
-  char printOptionsBuffer[33];
-  memset(printOptionsBuffer, '\0', 33);
+  unsigned int printBufferSize = 18;//33
+  char printOptionsBuffer[ printBufferSize ];
+  memset(printOptionsBuffer, '\0', printBufferSize);
   static int oN_IDDisplay_offset;
   
   if (buttonpiso1.isTapped(0) == true) {//UP
@@ -2871,8 +2874,8 @@ void menu_SELECTION(){
       display.fillRoundRect(0, buttonDrawHeight * buttonDrawIndex, buttonDrawWidth, buttonDrawHeight - 2, buttonDrawHeight / 4, WHITE);
       display.setTextColor(BLACK);
     };
-    strcpy(printOptionsBuffer, smOptionName_List[ optionNameID ]);
-    display.print("Opt "); display.print(optionNameID); display.print(":"); display.println(printOptionsBuffer);
+    strlcpy(printOptionsBuffer, smOptionName_List[ optionNameID ], printBufferSize);
+    display.print(optionNameID); display.print(":"); display.println(printOptionsBuffer);
   }
 }
 
@@ -2951,110 +2954,36 @@ void menu_SPIFFS(){
   memset(savedFileNames, '\0', currentNameSaveCount * maxFileNameLength);
   Serial.println("CheckPoint-00");
   File root = SPIFFS.open("/");
+  printDirectory(root, 0);
   Serial.println("CheckPoint-01");
-  File file = root.openNextFile();
-  Serial.println("CheckPoint-02");
-  while (file) {
-    //extend Main List Length
-    Serial.println("Extending File Name List!");
-    printFreeHeap(Serial);
-    if (fileCount > currentNameSaveCount) {
-      //allocate buffer
-      //copy to buffer
-      //extend main list
-      //add items back to Main List
-      //free up allocated buffer
-      Serial.println("CheckPoint-03");
-      savedFileNamesExtendBuffer = (char *)malloc( currentNameSaveCount * maxFileNameLength );
-      Serial.println("CheckPoint-04");
-      memcpy(savedFileNamesExtendBuffer, savedFileNames, currentNameSaveCount * maxFileNameLength);
-      Serial.println("CheckPoint-05");
-      free(savedFileNames);
-      Serial.println("CheckPoint-06");
-      /*
-        for (int index = 0; index < currentNameSaveCount; index++){
-        savedFileNamesExtendBuffer[ index ] = savedFileNames[ index ];
-        }
-        //*/
-      currentNameSaveCount += extendNameSaveCountSize;
-      savedFileNames = (char *)malloc( currentNameSaveCount * maxFileNameLength );
-      Serial.println("CheckPoint-07");
-      memset(savedFileNames, '\0', currentNameSaveCount * maxFileNameLength);
-      Serial.println("CheckPoint-08");
-      for (int index = 0; index < (currentNameSaveCount - extendNameSaveCountSize); index++) {
-        savedFileNames[ index ] = savedFileNamesExtendBuffer[ index ];
-      }
-      Serial.println("CheckPoint-09");
-      free(savedFileNamesExtendBuffer);//frees Memory
-      Serial.println("CheckPoint-0a");
-    }
-    printFreeHeap(Serial);
-    Serial.println("CheckPoint-0b");
-    //add to main List
-    strcpy(&savedFileNames[ fileCount * maxFileNameLength ], file.name()); //savedFileNames[ fileCount ] = file.name();
-    Serial.println("CheckPoint-0c");
-    Serial.print("FILE: ");
-    Serial.println(file.name());
-    
-    fileCount++;
-    file = root.openNextFile();
-    Serial.println("CheckPoint-0d");
-  }
-  Serial.println("CheckPoint-0e");
-  file.close();
-  root.close();
-  while (currentMenuID == 8) {
-    Serial.println("CheckPoint-0f");
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    
-    if (disableButtonPISO_update == false) {
-      buttonpiso1.update();
-    };
-    printButtonPISODebug();
-    
-    
-    if (buttonpiso1.isTapped(0) == true) {//UP
-      fileSelect--;
-      if (fileSelect + 1 <= fileDisplayOffset) {
-        fileDisplayOffset = fileSelect;
-      }
-    }
-    if (buttonpiso1.isTapped(5) == true) {//DOWN
-      fileSelect++;
-      if ((fileSelect - fileDisplayOffset) >= fileDisplayOffsetMax) {
-        fileDisplayOffset = fileSelect - (fileDisplayOffsetMax - 1);
-      }
-    }
-    display.println(fileSelect);
-    char printBuffer[32];
-    for (int index = 0; index < fileDisplayOffsetMax; index++) {
-      //
-      display.setCursor(0, 8 * index);
-      strncpy(printBuffer, &savedFileNames[ (fileDisplayOffset + index)*maxFileNameLength ], maxFileNameLength);
-      if ((fileDisplayOffset + index) == fileSelect) {
-        display.fillRect(0, 8 * (fileSelect - fileDisplayOffset), display.width(), 8, WHITE);
-        display.setTextColor(BLACK);
-        display.println(printBuffer);
-      } else {
-        display.setTextColor(WHITE);
-        display.println(printBuffer);
-      }
-    }
-    display.display();
-    //
-    if (buttonpiso1.isTapped(7) == true) {//B
-      currentMenuID = 0;//previousMenuID;
-      break;
-    };
-  }
-  Serial.println("CheckPoint-10");
-  //free(savedFileNames);//frees Memory
-  Serial.println("CheckPoint-11");
-  vTaskDelete( NULL );
 }
+
+void printDirectory(File dir, int numTabs) {
+  while (true) {
+    File entry =  dir.openNextFile();
+    if (! entry) {
+      // no more files
+      break;
+    }
+    for (uint8_t i = 0; i < numTabs; i++) {
+      Serial.print('\t');
+    }
+    Serial.print(entry.name());
+    if (entry.isDirectory()) {
+      Serial.println("/");
+      printDirectory(entry, numTabs + 1);
+    } else {
+      // files have sizes, directories do not
+      Serial.print("\t\t");
+      Serial.print(entry.size(), DEC);
+      Serial.print("\t --> ");
+      Serial.print(numTabs);
+      Serial.println();
+    }
+    entry.close();
+  }
+}
+
 
 void menu_WIFI(){
   //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
