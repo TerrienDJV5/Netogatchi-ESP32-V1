@@ -723,14 +723,34 @@ static const unsigned char PROGMEM wifi16x16Icon[] =
   B10000000, B00000001,
   B10000000, B00000001,
   B10000000, B00000001,
+  B10000000, B00000001,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00011111, B11111000,
+  B00111000, B00011100,
+  B00110011, B11001100,
+  B00000111, B11100000,
+  B00000111, B11100000,
+};
+
+static const unsigned char PROGMEM LoRa16x16Icon[] =
+{
   B11111111, B11111111,
-  B10000000, B10000001,
-  B10000000, B10000001,
-  B10000000, B10000001,
-  B10000000, B10000001,
-  B10000000, B10000001,
-  B10000000, B10000001,
-  B10000000, B10000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B10000000, B00000001,
+  B00000000, B00000000,
+  B00000000, B00000000,
+  B00011111, B11111000,
+  B00111000, B00011100,
+  B00110011, B11001100,
+  B00000111, B11100000,
+  B00000111, B11100000,
 };
 
 /*
@@ -1908,10 +1928,10 @@ void setup()   {
   printFreeHeap(Serial);
   test_bitmapgif_dat_FBF();
   
-  delay(500);
+  delay(250);
   test_bitmapgif_dat_GIF();
   
-  delay(500);
+  delay(250);
 
 
 
@@ -1926,7 +1946,7 @@ void setup()   {
   readbitmapdatFile(display, fileBMP);
   fileBMP.close();
   }
-  delay(500);
+  delay(250);
 
   {
   //Neco-Arc_bitmapimg.dat
@@ -1972,7 +1992,7 @@ void setup()   {
   }
   fileBMP.close();
   }
-  delay(500);
+  delay(250);
 
   printFreeHeap(Serial);
   
@@ -2128,7 +2148,7 @@ void setup()   {
   WiFi.onEvent(OnWiFiEvent);
 
   //https://www.upesy.com/blogs/tutorials/how-to-connect-wifi-acces-point-with-esp32
-  disableWiFi();
+  //disableWiFi();
 
   enableWiFi();
   //wifiSerialSetup();
@@ -2192,7 +2212,7 @@ void setup()   {
   xTaskCreatePinnedToCore(
     TaskWiFiLoRaBridgeFunc,   /* Task function. */
     "TaskWiFiLoRaBridgeFunc",     /* name of task. */
-    1000,       /* Stack size of task */
+    2000,       /* Stack size of task */
     NULL,        /* parameter of the task */
     2,           /* priority of the task */
     &Task_WiFi_LoRa_Bridge,      /* Task handle to keep track of created task */
@@ -2431,9 +2451,6 @@ void loop()
 #endif
     display.setTextSize(1);
     display.setTextColor(WHITE);
-    display.print("Serial.avail:"); display.println(Serial.available(), DEC);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
     display.print("CurrentMenuID:"); display.println(currentMenuID, DEC);
     /*
     display.setTextSize(1);
@@ -2556,6 +2573,36 @@ void loop()
   
   //update some variables
 
+  //Draw Button Press GUI
+  if (buttonpiso1.getRAWState()!=0b00000000){
+    display.fillRect(128-18, 64-8, 18, 8, WHITE);
+    display.fillRect(128-17, 64-7, 17, 7, BLACK);
+    if (buttonpiso1.isPressed(0) == true) {//UP
+      Serial.println("Button 0 was Pressed!");
+    };
+    if (buttonpiso1.isPressed(1) == true) {//Start
+      Serial.println("Button 1 was Pressed!");
+    };
+    if (buttonpiso1.isPressed(2) == true) {//Select
+      Serial.println("Button 2 was Pressed!");
+    };
+    if (buttonpiso1.isPressed(3) == true) {//A
+      Serial.println("Button 3 was Pressed!");
+    };
+    if (buttonpiso1.isPressed(4) == true) {//LEFT
+      Serial.println("Button 4 was Pressed!");
+      display.fillRect(128-18, 64-8, 18, 8, WHITE);
+    };
+    if (buttonpiso1.isPressed(5) == true) {//DOWN
+      Serial.println("Button 5 was Pressed!");
+    };
+    if (buttonpiso1.isPressed(6) == true) {//RIGHT
+      Serial.println("Button 6 was Pressed!");
+    };
+    if (buttonpiso1.isPressed(7) == true) {//B
+      Serial.println("Button 7 was Pressed!");
+    };
+  }
   
   
   //update Frame
@@ -2615,6 +2662,7 @@ void printHeapFrag(Stream &serialport) {
 }  
 
 void menu_MAIN(){
+  display.clearDisplay();
   {
     display.drawRoundRect(0, 2 - 8, 128, 16 - 2 + 8, 4, WHITE);
     display.fillRect(0, 0, 48 + 8, 16, BLACK);
@@ -2623,7 +2671,11 @@ void menu_MAIN(){
   }
   {
     display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
-    display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((batteryPercent) * (20 / 100)), 8, BLACK);
+    if (batteryVoltage == 0.0){
+      display.fillRect(batteryXpos + 4, batteryYpos + 2, 20, 8, BLACK);
+    }else{
+      display.fillRect(batteryXpos + 4, batteryYpos + 2, (double)((batteryPercent) * (20 / 100)), 8, BLACK);
+    }
   }
   
   display.fillRect(80, 0, 16, 16+16, BLACK);
@@ -2644,7 +2696,7 @@ void menu_MAIN(){
   display.setTextColor(WHITE);
   display.print("FPS~:"); display.print( system_Frame_FPS ); display.println();
   display.print("RawButtons:"); display.println(buttonpiso1.getRAWState(), BIN);
-  display.print("battery%:"); display.print(batteryPercent); display.print(", "); display.print(batteryVoltage); display.println("V");
+  display.print("battery:"); display.print(batteryPercent); display.print("%, "); display.print(batteryVoltage); display.println("V");
   display.print("ShowingVCB_frame:"); display.println(frameCountVariable % 32);
   display.drawBitmap(0, 8, visableCharacterBuffer[ frameCountVariable % 32 ], 32, 56, WHITE);
 }
@@ -2692,6 +2744,7 @@ void menu_SELECTION(){
 
 
 void menu_LORA(){
+  display.clearDisplay();
   //https://github.com/xreef/EByte_LoRa_E220_Series_Library
   display.setCursor(0, 1 * 8);
   display.setTextSize(1);
@@ -2745,6 +2798,7 @@ void menu_LORA(){
 }
 
 void menu_SPIFFS(){
+  display.clearDisplay();
   //https://techtutorialsx.com/2019/02/23/esp32-arduino-list-all-files-in-the-spiffs-file-system/
   display.setCursor(0, 1 * 8);
   display.setTextSize(1);
