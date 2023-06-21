@@ -163,6 +163,8 @@
 
 //WiFi Support
 #include "WiFi.h"
+
+
 #include <esp_wifi.h>
 //https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
 
@@ -1737,13 +1739,9 @@ TaskHandle_t TaskWiFiMultiConnect;
 QueueHandle_t queue;
 
 
-
 IPAddress ip(192, 168, 0, 50);
 IPAddress gateway(192, 168, 0, 1);
 IPAddress subnet(255, 255, 255, 0);
-
-WiFiServer TCPServer(1234, ip);
-WiFiClient TCPClient;
 
 
 //https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32s2/api-reference/peripherals/index.html
@@ -1978,7 +1976,7 @@ void setup()   {
 
   printFreeHeap(Serial);
   
-  {
+  /*{
   //Neco-Arc_bitmapimg.txt
   File fileBMP;
   fileBMP = SPIFFS.open("/Neco-Arc_bitmapimg.txt");
@@ -1994,17 +1992,13 @@ void setup()   {
     memset(fileImageBuffer, '\0', 2048);
     fileBMP.readBytesUntil('\n', filereadBuffer, 2048);
     fileBMP.readBytesUntil('\n', fileImageBuffer, 2048);
-    //Serial.write(filereadBuffer, strlen(filereadBuffer));
-    //Serial.println();
-    //Serial.write(fileImageBuffer, strlen(fileImageBuffer));
-    //Serial.println();
     display.clearDisplay();
     display.drawBitmap(0, 0, convertTextHextoCharArray( fileImageBuffer ), 32, 56, WHITE);//Test Image Read
     display.display();
   }
   fileBMP.close();
-  }
-  delay(500);
+  }//*/
+  //delay(500);
 
   printFreeHeap(Serial);
   {
@@ -2156,8 +2150,7 @@ void setup()   {
   }
   //*/
 
-  TCPServer.begin();
-  TCPServer.setNoDelay(true);
+  
   
   /*
      Task Handles
@@ -2322,14 +2315,24 @@ void TaskWiFiLoRaBridgeFunc( void * pvParameters ) {
   //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi.html
   //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
   //https://randomnerdtutorials.com/esp32-wifimulti/
-  //Create Clients
-  //Create Server
-  //Have Clients Send Data To Server, and Server Will Redirect it to The Internet
+  
+  //https://randomnerdtutorials.com/esp32-access-point-ap-web-server/
   
   for (;;) {
-    control TCP
-    Control UDP
-    delay(10000);
+    //https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/wifi.html
+    uint8_t softAP_getStationNum = WiFi.softAPgetStationNum();
+    Serial.print("Stations connected: ");
+    Serial.println(softAP_getStationNum);
+    IPAddress softAP_BroadcastIP = WiFi.softAPBroadcastIP();
+    Serial.print("softAPBroadcastIP: ");
+    Serial.println(softAP_BroadcastIP);
+    IPAddress softAP_IP = WiFi.softAPIP();
+    Serial.print("softAPIP: ");
+    Serial.println(softAP_IP);
+    IPAddress softAP_NetworkID = WiFi.softAPNetworkID();
+    Serial.print("softAPNetworkID: ");
+    Serial.println(softAP_NetworkID);
+    delay(750);
   }
   Serial.println("Ending TaskWiFiBridgeSTAtoAPFunc");
   vTaskDelete( NULL );
