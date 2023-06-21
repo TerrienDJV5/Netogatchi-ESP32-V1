@@ -68,8 +68,11 @@
 #include "esp_attr.h" //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/memory-types.html
 
 
+/*#################################################*/
+//Try This!
+//#include "painlessMesh.h" //https://randomnerdtutorials.com/esp-mesh-esp32-esp8266-painlessmesh/
 
-
+/*#################################################*/
 
 
 //Define Simple Functions
@@ -908,6 +911,7 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
 
 // Loads the CredentialsList from a file
 void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential) {
+  //Fix Me?
   bool isINList = false;
   for (int index = 0; index < wifiCredentialList.length; index++) {
     if (wifiCredentialList.credentials[ index ].ssid == wifiCredential.ssid){
@@ -1412,7 +1416,7 @@ void load_bitmapdat_File(unsigned char* &imageloadlocation, unsigned int &imageD
 
 
 
-
+void readbitmapdatFile(Adafruit_SH1106 &display, File &fileBMP);
 
 void readbitmapdatFile(Adafruit_SH1106 &display, File &fileBMP) {
   if (!fileBMP) {
@@ -1732,6 +1736,14 @@ TaskHandle_t TaskWiFiMultiConnect;
 //https://forum.arduino.cc/t/how-can-i-do-dual-core-task-use-same-memory-esp32-rtos/702929/24?page=2 //https://youtu.be/ywbq1qR-fY0?t=1206
 QueueHandle_t queue;
 
+
+
+IPAddress ip(192, 168, 0, 50);
+IPAddress gateway(192, 168, 0, 1);
+IPAddress subnet(255, 255, 255, 0);
+
+WiFiServer TCPServer(1234, ip);
+WiFiClient TCPClient;
 
 
 //https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32s2/api-reference/peripherals/index.html
@@ -2083,23 +2095,10 @@ void setup()   {
   
   
   display.clearDisplay();
-
-  //WiFi Setup
-  WiFi.onEvent(OnWiFiEvent);
-
-  //https://www.upesy.com/blogs/tutorials/how-to-connect-wifi-acces-point-with-esp32
-  disableWiFi();
-
-  enableWiFi();
-  //wifiSerialSetup();
-
-  startSoftAP( Serial );
-  //WiFi Setup Complete
-  Serial.println("Complete WiFi Setup!");
-  
 #ifdef _TEST_ADAFRUIT_SH1106
   setupTest(disptestBitFramelay);
 #endif
+  
   // Should load default config if run for the first time
   Serial.println(F("Loading configuration..."));
   loadConfiguration(filename, config);
@@ -2122,6 +2121,7 @@ void setup()   {
   printFile("/Wifi_Connections.txt", SPIFFS);
   
   Serial.println(F("Reading WiFi configuration..."));
+  WiFi.mode(WIFI_AP_STA);
   for (int index = 0; index < wifiCredentialList.length; index++) { 
     Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
     Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
@@ -2130,17 +2130,34 @@ void setup()   {
     delay(100);
   }
   
+  //WiFi Setup
+  WiFi.onEvent(OnWiFiEvent);
+
+  //https://www.upesy.com/blogs/tutorials/how-to-connect-wifi-acces-point-with-esp32
+  disableWiFi();
+
+  enableWiFi();
+  //wifiSerialSetup();
+
+  startSoftAP( Serial );
+  //WiFi Setup Complete
+  Serial.println("Complete WiFi Setup!");
+  
+  
   
   // Connect to Wi-Fi using wifiMulti (connects to the SSID with strongest connection)
   Serial.println("Connecting Wifi...");
-  /*
+  ///*
   if(wifiMulti.run() == WL_CONNECTED) {
     Serial.println("");
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
   }
-  */
+  //*/
+
+  TCPServer.begin();
+  TCPServer.setNoDelay(true);
   
   /*
      Task Handles
@@ -2294,6 +2311,15 @@ void TaskIRDecodeFunc( void * pvParameters ) {
 
 
 void TaskWiFiLoRaBridgeFunc( void * pvParameters ) {
+  //Mesh
+  Serial.print("TaskWiFiBridgeSTAtoAPFunc running on core "); Serial.println(xPortGetCoreID());
+  Serial.print("TaskWiFiBridgeLoRatoAPFunc running on core "); Serial.println(xPortGetCoreID());
+  Serial.print("TaskWiFiBridgeSTAtoLoRaFunc running on core "); Serial.println(xPortGetCoreID());
+  //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/esp-wifi-mesh.html#overview
+  //https://randomnerdtutorials.com/esp-mesh-esp32-esp8266-painlessmesh/
+  
+  //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_wifi.html
+  //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi.html
   //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
   //https://randomnerdtutorials.com/esp32-wifimulti/
   //Create Clients
@@ -2301,10 +2327,8 @@ void TaskWiFiLoRaBridgeFunc( void * pvParameters ) {
   //Have Clients Send Data To Server, and Server Will Redirect it to The Internet
   
   for (;;) {
-    Serial.print("TaskWiFiBridgeSTAtoAPFunc running on core "); Serial.println(xPortGetCoreID());
-    Serial.print("TaskWiFiBridgeLoRatoAPFunc running on core "); Serial.println(xPortGetCoreID());
-    Serial.print("TaskWiFiBridgeSTAtoLoRaFunc running on core "); Serial.println(xPortGetCoreID());
-    
+    control TCP
+    Control UDP
     delay(10000);
   }
   Serial.println("Ending TaskWiFiBridgeSTAtoAPFunc");
@@ -2316,7 +2340,7 @@ void TaskWiFiMultiConnectFunc( void * pvParameters ) {
   Serial.print("TaskWiFiMultiConnectFunc running on core "); Serial.println(xPortGetCoreID());
   for (;;) {
     //if the connection to the stongest hotstop is lost, it will connect to the next network on the list
-    /*
+    ///*
     if (wifiMulti.run(connectTimeoutMs) == WL_CONNECTED) {
       Serial.print("WiFi connected: ");
       Serial.print(WiFi.SSID());
@@ -3365,7 +3389,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
       saveWiFicredentials( wifiCredential );
       readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
-      saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
+      //saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
       serialport.println("Wifi Credentials Saved!");
       
     }
@@ -3397,6 +3421,7 @@ void startSoftAP(Stream &serialport){
   char password[64] = "123456789";
   // Connect to Wi-Fi network with SSID and password
   serialport.print("Setting AP (Access Point)…");
+  WiFi.softAPConfig(ip, gateway, subnet);
   // Remove the password parameter, if you want the AP (Access Point) to be open
   (void)WiFi.softAP(ssid, password);
   ;
