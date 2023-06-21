@@ -551,7 +551,7 @@ static char smOptionName_List[][32 + 1] = {
   "Mic/Biz Menu Unfinished",
   "SPIFFS File System Unfinished",
   "SD File System Menu Unfinished",
-  "Op10",
+  "IP Menu",
   "Op11",
   "Op12",
   "Op13",
@@ -1749,7 +1749,7 @@ TaskHandle_t Task10;
 TaskHandle_t TaskIRDecode;
 TaskHandle_t Task_WiFi_LoRa_Bridge;
 TaskHandle_t TaskWiFiMultiConnect;
-
+TaskHandle_t TaskBuzzer;
 
 
 
@@ -1806,7 +1806,7 @@ void setup()   {
   //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/performance/size.html#idf-py-size
   printFreeHeap(Serial);
 #if (FeatureEnable_BT_Serial==true)
-  SerialBT.begin("ESP32test"); //Bluetooth device name
+  SerialBT.begin("ESP32btSerial"); //Bluetooth device name
   Serial.println("The device started, now you can pair it with bluetooth!");
   printFreeHeap(Serial);
 #endif
@@ -1841,9 +1841,6 @@ void setup()   {
     Serial.write(file.read());
   }
   file.close();
-
-
-
 
 
   /*
@@ -1927,21 +1924,21 @@ void setup()   {
   */
   printFreeHeap(Serial);
   
-  /*
+  
   test_bitmapgif_dat_FBF();
   
   delay(250);
   test_bitmapgif_dat_GIF();
   
   delay(250);
-  //*/
+  
 
 
 
   
 
   printFreeHeap(Serial);
-
+  /*
   {
   File fileBMP;
   fileBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
@@ -1949,7 +1946,9 @@ void setup()   {
   fileBMP.close();
   }
   delay(250);
-
+  //*/
+  
+  /*
   {
   //Neco-Arc_bitmapimg.dat
   File fileBMP;
@@ -1957,7 +1956,8 @@ void setup()   {
   readbitmapdatFile(display, fileBMP);
   fileBMP.close();
   }
-  delay(500);
+  delay(250);
+  */
 
   printFreeHeap(Serial);
 
@@ -2231,11 +2231,13 @@ void setup()   {
     &TaskWiFiMultiConnect,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
   delay(500);
+
+  
   
 
   printFreeHeap(Serial);
   Serial.println("Exiting Setup!");
-  delay(2500);
+  delay(1250);
 }
 
 //https://techtutorialsx.com/2017/05/06/esp32-arduino-creating-a-task/
@@ -2383,6 +2385,19 @@ void TaskWiFiMultiConnectFunc( void * pvParameters ) {
 }
 
 
+void TaskBuzzercode( void * pvParameters ) {
+  //https://techtutorialsx.com/2017/05/07/esp32-arduino-passing-a-variable-as-argument-of-a-freertos-task/
+  Serial.print("TaskBuzzer running on core "); Serial.println(xPortGetCoreID());
+  Serial.println(*((char*)pvParameters));
+  char *cName = ((char*)pvParameters);
+  Serial.println(cName);
+  //Work on Me!
+  
+  Serial.println("Ending TaskBuzzer");
+  vTaskDelete( NULL );
+}
+
+
 
 static const unsigned char PROGMEM buttonInputIcon4x8[2][8] =
 {
@@ -2436,8 +2451,21 @@ void loop()
     5,           /* priority of the task */
     &Task5,      /* Task handle to keep track of created task */
     1);          /* pin task to core 1 */
-  
 
+
+  char *localIntVar;
+  localIntVar = (char*)malloc(64);
+  strcpy(localIntVar, "Buzzer.pwm");
+  //create a task that will be executed in the TaskBuzzercode() function, with priority 20 and executed on core 1
+  xTaskCreatePinnedToCore(
+    TaskBuzzercode,   /* Task function. */
+    "TaskBuzzercode",     /* name of task. */
+    2000,       /* Stack size of task */
+    (void*)&localIntVar[0],        /* parameter of the task */
+    20,           /* priority of the task */
+    &TaskBuzzer,      /* Task handle to keep track of created task */
+    1);          /* pin task to core 1 */
+    
 
   if (timeConfigured==false){
     if (WiFi.status() != WL_CONNECTED){
@@ -2526,6 +2554,11 @@ void loop()
   //SPIFFs menu //currentMenuID==8
   if (currentMenuID == 8) {
     menu_SPIFFS();
+  }
+
+  //IP menu //currentMenuID==11
+  if (currentMenuID == 11) {
+    menu_IP();
   }
   
   
@@ -2956,6 +2989,7 @@ void menu_SPIFFS(){
   File root = SPIFFS.open("/");
   printDirectory(root, 0);
   Serial.println("CheckPoint-01");
+  free(savedFileNames);
 }
 
 void printDirectory(File dir, int numTabs) {
@@ -2986,6 +3020,7 @@ void printDirectory(File dir, int numTabs) {
 
 
 void menu_WIFI(){
+  display.clearDisplay();
   //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
   //https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/soft-access-point-class.html
   display.setCursor(0, 1 * 8);
@@ -3055,12 +3090,26 @@ void menu_WIFI(){
 }
 
 void menu_IR(){
+  display.clearDisplay();
   display.setCursor(0, 0);
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.print("IR Menu"); display.println();
   display.print("Functionality Not yet added!"); display.println();
 }
+
+void menu_IP(){
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("IP Menu"); display.println();
+  display.print("AP IP address: "); display.print( WiFi.softAPIP() ); display.println();
+}
+
+
+
+
 
 
 
