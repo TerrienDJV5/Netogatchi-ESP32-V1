@@ -1926,13 +1926,15 @@ void setup()   {
     delay(1500);
   */
   printFreeHeap(Serial);
+  
+  /*
   test_bitmapgif_dat_FBF();
   
   delay(250);
   test_bitmapgif_dat_GIF();
   
   delay(250);
-
+  //*/
 
 
 
@@ -2382,7 +2384,29 @@ void TaskWiFiMultiConnectFunc( void * pvParameters ) {
 
 
 
-
+static const unsigned char PROGMEM buttonInputIcon4x8[2][8] =
+{
+  {
+    B11110000,
+    B01100000,
+    B11110000,
+    B01100000,
+    B11110000,
+    B01100000,
+    B11110000,
+    B01100000,
+  },
+  {
+    B11110000,
+    B01100000,
+    B00000000,
+    B10010000,
+    B01100000,
+    B00000000,
+    B10010000,
+    B01100000,
+  },
+};
 
 
 
@@ -2575,32 +2599,142 @@ void loop()
 
   //Draw Button Press GUI
   if (buttonpiso1.getRAWState()!=0b00000000){
-    display.fillRect(128-18, 64-8, 18, 8, WHITE);
-    display.fillRect(128-17, 64-7, 17, 7, BLACK);
+    int bGUI_PosX = 0;
+    int bGUI_PosY = 46;
+    int bGUI_LenX = 30;
+    int bGUI_LenY = 17;
+    //Position2D_int_Struct bGUIPoint0 = {bGUI_PosX, bGUI_PosY};
+    Position2D_int_Struct bGUIPoint0;
+    bGUIPoint0.x = bGUI_PosX;
+    bGUIPoint0.y = bGUI_PosY;
+    Position2D_int_Struct bGUIPoint1;
+    bGUIPoint1.x = bGUI_PosX+8;
+    bGUIPoint1.y = bGUI_PosY;
+    Position2D_int_Struct bGUIPoint2;
+    bGUIPoint2.x = bGUI_PosX+11;
+    bGUIPoint2.y = bGUI_PosY+4;
+    Position2D_int_Struct bGUIPoint3;
+    bGUIPoint3.x = bGUI_PosX;
+    bGUIPoint3.y = bGUI_PosY+bGUI_LenY;
+    Position2D_int_Struct bGUIPoint4;
+    bGUIPoint4.x = bGUI_PosX+bGUI_LenX;
+    bGUIPoint4.y = bGUI_PosY+4;
+    Position2D_int_Struct bGUIPoint5;
+    bGUIPoint5.x = bGUI_PosX+bGUI_LenX;
+    bGUIPoint5.y = bGUI_PosY+bGUI_LenY-5;
+    Position2D_int_Struct bGUIPoint6;
+    bGUIPoint6.x = bGUI_PosX+bGUI_LenX-5;
+    bGUIPoint6.y = bGUI_PosY+bGUI_LenY;
+
+    display.fillTriangle(bGUIPoint0.x, bGUIPoint0.y,
+                         bGUIPoint1.x, bGUIPoint1.y,
+                         bGUIPoint2.x, bGUIPoint2.y, WHITE);
+    display.fillTriangle(bGUIPoint0.x, bGUIPoint0.y,
+                         bGUIPoint3.x, bGUIPoint3.y,
+                         bGUIPoint2.x, bGUIPoint2.y, WHITE);
+    display.fillTriangle(bGUIPoint2.x, bGUIPoint2.y,
+                         bGUIPoint4.x, bGUIPoint4.y,
+                         bGUIPoint5.x, bGUIPoint5.y, WHITE);
+    display.fillTriangle(bGUIPoint2.x, bGUIPoint2.y,
+                         bGUIPoint6.x, bGUIPoint6.y,
+                         bGUIPoint3.x, bGUIPoint3.y, WHITE);
+    display.fillTriangle(bGUIPoint2.x, bGUIPoint2.y,
+                         bGUIPoint5.x, bGUIPoint5.y,
+                         bGUIPoint6.x, bGUIPoint6.y, WHITE);
+
+    display.fillTriangle(bGUIPoint0.x+1, bGUIPoint0.y+1,
+                         bGUIPoint1.x-1, bGUIPoint1.y+1,
+                         bGUIPoint2.x-1, bGUIPoint2.y+1, BLACK);
+    display.fillTriangle(bGUIPoint0.x+1, bGUIPoint0.y+1,
+                         bGUIPoint3.x+1, bGUIPoint3.y-1,
+                         bGUIPoint2.x-1, bGUIPoint2.y+1, BLACK);
+    display.fillTriangle(bGUIPoint2.x-1, bGUIPoint2.y+1,
+                         bGUIPoint4.x-1, bGUIPoint4.y+1,
+                         bGUIPoint5.x-1, bGUIPoint5.y+0, BLACK);
+    display.fillTriangle(bGUIPoint2.x-1, bGUIPoint2.y+1,
+                         bGUIPoint6.x+0, bGUIPoint6.y-1,
+                         bGUIPoint3.x+1, bGUIPoint3.y-1, BLACK);
+    display.fillTriangle(bGUIPoint2.x-1, bGUIPoint2.y+1,
+                         bGUIPoint5.x-1, bGUIPoint5.y+0,
+                         bGUIPoint6.x+0, bGUIPoint6.y-1, BLACK);
+    
+    Position2D_int_Struct bGUIInputIconPos;
+    bGUIInputIconPos.x = bGUI_PosX+2;
+    bGUIInputIconPos.y = bGUI_PosY+2;
+    Position2D_int_Struct bGUIInputIconLength;
+    bGUIInputIconLength.x = 4;
+    bGUIInputIconLength.y = 8;
+
+    //if buttonInput Mode is PISO
+    display.fillRect(bGUIInputIconPos.x, bGUIInputIconPos.y, bGUIInputIconLength.x, bGUIInputIconLength.y, BLACK);
+    display.drawBitmap(bGUIInputIconPos.x, bGUIInputIconPos.y, buttonInputIcon4x8[0], bGUIInputIconLength.x, bGUIInputIconLength.y, WHITE);
+    //if buttonInput Mode is HTTPS
+    display.fillRect(bGUIInputIconPos.x, bGUIInputIconPos.y, bGUIInputIconLength.x, bGUIInputIconLength.y, BLACK);
+    display.drawBitmap(bGUIInputIconPos.x, bGUIInputIconPos.y, buttonInputIcon4x8[1], bGUIInputIconLength.x, bGUIInputIconLength.y, WHITE);
+    
+    
+    Position2D_int_Struct bGUIButtonPos;
+    bGUIButtonPos.x = bGUI_PosX+2+1;
+    bGUIButtonPos.y = bGUI_PosY+8-2;
+    
+    //Start
+    display.fillRect(bGUIButtonPos.x+11+0, bGUIButtonPos.y+0+0, 4, 4, WHITE);
+    display.fillRect(bGUIButtonPos.x+11+1, bGUIButtonPos.y+0+1, 2, 2, BLACK);
+    //Select
+    display.fillRect(bGUIButtonPos.x+16+0, bGUIButtonPos.y+0+0, 4, 4, WHITE);
+    display.fillRect(bGUIButtonPos.x+16+1, bGUIButtonPos.y+0+1, 2, 2, BLACK);
+    
+    //UP
+    display.fillRect(bGUIButtonPos.x+5+0, bGUIButtonPos.y+0+0, 4, 4, WHITE);
+    display.fillRect(bGUIButtonPos.x+5+1, bGUIButtonPos.y+0+1, 2, 2, BLACK);
+    //LEFT
+    display.fillRect(bGUIButtonPos.x+0+0, bGUIButtonPos.y+5+0, 4, 4, WHITE);
+    display.fillRect(bGUIButtonPos.x+0+1, bGUIButtonPos.y+5+1, 2, 2, BLACK);
+    //DOWN
+    display.fillRect(bGUIButtonPos.x+5+0, bGUIButtonPos.y+5+0, 4, 4, WHITE);
+    display.fillRect(bGUIButtonPos.x+5+1, bGUIButtonPos.y+5+1, 2, 2, BLACK);
+    //RIGHT
+    display.fillRect(bGUIButtonPos.x+10+0, bGUIButtonPos.y+5+0, 4, 4, WHITE);
+    display.fillRect(bGUIButtonPos.x+10+1, bGUIButtonPos.y+5+1, 2, 2, BLACK);
+    
+    //A
+    display.fillRect(bGUIButtonPos.x+16+0, bGUIButtonPos.y+5+0, 4, 4, WHITE);
+    display.fillRect(bGUIButtonPos.x+16+1, bGUIButtonPos.y+5+1, 2, 2, BLACK);
+    //B
+    display.fillRect(bGUIButtonPos.x+21+0, bGUIButtonPos.y+2+0, 4, 4, WHITE);
+    display.fillRect(bGUIButtonPos.x+21+1, bGUIButtonPos.y+2+1, 2, 2, BLACK);
+    
     if (buttonpiso1.isPressed(0) == true) {//UP
-      Serial.println("Button 0 was Pressed!");
+      //UP
+      display.fillRect(bGUIButtonPos.x+5+0, bGUIButtonPos.y+0+0, 4, 4, WHITE);
     };
     if (buttonpiso1.isPressed(1) == true) {//Start
-      Serial.println("Button 1 was Pressed!");
+      //Start
+      display.fillRect(bGUIButtonPos.x+11+0, bGUIButtonPos.y+0+0, 4, 4, WHITE);
     };
     if (buttonpiso1.isPressed(2) == true) {//Select
-      Serial.println("Button 2 was Pressed!");
+      //Select
+      display.fillRect(bGUIButtonPos.x+16+0, bGUIButtonPos.y+0+0, 4, 4, WHITE);
     };
     if (buttonpiso1.isPressed(3) == true) {//A
-      Serial.println("Button 3 was Pressed!");
+      //A
+      display.fillRect(bGUIButtonPos.x+16+0, bGUIButtonPos.y+5+0, 4, 4, WHITE);
     };
     if (buttonpiso1.isPressed(4) == true) {//LEFT
-      Serial.println("Button 4 was Pressed!");
-      display.fillRect(128-18, 64-8, 18, 8, WHITE);
+      //LEFT
+      display.fillRect(bGUIButtonPos.x+0+0, bGUIButtonPos.y+5+0, 4, 4, WHITE);
     };
     if (buttonpiso1.isPressed(5) == true) {//DOWN
-      Serial.println("Button 5 was Pressed!");
+      //DOWN
+      display.fillRect(bGUIButtonPos.x+5+0, bGUIButtonPos.y+5+0, 4, 4, WHITE);
     };
     if (buttonpiso1.isPressed(6) == true) {//RIGHT
-      Serial.println("Button 6 was Pressed!");
+      //RIGHT
+      display.fillRect(bGUIButtonPos.x+10+0, bGUIButtonPos.y+5+0, 4, 4, WHITE);
     };
     if (buttonpiso1.isPressed(7) == true) {//B
-      Serial.println("Button 7 was Pressed!");
+      //B
+      display.fillRect(bGUIButtonPos.x+21+0, bGUIButtonPos.y+2+0, 4, 4, WHITE);
     };
   }
   
