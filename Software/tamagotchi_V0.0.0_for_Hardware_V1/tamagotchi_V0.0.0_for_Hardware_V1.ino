@@ -193,6 +193,13 @@ WiFiServer SerialWiFiserver(23);
 WiFiClient SerialWiFiclient;
 
 
+//FTP
+#include <SimpleFTPServer.h> //https://github.com/xreef/SimpleFTPServer
+FtpServer ftpSrv; //set #define FTP_DEBUG in ESP8266FtpServer.h to see ftp verbose on serial
+
+
+
+
 
 //other Stuff Support
 
@@ -735,22 +742,22 @@ static const unsigned char PROGMEM wifi16x16Icon[] =
 
 static const unsigned char PROGMEM LoRa16x16Icon[] =
 {
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
+  B11000000, B00000000,
   B11111111, B11111111,
-  B10000000, B00000001,
-  B10000000, B00000001,
-  B10000000, B00000001,
-  B10000000, B00000001,
-  B10000000, B00000001,
-  B10000000, B00000001,
-  B10000000, B00000001,
-  B10000000, B00000001,
-  B00000000, B00000000,
-  B00000000, B00000000,
-  B00011111, B11111000,
-  B00111000, B00011100,
-  B00110011, B11001100,
-  B00000111, B11100000,
-  B00000111, B11100000,
+  B11111111, B11111111,
 };
 
 /*
@@ -1790,7 +1797,7 @@ void setup()   {
 
   //Buzzer Boi Pin
   //https://github.com/pschatzmann/arduino-audio-tools
-  pinMode(buzzerPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
 
   //BatterySensePin
   pinMode(batteryVoltageDivider, INPUT);
@@ -2141,6 +2148,7 @@ void setup()   {
   for (int index = 0; index < wifiCredentialList.length; index++) { 
     Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
     Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
+    // Fix me
     wifiMulti.addAP(wifiCredentialList.credentials[ index ].ssid, wifiCredentialList.credentials[ index ].pass);
     Serial.println();
     delay(100);
@@ -2171,7 +2179,19 @@ void setup()   {
     Serial.println(WiFi.localIP());
   }
   //*/
-
+  
+  
+  /////FTP Setup, ensure SPIFFS is started before ftp;  /////////
+  
+  /////FTP Setup, ensure SPIFFS is started before ftp;  /////////
+#ifdef ESP32       //esp32 we send true to format spiffs if cannot mount
+  if (SPIFFS.begin(true)) {
+#elif defined ESP8266
+  if (SPIFFS.begin()) {
+#endif
+      Serial.println("SPIFFS opened!");
+      ftpSrv.begin("esp8266","esp8266");    //username, password for ftp.  set ports in ESP8266FtpServer.h  (default 21, 50009 for PASV)
+  } 
   
   
   /*
@@ -2392,6 +2412,12 @@ void TaskBuzzercode( void * pvParameters ) {
   char *cName = ((char*)pvParameters);
   Serial.println(cName);
   //Work on Me!
+  int sound[1024];
+  for (int index = 0; index < 1024; index++) {
+    analogWrite(buzzerPin, sound[ index ]);
+    delayMicroseconds(10);
+  }
+  
   
   Serial.println("Ending TaskBuzzer");
   vTaskDelete( NULL );
@@ -2439,6 +2465,10 @@ void loop()
   system_Frame_FPS = (double)(1 / ((double)(frameEndTime - frameStartTime) / 1000000));
   //\/ start Frame Here \/
   frameStartTime = micros();
+
+  ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!!  
+  // server.handleClient();   //example if running a webserver you still need to call .handleClient();
+  
   
   
   //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
@@ -2460,7 +2490,7 @@ void loop()
   xTaskCreatePinnedToCore(
     TaskBuzzercode,   /* Task function. */
     "TaskBuzzercode",     /* name of task. */
-    2000,       /* Stack size of task */
+    8192,       /* Stack size of task */
     (void*)&localIntVar[0],        /* parameter of the task */
     20,           /* priority of the task */
     &TaskBuzzer,      /* Task handle to keep track of created task */
