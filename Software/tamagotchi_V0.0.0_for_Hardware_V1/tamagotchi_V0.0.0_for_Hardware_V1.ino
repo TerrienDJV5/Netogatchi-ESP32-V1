@@ -969,7 +969,6 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
   
   //Check if SSID And PASS are Valid
   Serial.println("Checking if Valid!");
-  //bug: results in all saved Credentials to be removed if one is invalid! (Status : unFixed)
   bool credentialsChanged = false;
   for (int index = 0; index < wifiCredentialList.length; index++) {
     if ( ensureValid_Credentials( wifiCredentialList.credentials[ index ] ) ){
@@ -1052,11 +1051,14 @@ void remove_WiFiCredential_From_WiFiCredentialsList(List_WiFi_Credentials_Struct
   //wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
   Serial.println("malloc/calloc/realloc og List Complete");
   Serial.println("Populate Resize List!");
+  //bug: results in all saved Credentials to be removed if one is invalid! (Status : unFixed)
+  
   unsigned int indexoffset = 0;
   for (unsigned int index = 0; index < (wifiCredentialList.length+1); index++) {
     Serial.print("indexoffset:");Serial.println( indexoffset );
     Serial.print("index:");Serial.println( index );
-    if (not( strcmp(wifiCredentialList.credentials[ index ].ssid, wifiCredential.ssid)==0 )){
+    if ( wifiCredentialList.credentials[ index ].ssid != wifiCredential.ssid ){
+      Serial.println("NotEqual")
       //strcpy(wifiCredentialList.credentials[ indexoffset ].ssid, tempList[ index ].ssid);
       //strcpy(wifiCredentialList.credentials[ indexoffset ].pass, tempList[ index ].pass);
       strcpy(tempList[ indexoffset ].ssid, wifiCredentialList.credentials[ index ].ssid);
