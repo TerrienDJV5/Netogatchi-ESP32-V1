@@ -123,6 +123,7 @@
 
 #define FeatureEnable_SH1106_Display true //Option not Fully implemented (enabled or disabled)
 #define FeatureEnable_PiSo_Control true //Option not implemented (enabled or disabled)
+#define FeatureEnable_WiFiHTTP_Control true //Option not implemented (enabled or disabled)
 
 #define FeatureEnable_IR_RXTX_Control false
 
@@ -161,41 +162,30 @@
 
 
 
+
+/*
+helpful Wifi Stuff Urls
+//https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
+//https://randomnerdtutorials.com/esp32-wifimulti/
+//https://www.megunolink.com/articles/wireless/talk-esp32-over-wifi/
+//https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
+//https://github.com/xreef/SimpleFTPServer
+*/
+
 //WiFi Support
 #include "WiFi.h"
-
-
 #include <esp_wifi.h>
-//https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
-
-
-
 #include "WiFiType.h"
-
-
-//https://randomnerdtutorials.com/esp32-wifimulti/
 #include <WiFiMulti.h>
+#include <SimpleFTPServer.h> //FTP
+
 
 WiFiMulti wifiMulti;
-// WiFi connect timeout per AP. Increase when connecting takes longer.
-const uint32_t connectTimeoutMs = 10000;
-
-
-
-int wifi_status = WL_IDLE_STATUS;
-
-
-//https://www.megunolink.com/articles/wireless/talk-esp32-over-wifi/
-WiFiServer SerialWiFiserver(23);
-
-// Initialize the client library
-//https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
-WiFiClient SerialWiFiclient;
-
-
-//FTP
-#include <SimpleFTPServer.h> //https://github.com/xreef/SimpleFTPServer
 FtpServer ftpSrv; //set #define FTP_DEBUG in ESP8266FtpServer.h to see ftp verbose on serial
+const uint32_t connectTimeoutMs = 10000; // WiFi connect timeout per AP. Increase when connecting takes longer.
+int wifi_status = WL_IDLE_STATUS;
+WiFiServer SerialWiFiserver(23);
+WiFiClient SerialWiFiclient; // Initialize the client library
 
 
 
@@ -223,9 +213,6 @@ Preferences preferences;
 #include <Adafruit_SH1106.h>
 #include "Taskbar.h"
 
-
-
-
 #include "BMIMGmanipulate.h"
 BMIMGmanipulate bitmapIMGmanipulate0(false);
 
@@ -240,6 +227,7 @@ BMIMGmanipulate bitmapIMGmanipulate0(false);
 
 
 #if (FeatureEnable_PiSo_Control==true)
+//https://docs.arduino.cc/learn/contributions/arduino-creating-library-guide
 #include "ButtonPISO.h"
 
 #endif
@@ -320,8 +308,8 @@ BluetoothSerial SerialBT;
 
 //IR Pins
 #define IR_TX_Pin 27 //GPIO 27
-#define IR_SEND_PIN 27
 #define IR_RX_Pin 39 //GPIO 39
+#define IR_SEND_PIN 27
 
 
 
@@ -771,9 +759,36 @@ static const unsigned char PROGMEM LoRa16x16Icon[] =
 
 
 
+
+
+/*
+ * showPrePrint (Can Be used anyWhere!)
+ */
+void showPrePrint(Stream &serialport, char* textInput){
+  const unsigned int prePrintSize = 32;
+  char *prePrintText;
+  prePrintText = (char*)malloc(prePrintSize+1);
+  memset(prePrintText, '\0', prePrintSize+1);
+  if (strlen(textInput) >= prePrintSize){
+    strncpy(prePrintText, textInput, prePrintSize);
+  }else{
+    strncpy(prePrintText, textInput, strlen(textInput));
+  }
+  serialport.print( prePrintText );
+  free(prePrintText);
+}
+
+
+
 /*
  * WiFi Stuff Start
  */
+
+
+IPAddress ip(192, 168, 0, 50);
+IPAddress gateway(192, 168, 0, 1);
+IPAddress subnet(255, 255, 255, 0);
+
 
 
 
@@ -812,20 +827,8 @@ List_WiFi_Credentials_Struct wifiCredentialList;
 //make Functions that convert Json to Structs
 
 
-/*
-  #define STORAGE_SELECT_SD 0
-  #define STORAGE_SELECT_SPIFFS 1
-  #define STORAGE_SELECT_SDFAT 2
-  #define STORAGE_SELECT_FFAT 3
-
-  #define STORAGE_INCLUDE_SD false
-  #define STORAGE_INCLUDE_SPIFFS true
-  #define STORAGE_INCLUDE_SDFAT false
-  #define STORAGE_INCLUDE_FFAT false
-*/
-
-void disableWiFi();
-void enableWiFi();
+void disable_STA_WiFi();
+void enable_STA_WiFi();
 
 
 
@@ -869,6 +872,8 @@ void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_S
 void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs);
 void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential);
 
+
+
 // Saves the CredentialsList to a file
 void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs) {
   Serial.println("File Will Be Saved!");
@@ -890,6 +895,8 @@ void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_S
     // Set the values in the document
     credentialList["info"][ index ]["ssid"] = wifiCredentialList.credentials[ index ].ssid;
     credentialList["info"][ index ]["pass"] = wifiCredentialList.credentials[ index ].pass;
+    Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
   }
   serializeJson(credentialList, file);
   serializeJson(credentialList, Serial);
@@ -919,9 +926,9 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
   
   wifiCredentialList.length = credentialList[ "Length" ];
   Serial.println("Length");
-  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList.length);
+  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
   Serial.print("length: ");Serial.println(wifiCredentialList.length);
-  Serial.println("malloc");
+  Serial.println("calloc");
   for (int index = 0; index < wifiCredentialList.length; index++) {
     Serial.print("index: ");Serial.println(index);
     // Set the values in the document
@@ -931,6 +938,8 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
     strlcpy(wifiCredentialList.credentials[ index ].pass,                  // <- destination
           credentialList["info"][ index ]["pass"],  // <- source
           sizeof(wifiCredentialList.credentials[ index ].pass));         // <- destination's capacity
+    Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
   }
   // Close the file
   file.close();
@@ -940,6 +949,7 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
 
 // Loads the CredentialsList from a file
 void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential) {
+  Serial.println("saveWiFiCredentialToWiFiCredentialsList()");
   //Fix Me?
   bool isINList = false;
   for (int index = 0; index < wifiCredentialList.length; index++) {
@@ -951,37 +961,24 @@ void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiC
       break;
     }
   }
+  Serial.print("isINList: ");Serial.println(isINList);
   if (isINList){
     return;
   }
   Serial.println(wifiCredential.ssid);
   Serial.println(wifiCredential.pass);
   Serial.println(wifiCredentialList.length);
-  List_WiFi_Credentials_Struct wifiCredentialList_Temp;
-  wifiCredentialList_Temp.length = wifiCredentialList.length;
-  wifiCredentialList_Temp.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList_Temp.length);
-  for (int index = 0; index < wifiCredentialList.length; index++) {
-    strcpy(wifiCredentialList_Temp.credentials[ index ].ssid, wifiCredentialList.credentials[ index ].ssid);
-    strcpy(wifiCredentialList_Temp.credentials[ index ].pass, wifiCredentialList.credentials[ index ].pass);
-    Serial.print(wifiCredentialList_Temp.credentials[ index ].ssid);Serial.print(", ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
-    Serial.print(wifiCredentialList_Temp.credentials[ index ].pass);Serial.print(", ");Serial.println(wifiCredentialList.credentials[ index ].pass);
-  }
-  free(wifiCredentialList.credentials);
-  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)malloc(wifiCredentialList.length + 1);
-  for (int index = 0; index < wifiCredentialList_Temp.length; index++) {
-    strcpy(wifiCredentialList.credentials[ index ].ssid, wifiCredentialList_Temp.credentials[ index ].ssid);
-    strcpy(wifiCredentialList.credentials[ index ].pass, wifiCredentialList_Temp.credentials[ index ].pass);
-    Serial.print(wifiCredentialList.credentials[ index ].ssid);Serial.print(", ");Serial.println(wifiCredentialList_Temp.credentials[ index ].ssid);
-    Serial.print(wifiCredentialList.credentials[ index ].pass);Serial.print(", ");Serial.println(wifiCredentialList_Temp.credentials[ index ].pass);
-  }
-  free(wifiCredentialList_Temp.credentials);
-  strcpy(wifiCredentialList.credentials[ wifiCredentialList.length ].ssid, wifiCredential.ssid);
-  strcpy(wifiCredentialList.credentials[ wifiCredentialList.length ].pass, wifiCredential.pass);
+  wifiCredentialList.length += 1;
+  Serial.println("Relocating og List");
+  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)realloc(wifiCredentialList.credentials, wifiCredentialList.length);
+  Serial.println("malloc/realloc og List Complete");
+  Serial.println("adding New index!");
+  strcpy(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].ssid, wifiCredential.ssid);
+  strcpy(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].pass, wifiCredential.pass);
   Serial.println(wifiCredential.ssid);
   Serial.println(wifiCredential.pass);
-  Serial.println(wifiCredentialList.credentials[ wifiCredentialList.length ].ssid);
-  Serial.println(wifiCredentialList.credentials[ wifiCredentialList.length ].pass);
-  wifiCredentialList.length += 1;
+  Serial.println(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].ssid);
+  Serial.println(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].pass);
   Serial.println(wifiCredentialList.length);
   
 }
@@ -1009,10 +1006,57 @@ enum userType
 
 void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials){
   // "/Wifi_Connections.txt"
+  List_WiFi_Credentials_Struct temp_wifiCredentialList;
+  //Load WiFiCredentialsList
+  Serial.println(F("Loading WiFi configuration..."));
+  loadWiFiCredentialsList("/Wifi_Connections.txt", temp_wifiCredentialList, SPIFFS);
   Serial.println(wifiCredentials.ssid);
   Serial.println(wifiCredentials.pass);
-  saveWiFiCredentialToWiFiCredentialsList(wifiCredentialList, wifiCredentials);
-  saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
+  saveWiFiCredentialToWiFiCredentialsList(temp_wifiCredentialList, wifiCredentials);
+  saveWiFiCredentialsList("/Wifi_Connections.txt", temp_wifiCredentialList, SPIFFS);
+}
+
+
+
+
+
+void OnWiFiEvent(WiFiEvent_t event)
+{
+  //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi.html
+  switch (event) {
+    case SYSTEM_EVENT_STA_CONNECTED:
+      showPrePrint(Serial, "(ON_SYSTEM_EVENT)-->");
+      Serial.println(F("ESP32 Connected to WiFi Network"));
+      showPrePrint(Serial, "(ON_SYSTEM_EVENT)-->");
+      Serial.println(F("the ESP32 is connected in station mode to an access point/hotspot (your router)"));
+      break;
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+      showPrePrint(Serial, "(ON_SYSTEM_EVENT)-->");
+      Serial.println(F("the ESP32 station disconnected from the access point."));
+      break;
+    case SYSTEM_EVENT_AP_START:
+      showPrePrint(Serial, "(ON_SYSTEM_EVENT)-->");
+      Serial.println(F("ESP32 soft AP started"));
+      break;
+    case SYSTEM_EVENT_AP_STOP:
+      showPrePrint(Serial, "(ON_SYSTEM_EVENT)-->");
+      Serial.println(F("ESP32 soft AP Stopped."));
+      break;
+    case SYSTEM_EVENT_AP_STACONNECTED:
+      showPrePrint(Serial, "(ON_SYSTEM_EVENT)-->");
+      Serial.println(F("Station connected to ESP32 soft AP"));
+      break;
+    case SYSTEM_EVENT_AP_STADISCONNECTED:
+      showPrePrint(Serial, "(ON_SYSTEM_EVENT)-->");
+      Serial.println(F("Station disconnected from ESP32 soft AP"));
+      break;
+    
+    default:
+      showPrePrint(Serial, "(ON_SYSTEM_EVENT)-->");
+      Serial.print("(CatchALL)-->");
+      Serial.printf("Got Event: %d\n", event);
+      break;
+  }
 }
 
 
@@ -1022,9 +1066,134 @@ void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials){
 
 
 
+
+void startSoftAP(Stream &serialport){
+  //https://randomnerdtutorials.com/esp32-access-point-ap-web-server/
+  char ssid[33]     = "ESP32-Access-Point";
+  char password[64] = "123456789";
+  // Connect to Wi-Fi network with SSID and password
+  serialport.print("Setting AP (Access Point)…");
+  WiFi.softAPConfig(ip, gateway, subnet);
+  // Remove the password parameter, if you want the AP (Access Point) to be open
+  (void)WiFi.softAP(ssid, password);
+  ;
+  IPAddress IP = WiFi.softAPIP();
+  serialport.print("AP IP address: ");
+  serialport.println(IP);
+}
+
+
+//https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
+void disable_STA_WiFi() {
+  WiFi.disconnect(true);  // Disconnect from the network
+  disableWiFi_STA_Mode();
+}
+
+void enable_STA_WiFi() {
+  //Remove This Function if it becomes basically on necessary
+  //https://docs.arduino.cc/library-examples/wifi-library/ScanNetworks
+  enableWiFi_STA_Mode();
+  
+  WiFi.disconnect(false);  // Reconnect the network
+  
+  //WiFi.begin(STA_SSID, STA_PASS);
+  //wifi_status = WiFi.begin("TP-Link_0F3D", "Jerkface13597603");//control WiFi connect "TP-Link_0F3D" "Jerkface13597603"
+  //wifi_status = WiFi.begin("Hail Hydra", "aarsabteeros@48");//control WiFi connect "Hail Hydra" "aarsabteeros@48"
+  //wifi_status = WiFi.begin("Test Network", "12345678");
+  
+  /*
+  int numSsid = WiFi.scanNetworks();
+  if (numSsid == -1) {
+    Serial.println("Couldn't get a wifi connection");
+    return;
+  }
+  */
+  
+  
+  //
+  
+  /*
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }//*/
+  /*
+  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    Serial.printf("WiFi Failed!\n");
+    return;
+  }
+  //*/
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+
+//https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
+void disableWiFiSoftAP()
+{
+  WiFi.softAPdisconnect(false);
+  WiFi.enableAP(false);
+  disableWiFi_AP_Mode();
+}
+
+void enableWiFiSoftAP(char* soft_ap_ssid, char* soft_ap_password)
+{
+  //https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/wifi.html
+  WiFi.softAPdisconnect(true);
+  WiFi.enableAP(true);
+  enableWiFi_AP_Mode();
+  //bool softAP(const char* ssid, const char* passphrase = NULL, int channel = 1, int ssid_hidden = 0, int max_connection = 4, bool ftm_responder = false);
+  WiFi.softAP(soft_ap_ssid, soft_ap_password);
+}
+
+
+/*
+ * \/ Mode Disable/Enable \/
+ */
+ void disableWiFi_AP_Mode() {
+  if (WiFi.getMode() == WIFI_MODE_AP) {
+    WiFi.mode(WIFI_OFF);
+  } else if (WiFi.getMode() == WIFI_MODE_APSTA) {
+    WiFi.mode(WIFI_STA);
+  }
+}
+void enableWiFi_AP_Mode() {
+  if (WiFi.getMode() == WIFI_MODE_NULL) {
+    WiFi.mode(WIFI_AP);
+  } else if (WiFi.getMode() == WIFI_MODE_APSTA) {
+    WiFi.mode(WIFI_AP_STA);
+  }
+}
+void disableWiFi_STA_Mode() {
+  if (WiFi.getMode() == WIFI_MODE_STA) {
+    WiFi.mode(WIFI_OFF);
+  } else if (WiFi.getMode() == WIFI_MODE_APSTA) {
+    WiFi.mode(WIFI_AP);
+  }
+}
+void enableWiFi_STA_Mode() {
+  if (WiFi.getMode() == WIFI_MODE_NULL) {
+    WiFi.mode(WIFI_STA);
+  } else if (WiFi.getMode() == WIFI_MODE_AP) {
+    WiFi.mode(WIFI_AP_STA);
+  }
+}
+/*
+ * /\ Mode Disable/Enable /\
+ */
+
+
+
+
+
+
 /*
  * WiFi Stuff End
  */
+
+
 
 
 
@@ -1707,27 +1876,6 @@ void test_bitmapgif_dat_GIF()
 
 
 
-void OnWiFiEvent(WiFiEvent_t event)
-{
-  switch (event) {
-    case SYSTEM_EVENT_STA_CONNECTED:
-      Serial.println("ESP32 Connected to WiFi Network");
-      break;
-    case SYSTEM_EVENT_AP_START:
-      Serial.println("ESP32 soft AP started");
-      break;
-    case SYSTEM_EVENT_AP_STACONNECTED:
-      Serial.println("Station connected to ESP32 soft AP");
-      break;
-    case SYSTEM_EVENT_AP_STADISCONNECTED:
-      Serial.println("Station disconnected from ESP32 soft AP");
-      break;
-    default:
-      Serial.printf("Got Event: %d\n", event);
-      break;
-  }
-}
-
 
 void printParameters(Stream &serialport, struct Configuration configuration);
 void printModuleInformation(Stream &serialport, struct ModuleInformation moduleInformation);
@@ -1765,10 +1913,6 @@ TaskHandle_t TaskBuzzer;
 //https://forum.arduino.cc/t/how-can-i-do-dual-core-task-use-same-memory-esp32-rtos/702929/24?page=2 //https://youtu.be/ywbq1qR-fY0?t=1206
 QueueHandle_t queue;
 
-
-IPAddress ip(192, 168, 0, 50);
-IPAddress gateway(192, 168, 0, 1);
-IPAddress subnet(255, 255, 255, 0);
 
 
 //https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32s2/api-reference/peripherals/index.html
@@ -2134,6 +2278,18 @@ void setup()   {
   Serial.println(F("Print config file..."));
   printFile(filename, SPIFFS);
   
+  
+  
+  Serial.println("Starting WiFi Setup!");
+  
+  //WiFi Setup
+  //https://www.upesy.com/blogs/tutorials/how-to-connect-wifi-acces-point-with-esp32
+  //disable_STA_WiFi();
+  //enable_STA_WiFi();
+  
+  WiFi.onEvent(OnWiFiEvent);
+
+  
   printFile("/Wifi_Connections.txt", SPIFFS);
   //Load WiFiCredentialsList
   Serial.println(F("Loading WiFi configuration..."));
@@ -2144,7 +2300,7 @@ void setup()   {
   printFile("/Wifi_Connections.txt", SPIFFS);
   
   Serial.println(F("Reading WiFi configuration..."));
-  WiFi.mode(WIFI_AP_STA);
+  
   for (int index = 0; index < wifiCredentialList.length; index++) { 
     Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
     Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
@@ -2154,16 +2310,8 @@ void setup()   {
     delay(100);
   }
   
-  //WiFi Setup
-  WiFi.onEvent(OnWiFiEvent);
-
-  //https://www.upesy.com/blogs/tutorials/how-to-connect-wifi-acces-point-with-esp32
-  //disableWiFi();
-
-  enableWiFi();
-  //wifiSerialSetup();
-
   startSoftAP( Serial );
+  SerialWiFiserver.begin();
   //WiFi Setup Complete
   Serial.println("Complete WiFi Setup!");
   
@@ -3059,10 +3207,9 @@ void menu_WIFI(){
   display.print("WiFi Menu"); display.println();
   if (buttonpiso1.isTapped(3) == true) {//A
     if (WiFi.getMode() == WIFI_MODE_NULL) {
-      enableWiFi();
-      //wifiSerialSetup();
+      enable_STA_WiFi();
     } else {
-      disableWiFi();
+      disable_STA_WiFi();
     }
   }
   if (WiFi.status() == WL_CONNECTED) {
@@ -3566,21 +3713,26 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strncpy(STA_PASS, &pointer2[1], pSize2-pSize3-1);
       serialport.printf("STA_SSID: |%s|\n", STA_SSID);
       serialport.printf("STA_PASS: |%s|\n", STA_PASS);
-      
+      /*
       WiFi.disconnect(false);  // Reconnect the network
-      
+      //*/
       //The SSID can be any alphanumeric, case-sensitive entry from 2 to 32 characters. The printable characters plus the space (ASCII 0x20) are allowed, but these six characters are not: ?, ", $, [, \, ], and +.
       //WEP - Maximum key length is 16 characters.
       //WPA-PSK/WPA2-PSK - Maximum key length is 63 characters.
+      /*
       WiFi.begin(STA_SSID, STA_PASS);
       while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         serialport.print(".");
       }
+      //*/
+      /*
       serialport.println("");
       serialport.print("IP address: ");
       serialport.println(WiFi.localIP());
       serialport.println("Wifi connected!");
+      //*/
+      
       serialport.println("Saving Wifi Credentials!");
       Credentials_WiFi_Struct wifiCredential;
       strcpy(wifiCredential.ssid, STA_SSID);
@@ -3588,9 +3740,9 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
       saveWiFicredentials( wifiCredential );
       readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
-      //saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
+      //saveWiFiCredentialsList("/Wifi_Connections.txt", temp_wifiCredentialList, SPIFFS);
       serialport.println("Wifi Credentials Saved!");
-      
+      ESP.restart();
     }
     if (commandSelect(commandInputs, "disconnect")) {
       //command format: control WiFi disconnect
@@ -3610,23 +3762,6 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
     }
   }
 
-}
-
-
-
-void startSoftAP(Stream &serialport){
-  //https://randomnerdtutorials.com/esp32-access-point-ap-web-server/
-  char ssid[33]     = "ESP32-Access-Point";
-  char password[64] = "123456789";
-  // Connect to Wi-Fi network with SSID and password
-  serialport.print("Setting AP (Access Point)…");
-  WiFi.softAPConfig(ip, gateway, subnet);
-  // Remove the password parameter, if you want the AP (Access Point) to be open
-  (void)WiFi.softAP(ssid, password);
-  ;
-  IPAddress IP = WiFi.softAPIP();
-  serialport.print("AP IP address: ");
-  serialport.println(IP);
 }
 
 
@@ -3729,104 +3864,6 @@ void printModuleInformation(Stream &serialport, struct ModuleInformation moduleI
 }
 
 
-
-
-//https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
-void disableWiFi() {
-  WiFi.disconnect(true);  // Disconnect from the network
-  WiFi.mode(WIFI_OFF);    // Switch WiFi off
-}
-
-void enableWiFi() {
-  //https://docs.arduino.cc/library-examples/wifi-library/ScanNetworks
-  Serial.println("enableWiFi()");
-  WiFi.disconnect(false);  // Reconnect the network
-  if (WiFi.getMode() == WIFI_MODE_NULL) {
-    WiFi.mode(WIFI_STA);
-  } else if (WiFi.getMode() == WIFI_MODE_AP) {
-    WiFi.mode(WIFI_AP_STA);
-  }
-
-  Serial.println("START WIFI");
-  //WiFi.begin(STA_SSID, STA_PASS);
-  //wifi_status = WiFi.begin("TP-Link_0F3D", "Jerkface13597603");//control WiFi connect "TP-Link_0F3D" "Jerkface13597603"
-  //wifi_status = WiFi.begin("Hail Hydra", "aarsabteeros@48");//control WiFi connect "Hail Hydra" "aarsabteeros@48"
-  //wifi_status = WiFi.begin("Test Network", "12345678");
-  
-  /*
-  int numSsid = WiFi.scanNetworks();
-  if (numSsid == -1) {
-    Serial.println("Couldn't get a wifi connection");
-    return;
-  }
-  */
-  
-  Credentials_WiFi_Struct wifiCredential;
-  File fileToRead = SPIFFS.open("/Wifi_Connections.txt", FILE_READ);
-  if(!fileToRead){
-    Serial.println("There was an error opening the file for appending");
-    return;
-  }
-  
-  Serial.println( fileToRead.available() );
-  String fileLineString;
-  fileLineString = fileToRead.readString();//readStringUntil('\n');
-  Serial.println( fileLineString );//readStringUntil("\r\n")
-  char fileLine[ fileLineString.length() + 1 ];
-  fileLineString.toCharArray(fileLine, fileLineString.length() + 1);
-  Serial.println( fileLine );
-  
-  //
-  //
-  //finish me!
-  //("{&s}{&s}\n", wifiCredential.ssid, wifiCredential.pass)
-  fileToRead.close();
-  
-  
-  
-  
-  wifi_status = WiFi.begin(wifiCredential.ssid, wifiCredential.pass);
-  
-  
-  //
-  
-  /*
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }//*/
-  /*
-  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.printf("WiFi Failed!\n");
-    return;
-  }
-  //*/
-
-  SerialWiFiserver.begin();
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-
-//https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
-void disableWiFiSoftAP() {
-  if (WiFi.getMode() == WIFI_MODE_AP) {
-    WiFi.mode(WIFI_OFF);
-  } else if (WiFi.getMode() == WIFI_MODE_APSTA) {
-    WiFi.mode(WIFI_STA);
-  }
-}
-
-void enableWiFiSoftAP(char* soft_ap_ssid, char* soft_ap_password) {
-  if (WiFi.getMode() == WIFI_MODE_NULL) {
-    WiFi.mode(WIFI_AP);
-  } else if (WiFi.getMode() == WIFI_MODE_STA) {
-    WiFi.mode(WIFI_AP_STA);
-  }
-  WiFi.softAP(soft_ap_ssid, soft_ap_password);
-}
 
 
 
