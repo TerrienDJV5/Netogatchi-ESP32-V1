@@ -932,14 +932,13 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
   
   
   wifiCredentialList.length = credentialList[ "Length" ];
-  unsigned int tempListLength = credentialList[ "Length" ];
   Serial.println("Length");
   wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
   Serial.print("length: ");Serial.println(wifiCredentialList.length);
   Serial.println("calloc");
   Credentials_WiFi_Struct temp_wifiCredential;
   unsigned int indexACC = 0;
-  for (int index = 0; index < tempListLength; index++) {
+  for (int index = 0; index < wifiCredentialList.length; index++) {
     Serial.print("index: ");Serial.println(index);
     // Set the values from the document
     strlcpy(temp_wifiCredential.ssid,                  // <- destination
@@ -950,7 +949,7 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
           sizeof(temp_wifiCredential.pass));         // <- destination's capacity
     
     if ( ensureValid_Credentials( temp_wifiCredential ) == false){
-      tempListLength-=1;
+      wifiCredentialList.length -= 1;
       continue;
     }
     // Set the values from the document
@@ -964,13 +963,13 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
     Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ indexACC ].pass);
     indexACC++;
   }
-  wifiCredentialList.length = tempListLength;
   // Close the file
   file.close();
   
   
   //Check if SSID And PASS are Valid
   Serial.println("Checking if Valid!");
+  //bug: results in all saved Credentials to be removed if one is invalid! (Status : unFixed)
   bool credentialsChanged = false;
   for (int index = 0; index < wifiCredentialList.length; index++) {
     if ( ensureValid_Credentials( wifiCredentialList.credentials[ index ] ) ){
@@ -1009,7 +1008,7 @@ void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiC
   wifiCredentialList.length += 1;
   Serial.println("Relocating og List");
   wifiCredentialList.credentials = (Credentials_WiFi_Struct*)realloc(wifiCredentialList.credentials, wifiCredentialList.length);
-  Serial.println("malloc/realloc og List Complete");
+  Serial.println("malloc/calloc/realloc og List Complete");
   Serial.println("adding New index!");
   strcpy(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].ssid, wifiCredential.ssid);
   strcpy(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].pass, wifiCredential.pass);
@@ -1040,32 +1039,52 @@ void remove_WiFiCredential_From_WiFiCredentialsList(List_WiFi_Credentials_Struct
     return;
   }
   Serial.println("removing Selected index!");
-  strcpy(wifiCredentialList.credentials[ selectIndex ].ssid, "");
-  strcpy(wifiCredentialList.credentials[ selectIndex ].pass, "");
+  //strcpy(wifiCredentialList.credentials[ selectIndex ].ssid, "");
+  //strcpy(wifiCredentialList.credentials[ selectIndex ].pass, "");
   wifiCredentialList.length -= 1;
   
   //Reallocate by making a temp Array of the new size add all the Saved Credentials to that, then call calloc on "wifiCredentialList.credentials" and re-add the Credentials from the Temp Array
   Serial.println("Relocating og List");
   Credentials_WiFi_Struct *tempList;
+  //tempList = &(wifiCredentialList.credentials);
   tempList = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
+  
+  //wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
+  Serial.println("malloc/calloc/realloc og List Complete");
+  Serial.println("Populate Resize List!");
   unsigned int indexoffset = 0;
   for (unsigned int index = 0; index < (wifiCredentialList.length+1); index++) {
-    if (wifiCredentialList.credentials[ index ].ssid == wifiCredential.ssid){
-      continue;
+    Serial.print("indexoffset:");Serial.println( indexoffset );
+    Serial.print("index:");Serial.println( index );
+    if (not( strcmp(wifiCredentialList.credentials[ index ].ssid, wifiCredential.ssid)==0 )){
+      //strcpy(wifiCredentialList.credentials[ indexoffset ].ssid, tempList[ index ].ssid);
+      //strcpy(wifiCredentialList.credentials[ indexoffset ].pass, tempList[ index ].pass);
+      strcpy(tempList[ indexoffset ].ssid, wifiCredentialList.credentials[ index ].ssid);
+      strcpy(tempList[ indexoffset ].pass, wifiCredentialList.credentials[ index ].pass);
+      Serial.println(tempList[ indexoffset ].ssid);
+      Serial.println(tempList[ indexoffset ].pass);
+      Serial.println(wifiCredentialList.credentials[ index ].ssid);
+      Serial.println(wifiCredentialList.credentials[ index ].pass);
+      indexoffset++;
     }
-    strcpy(tempList[ indexoffset ].ssid, wifiCredentialList.credentials[ index ].ssid);
-    strcpy(tempList[ indexoffset ].pass, wifiCredentialList.credentials[ index ].pass);
-    indexoffset++;
   }
-  
-  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
-  Serial.println("malloc/realloc og List Complete");
-  Serial.println("Populate Resize List!");
+  free(wifiCredentialList.credentials);
+  /*
   for (unsigned int index = 0; index < (wifiCredentialList.length); index++) {
+    Serial.print("TempListP[");Serial.print( index );Serial.println("]:");
+    Serial.println(tempList[ index ].ssid);
+    Serial.println(tempList[ index ].pass);
     strcpy(wifiCredentialList.credentials[ index ].ssid, tempList[ index ].ssid);
     strcpy(wifiCredentialList.credentials[ index ].pass, tempList[ index ].pass);
+    Serial.print("Resized List[");Serial.print( index );Serial.println("]:");
+    Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.println(wifiCredentialList.credentials[ index ].pass);
   }
-  free(tempList);
+  */
+  //free(tempList);
+  
+  
+  
   
 }
 
@@ -1084,33 +1103,85 @@ bool ensureValid_PASS(Credentials_WiFi_Struct &wifiCredential){
 }
 
 bool ensureValid_SSIDchar(char* inputSSID){
+  //https://routersecurity.org/SSID.php
   //https://www.cisco.com/assets/sol/sb/WAP321_Emulators/WAP321_Emulator_v1.0.0.3/help/Wireless05.html
-  //The SSID can be any alphanumeric, case-sensitive entry from 2 to 32 characters. The printable characters plus the space (ASCII 0x20) are allowed, but these six characters are not: ?, ", $, [, \, ], and +.
-  // The allowable characters are: ASCII 0x20, 0x21, 0x23, 0x25 through 0x2A, 0x2C through 0x3E, 0x40 through 0x5A, 0x5E through 0x7E.
-  // In addition, these three characters cannot be the first character:!, #, and ; (ASCII 0x21, 0x23, and 0x3B, respectively).
-  //Trailing and leading spaces (ASCII 0x20) are not permitted.
-  //NOTE     This means that spaces are allowed within the SSID, but not as the first or last character, and the period “.” (ASCII 0x2E) is also allowed. 
-  char blackListChar[7] = {'?', '"', '$', '[', '\\', ']', '+'};
+  
   unsigned int inputSSIDLen = strlen(inputSSID);
+  //The SSID can be any alphanumeric, case-sensitive entry from 2 to 32 characters.
   if ((inputSSIDLen>32)or(inputSSIDLen<2)){
     Serial.println("Returning False!");
     return false;
   }
+  // In addition, these three characters cannot be the first character:!, #, and ; (ASCII 0x21, 0x23, and 0x3B, respectively).
+  if ( (inputSSID[ 0 ] == 0x21)or(inputSSID[ 0 ] == 0x23)or(inputSSID[ 0 ] == 0x3B) ){
+    Serial.println("Returning False!");
+    return false;
+  }
+  //Trailing and leading spaces (ASCII 0x20) are not permitted.
+  //NOTE     This means that spaces are allowed within the SSID, but not as the first or last character, and the period “.” (ASCII 0x2E) is also allowed. 
+  if ( (inputSSID[ 0 ] == 0x20)or(inputSSID[ inputSSIDLen-1 ] == 0x20) ){
+    Serial.println("Returning False!");
+    return false;
+  }
+  char blackListChar[7] = {'?', '"', '$', '[', '\\', ']', '+'};//0x3F, 0x22, 0x24, 0x5B, 0x5C, 0x5D, 0x2B
+  char blackListCharHex[7] = {0x3F, 0x22, 0x24, 0x5B, 0x5C, 0x5D, 0x2B};
   for (unsigned int index = 0; index < inputSSIDLen; index++) {
     Serial.print("CharIndex: ");Serial.println(inputSSID[ index ]);
+    // The allowable characters are: ASCII 0x20, 0x21, 0x23, 0x25 through 0x2A, 0x2C through 0x3E, 0x40 through 0x5A, 0x5E through 0x7E.
+    if (not ( (inputSSID[ index ] == 0x20)or(inputSSID[ index ] == 0x21)or(inputSSID[ index ] == 0x23)or(isCharRange(inputSSID[ index ], 0x25, 0x2A))or(isCharRange(inputSSID[ index ], 0x2C, 0x3E))or(isCharRange(inputSSID[ index ], 0x40, 0x5A))or(isCharRange(inputSSID[ index ], 0x5E, 0x7E)) ) ){
+      Serial.println("Returning False!");
+      return false;
+    }
+    //The printable characters plus the space (ASCII 0x20) are allowed, but these six characters are not: ?, ", $, [, \, ], and +.
+    //{'?', '"', '$', '[', '\\', ']', '+'} == {0x3F, 0x22, 0x24, 0x5B, 0x5C, 0x5D, 0x2B}
+    if (inputSSID[ index ] == 0x3F){
+      Serial.println("Returning False!");
+      Serial.print("inputSSID[ index ]: ");Serial.println(inputSSID[ index ], HEX);
+      return false;
+    }
+    if (inputSSID[ index ] == 0x22){
+      Serial.println("Returning False!");
+      Serial.print("inputSSID[ index ]: ");Serial.println(inputSSID[ index ], HEX);
+      return false;
+    }
+    if (inputSSID[ index ] == 0x24){
+      Serial.println("Returning False!");
+      Serial.print("inputSSID[ index ]: ");Serial.println(inputSSID[ index ], HEX);
+      return false;
+    }
+    if (inputSSID[ index ] == 0x5B){
+      Serial.println("Returning False!");
+      Serial.print("inputSSID[ index ]: ");Serial.println(inputSSID[ index ], HEX);
+      return false;
+    }
+    if (inputSSID[ index ] == 0x5C){
+      Serial.println("Returning False!");
+      Serial.print("inputSSID[ index ]: ");Serial.println(inputSSID[ index ], HEX);
+      return false;
+    }
+    if (inputSSID[ index ] == 0x5D){
+      Serial.println("Returning False!");
+      Serial.print("inputSSID[ index ]: ");Serial.println(inputSSID[ index ], HEX);
+      return false;
+    }
+    if (inputSSID[ index ] == 0x2B){
+      Serial.println("Returning False!");
+      Serial.print("inputSSID[ index ]: ");Serial.println(inputSSID[ index ], HEX);
+      return false;
+    }
+    /*
     for (unsigned int indexCheck = 0; indexCheck < 7; indexCheck++) {
       Serial.print("indexCheck: ");Serial.print(indexCheck);
       Serial.print(", ");
       Serial.print("CharCheck: ");Serial.println(blackListChar[indexCheck]);
+      Serial.print("CharCheckHex: ");Serial.println(blackListCharHex[indexCheck]);
       if (inputSSID[ index ] == blackListChar[indexCheck]){
         Serial.println("Returning False!");
         return false;
       }
     }
-    if (not ( (inputSSID[ index ] == 0x20)or(inputSSID[ index ] == 0x21)or(inputSSID[ index ] == 0x23)or(isCharRange(inputSSID[ index ], 0x25, 0x2A))or(isCharRange(inputSSID[ index ], 0x2C, 0x3E))or(isCharRange(inputSSID[ index ], 0x40, 0x5A))or(isCharRange(inputSSID[ index ], 0x5E, 0x7E)) ) ){
-      Serial.println("Returning False!");
-      return false;
-    }
+    //*/
+    
   }
   Serial.println("Returning True!");
   return true;
@@ -1128,7 +1199,7 @@ bool ensureValid_PASSchar(char* inputPASS){
 
 
 bool isCharRange(char inputChar, unsigned int startv, unsigned int endv){
-  return (inputChar >= startv and inputChar <= endv);
+  return (inputChar >= startv and inputChar < endv);
 }
 
 
