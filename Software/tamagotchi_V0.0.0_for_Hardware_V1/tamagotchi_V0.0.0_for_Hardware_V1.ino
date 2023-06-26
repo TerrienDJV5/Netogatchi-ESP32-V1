@@ -822,7 +822,7 @@ typedef struct {
 //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi-security.html
 
 
-const char *filenameWiFi = "/Wifi_Connections.txt";
+const char *filenameWiFi = "/Wifi_Connections.json";
 List_WiFi_Credentials_Struct wifiCredentialList;
 //make Functions that convert Json to Structs
 
@@ -859,7 +859,7 @@ void loadWiFiConfigurationCharArray(char jsonChar[], size_t jsonCharSize, Creden
 }
 
 
-
+//https://jraleman.medium.com/c-programming-language-functions-malloc-calloc-realloc-and-free-61cfc3e45da7
 
 void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials);
 
@@ -867,10 +867,17 @@ void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials);
 //to make Reading and writeing faster checkt this out 
 //https://github.com/bblanchon/ArduinoStreamUtils
 
-//Test These!
+bool ensureValid_Credentials(Credentials_WiFi_Struct &wifiCredential);
+bool ensureValid_SSID(Credentials_WiFi_Struct &wifiCredential);
+bool ensureValid_PASS(Credentials_WiFi_Struct &wifiCredential);
+bool ensureValid_SSIDchar(char* inputSSID);//Make Private if put in a Class!
+bool ensureValid_PASSchar(char* inputPASS);//Make Private if put in a Class!
+
+
 void saveWiFiCredentialsList(const char *filename, const List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs);
 void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct &wifiCredentialList, fs::FS &fs);
 void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential);
+void remove_WiFiCredential_From_WiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential);
 
 
 
@@ -925,29 +932,60 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
   
   
   wifiCredentialList.length = credentialList[ "Length" ];
+  unsigned int tempListLength = credentialList[ "Length" ];
   Serial.println("Length");
   wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
   Serial.print("length: ");Serial.println(wifiCredentialList.length);
   Serial.println("calloc");
-  for (int index = 0; index < wifiCredentialList.length; index++) {
+  Credentials_WiFi_Struct temp_wifiCredential;
+  unsigned int indexACC = 0;
+  for (int index = 0; index < tempListLength; index++) {
     Serial.print("index: ");Serial.println(index);
-    // Set the values in the document
-    strlcpy(wifiCredentialList.credentials[ index ].ssid,                  // <- destination
+    // Set the values from the document
+    strlcpy(temp_wifiCredential.ssid,                  // <- destination
           credentialList["info"][ index ]["ssid"],  // <- source
-          sizeof(wifiCredentialList.credentials[ index ].ssid));         // <- destination's capacity
-    strlcpy(wifiCredentialList.credentials[ index ].pass,                  // <- destination
+          sizeof(temp_wifiCredential.ssid));         // <- destination's capacity
+    strlcpy(temp_wifiCredential.pass,                  // <- destination
           credentialList["info"][ index ]["pass"],  // <- source
-          sizeof(wifiCredentialList.credentials[ index ].pass));         // <- destination's capacity
-    Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
-    Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
+          sizeof(temp_wifiCredential.pass));         // <- destination's capacity
+    
+    if ( ensureValid_Credentials( temp_wifiCredential ) == false){
+      tempListLength-=1;
+      continue;
+    }
+    // Set the values from the document
+    strlcpy(wifiCredentialList.credentials[ indexACC ].ssid,                  // <- destination
+          credentialList["info"][ index ]["ssid"],  // <- source
+          sizeof(wifiCredentialList.credentials[ indexACC ].ssid));         // <- destination's capacity
+    strlcpy(wifiCredentialList.credentials[ indexACC ].pass,                  // <- destination
+          credentialList["info"][ index ]["pass"],  // <- source
+          sizeof(wifiCredentialList.credentials[ indexACC ].pass));         // <- destination's capacity
+    Serial.print("ssid: ");Serial.println(wifiCredentialList.credentials[ indexACC ].ssid);
+    Serial.print("pass: ");Serial.println(wifiCredentialList.credentials[ indexACC ].pass);
+    indexACC++;
   }
+  wifiCredentialList.length = tempListLength;
   // Close the file
   file.close();
   
   
+  //Check if SSID And PASS are Valid
+  Serial.println("Checking if Valid!");
+  bool credentialsChanged = false;
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    if ( ensureValid_Credentials( wifiCredentialList.credentials[ index ] ) ){
+      continue;
+    }
+    credentialsChanged = true;
+    remove_WiFiCredential_From_WiFiCredentialsList(wifiCredentialList, wifiCredentialList.credentials[ index ]);
+  }
+  if (credentialsChanged){
+    //resaves changed CredentialsList by removing inValided Credentials
+    saveWiFiCredentialsList(filename, wifiCredentialList, fs);
+  }
 }
 
-// Loads the CredentialsList from a file
+
 void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential) {
   Serial.println("saveWiFiCredentialToWiFiCredentialsList()");
   //Fix Me?
@@ -985,6 +1023,113 @@ void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiC
 
 
 
+void remove_WiFiCredential_From_WiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential) {
+  Serial.println("remove_WiFiCredential_From_WiFiCredentialsList()");
+  //will remove saved "WiFiCredential" if ssid is on the List!
+  bool isINList = false;
+  unsigned int selectIndex = 0;
+  for (unsigned int index = 0; index < wifiCredentialList.length; index++) {
+    if (wifiCredentialList.credentials[ index ].ssid == wifiCredential.ssid){
+      isINList = true;
+      selectIndex = index;
+      break;
+    }
+  }
+  Serial.print("isINList: ");Serial.println(isINList);
+  if (!isINList){
+    return;
+  }
+  Serial.println("removing Selected index!");
+  strcpy(wifiCredentialList.credentials[ selectIndex ].ssid, "");
+  strcpy(wifiCredentialList.credentials[ selectIndex ].pass, "");
+  wifiCredentialList.length -= 1;
+  
+  //Reallocate by making a temp Array of the new size add all the Saved Credentials to that, then call calloc on "wifiCredentialList.credentials" and re-add the Credentials from the Temp Array
+  Serial.println("Relocating og List");
+  Credentials_WiFi_Struct *tempList;
+  tempList = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
+  unsigned int indexoffset = 0;
+  for (unsigned int index = 0; index < (wifiCredentialList.length+1); index++) {
+    if (wifiCredentialList.credentials[ index ].ssid == wifiCredential.ssid){
+      continue;
+    }
+    strcpy(tempList[ indexoffset ].ssid, wifiCredentialList.credentials[ index ].ssid);
+    strcpy(tempList[ indexoffset ].pass, wifiCredentialList.credentials[ index ].pass);
+    indexoffset++;
+  }
+  
+  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
+  Serial.println("malloc/realloc og List Complete");
+  Serial.println("Populate Resize List!");
+  for (unsigned int index = 0; index < (wifiCredentialList.length); index++) {
+    strcpy(wifiCredentialList.credentials[ index ].ssid, tempList[ index ].ssid);
+    strcpy(wifiCredentialList.credentials[ index ].pass, tempList[ index ].pass);
+  }
+  free(tempList);
+  
+}
+
+
+
+bool ensureValid_Credentials(Credentials_WiFi_Struct &wifiCredential){
+  //later make "ensureValid_SSID" and "ensureValid_PASS" use (Credentials_WiFi_Struct &wifiCredential) as input
+  return ( ensureValid_SSID( wifiCredential ) and ensureValid_PASS( wifiCredential ) );
+}
+
+bool ensureValid_SSID(Credentials_WiFi_Struct &wifiCredential){
+  return ensureValid_SSIDchar( wifiCredential.ssid );
+}
+bool ensureValid_PASS(Credentials_WiFi_Struct &wifiCredential){
+  return ensureValid_PASSchar( wifiCredential.pass );
+}
+
+bool ensureValid_SSIDchar(char* inputSSID){
+  //https://www.cisco.com/assets/sol/sb/WAP321_Emulators/WAP321_Emulator_v1.0.0.3/help/Wireless05.html
+  //The SSID can be any alphanumeric, case-sensitive entry from 2 to 32 characters. The printable characters plus the space (ASCII 0x20) are allowed, but these six characters are not: ?, ", $, [, \, ], and +.
+  // The allowable characters are: ASCII 0x20, 0x21, 0x23, 0x25 through 0x2A, 0x2C through 0x3E, 0x40 through 0x5A, 0x5E through 0x7E.
+  // In addition, these three characters cannot be the first character:!, #, and ; (ASCII 0x21, 0x23, and 0x3B, respectively).
+  //Trailing and leading spaces (ASCII 0x20) are not permitted.
+  //NOTE     This means that spaces are allowed within the SSID, but not as the first or last character, and the period “.” (ASCII 0x2E) is also allowed. 
+  char blackListChar[7] = {'?', '"', '$', '[', '\\', ']', '+'};
+  unsigned int inputSSIDLen = strlen(inputSSID);
+  if ((inputSSIDLen>32)or(inputSSIDLen<2)){
+    Serial.println("Returning False!");
+    return false;
+  }
+  for (unsigned int index = 0; index < inputSSIDLen; index++) {
+    Serial.print("CharIndex: ");Serial.println(inputSSID[ index ]);
+    for (unsigned int indexCheck = 0; indexCheck < 7; indexCheck++) {
+      Serial.print("indexCheck: ");Serial.print(indexCheck);
+      Serial.print(", ");
+      Serial.print("CharCheck: ");Serial.println(blackListChar[indexCheck]);
+      if (inputSSID[ index ] == blackListChar[indexCheck]){
+        Serial.println("Returning False!");
+        return false;
+      }
+    }
+    if (not ( (inputSSID[ index ] == 0x20)or(inputSSID[ index ] == 0x21)or(inputSSID[ index ] == 0x23)or(isCharRange(inputSSID[ index ], 0x25, 0x2A))or(isCharRange(inputSSID[ index ], 0x2C, 0x3E))or(isCharRange(inputSSID[ index ], 0x40, 0x5A))or(isCharRange(inputSSID[ index ], 0x5E, 0x7E)) ) ){
+      Serial.println("Returning False!");
+      return false;
+    }
+  }
+  Serial.println("Returning True!");
+  return true;
+}
+bool ensureValid_PASSchar(char* inputPASS){
+  //Enter a string of at least 8 characters to a maximum of 63 characters. Acceptable characters include upper and lower case alphabetic letters, the numeric digits, and special symbols such as @ and #.
+  unsigned int inputPASSLen = strlen(inputPASS);
+  if ( ((inputPASSLen>63)or(inputPASSLen<8)) and (inputPASSLen!=0) ){
+    Serial.println("Returning False!");
+    return false;
+  }
+  Serial.println("Returning True!");
+  return true;
+}
+
+
+bool isCharRange(char inputChar, unsigned int startv, unsigned int endv){
+  return (inputChar >= startv and inputChar <= endv);
+}
 
 
 
@@ -1005,15 +1150,15 @@ enum userType
 
 
 void saveWiFicredentials(Credentials_WiFi_Struct &wifiCredentials){
-  // "/Wifi_Connections.txt"
+  // "/Wifi_Connections.json"
   List_WiFi_Credentials_Struct temp_wifiCredentialList;
   //Load WiFiCredentialsList
   Serial.println(F("Loading WiFi configuration..."));
-  loadWiFiCredentialsList("/Wifi_Connections.txt", temp_wifiCredentialList, SPIFFS);
+  loadWiFiCredentialsList("/Wifi_Connections.json", temp_wifiCredentialList, SPIFFS);
   Serial.println(wifiCredentials.ssid);
   Serial.println(wifiCredentials.pass);
   saveWiFiCredentialToWiFiCredentialsList(temp_wifiCredentialList, wifiCredentials);
-  saveWiFiCredentialsList("/Wifi_Connections.txt", temp_wifiCredentialList, SPIFFS);
+  saveWiFiCredentialsList("/Wifi_Connections.json", temp_wifiCredentialList, SPIFFS);
 }
 
 
@@ -1981,7 +2126,7 @@ void setup()   {
   }
   file.close();
 
-  file = SPIFFS.open("/Wifi_Connections.txt");
+  file = SPIFFS.open("/Wifi_Connections.json");
   if (!file) {
     Serial.println("Failed to open file for reading");
     return;
@@ -2290,14 +2435,14 @@ void setup()   {
   WiFi.onEvent(OnWiFiEvent);
 
   
-  printFile("/Wifi_Connections.txt", SPIFFS);
+  printFile("/Wifi_Connections.json", SPIFFS);
   //Load WiFiCredentialsList
   Serial.println(F("Loading WiFi configuration..."));
-  loadWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
+  loadWiFiCredentialsList("/Wifi_Connections.json", wifiCredentialList, SPIFFS);
   //Save WiFiCredentialsList
   Serial.println(F("Saving WiFi configuration..."));
-  saveWiFiCredentialsList("/Wifi_Connections.txt", wifiCredentialList, SPIFFS);
-  printFile("/Wifi_Connections.txt", SPIFFS);
+  saveWiFiCredentialsList("/Wifi_Connections.json", wifiCredentialList, SPIFFS);
+  printFile("/Wifi_Connections.json", SPIFFS);
   
   Serial.println(F("Reading WiFi configuration..."));
   
@@ -3713,34 +3858,88 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strncpy(STA_PASS, &pointer2[1], pSize2-pSize3-1);
       serialport.printf("STA_SSID: |%s|\n", STA_SSID);
       serialport.printf("STA_PASS: |%s|\n", STA_PASS);
-      /*
-      WiFi.disconnect(false);  // Reconnect the network
-      //*/
-      //The SSID can be any alphanumeric, case-sensitive entry from 2 to 32 characters. The printable characters plus the space (ASCII 0x20) are allowed, but these six characters are not: ?, ", $, [, \, ], and +.
-      //WEP - Maximum key length is 16 characters.
-      //WPA-PSK/WPA2-PSK - Maximum key length is 63 characters.
-      /*
-      WiFi.begin(STA_SSID, STA_PASS);
-      while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        serialport.print(".");
-      }
-      //*/
-      /*
-      serialport.println("");
-      serialport.print("IP address: ");
-      serialport.println(WiFi.localIP());
-      serialport.println("Wifi connected!");
-      //*/
       
       serialport.println("Saving Wifi Credentials!");
       Credentials_WiFi_Struct wifiCredential;
       strcpy(wifiCredential.ssid, STA_SSID);
       strcpy(wifiCredential.pass, STA_PASS);
-      readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
-      saveWiFicredentials( wifiCredential );
-      readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
-      //saveWiFiCredentialsList("/Wifi_Connections.txt", temp_wifiCredentialList, SPIFFS);
+      readFile(serialport, SPIFFS, "/Wifi_Connections.json");
+      
+      //saveWiFicredentials( wifiCredential );
+      //################################################################################################################################
+      List_WiFi_Credentials_Struct temp_wifiCredentialList;
+      //Load WiFiCredentialsList
+      serialport.println(F("Loading WiFi configuration..."));
+      serialport.println(wifiCredential.ssid);
+      serialport.println(wifiCredential.pass);
+      loadWiFiCredentialsList("/Wifi_Connections.json", temp_wifiCredentialList, SPIFFS);
+      saveWiFiCredentialToWiFiCredentialsList(temp_wifiCredentialList, wifiCredential);
+      //remove_WiFiCredential_From_WiFiCredentialsList(temp_wifiCredentialList, wifiCredential);
+      saveWiFiCredentialsList("/Wifi_Connections.json", temp_wifiCredentialList, SPIFFS);
+      //################################################################################################################################
+      
+      readFile(serialport, SPIFFS, "/Wifi_Connections.json");
+      serialport.println("Wifi Credentials Saved!");
+      ESP.restart();
+    }
+    if (commandSelect(commandInputs, "CredentialRemove ")) {
+      //command format: control WiFi CredentialRemove "SSID" "PassWord"
+      strcpy(subTargetCommand, "CredentialRemove ");
+      strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
+      printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      
+      const char ch0 = '"';
+      char *pointer0;
+      char *pointer1;
+      char *pointer2;
+      char *pointer3;
+      unsigned int pSize0;
+      unsigned int pSize1;
+      unsigned int pSize2;
+      unsigned int pSize3;
+      char STA_SSID[33];
+      char STA_PASS[64];
+      memset(STA_SSID, '\0', 33);
+      memset(STA_PASS, '\0', 64);
+      pointer0 = strchr(subCommandInputs, ch0);
+      pSize0 = strlen(pointer0);
+      pointer1 = strchr(&pointer0[1], ch0);
+      pSize1 = strlen(pointer1);
+      pointer2 = strchr(&pointer1[1], ch0);
+      pSize2 = strlen(pointer2);
+      pointer3 = strchr(&pointer2[1], ch0);
+      pSize3 = strlen(pointer3);
+      
+      serialport.printf("Looling For: |%c|\n", ch0);
+      serialport.printf("Pointer0: |%s| Len=%d\n", pointer0, pSize0);
+      serialport.printf("Pointer1: |%s| Len=%d\n", pointer1, pSize1);
+      serialport.printf("Pointer2: |%s| Len=%d\n", pointer2, pSize2);
+      serialport.printf("Pointer3: |%s| Len=%d\n", pointer3, pSize3);
+      
+      strncpy(STA_SSID, &pointer0[1], pSize0-pSize1-1);
+      strncpy(STA_PASS, &pointer2[1], pSize2-pSize3-1);
+      serialport.printf("STA_SSID: |%s|\n", STA_SSID);
+      serialport.printf("STA_PASS: |%s|\n", STA_PASS);
+      
+      serialport.println("Saving Wifi Credentials!");
+      Credentials_WiFi_Struct wifiCredential;
+      strcpy(wifiCredential.ssid, STA_SSID);
+      strcpy(wifiCredential.pass, STA_PASS);
+      readFile(serialport, SPIFFS, "/Wifi_Connections.json");
+      
+      //################################################################################################################################
+      List_WiFi_Credentials_Struct temp_wifiCredentialList;
+      //Load WiFiCredentialsList
+      serialport.println(F("Loading WiFi configuration..."));
+      serialport.println(wifiCredential.ssid);
+      serialport.println(wifiCredential.pass);
+      loadWiFiCredentialsList("/Wifi_Connections.json", temp_wifiCredentialList, SPIFFS);
+      //saveWiFiCredentialToWiFiCredentialsList(temp_wifiCredentialList, wifiCredential);
+      remove_WiFiCredential_From_WiFiCredentialsList(temp_wifiCredentialList, wifiCredential);
+      saveWiFiCredentialsList("/Wifi_Connections.json", temp_wifiCredentialList, SPIFFS);
+      //################################################################################################################################
+      
+      readFile(serialport, SPIFFS, "/Wifi_Connections.json");
       serialport.println("Wifi Credentials Saved!");
       ESP.restart();
     }
@@ -3757,7 +3956,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "checkSavedInfo ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
-      readFile(serialport, SPIFFS, "/Wifi_Connections.txt");
+      readFile(serialport, SPIFFS, "/Wifi_Connections.json");
       serialport.println("checkSavedInfo!");
     }
   }

@@ -151,28 +151,27 @@ unsigned char* BMIMGmanipulate::rotate64x64ImageClockwise(unsigned char imageIN6
   const unsigned int sectorByteWidth = imageByteWidth>>1;
   const unsigned int sectorByteHeight = imageByteHeight>>1;
   const unsigned int sectorByteSize = sectorByteWidth*sectorByteHeight;
-  Serial.println(F("Track64-001"));
+  
   static unsigned char imageOutput[fullImageByteSize];
   memset(imageOutput,0,fullImageByteSize);
   unsigned char sectorX0Y0[ sectorByteSize ];
   unsigned char sectorX1Y0[ sectorByteSize ];
   unsigned char sectorX0Y1[ sectorByteSize ];
   unsigned char sectorX1Y1[ sectorByteSize ];
-  Serial.println(F("Track64-002"));
+  
   for (uint16_t index = 0; index < sectorByteHeight; index++) {
     memcpy(&sectorX0Y0[ index*sectorByteWidth ], &imageIN64x64[ index*imageByteWidth ], sectorByteWidth);
     memcpy(&sectorX1Y0[ index*sectorByteWidth ], &imageIN64x64[ index*imageByteWidth+sectorByteWidth ], sectorByteWidth);
     memcpy(&sectorX0Y1[ index*sectorByteWidth ], &imageIN64x64[ index*imageByteWidth+sectorByteSize*2 ], sectorByteWidth);
     memcpy(&sectorX1Y1[ index*sectorByteWidth ], &imageIN64x64[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], sectorByteWidth);
   }
-  Serial.println(F("Track64-003"));
+  
   memmove(sectorX0Y0, rotate32x32ImageClockwise( sectorX0Y0 ), sectorByteSize );
   memmove(sectorX1Y0, rotate32x32ImageClockwise( sectorX1Y0 ), sectorByteSize );
   memmove(sectorX0Y1, rotate32x32ImageClockwise( sectorX0Y1 ), sectorByteSize );
   memmove(sectorX1Y1, rotate32x32ImageClockwise( sectorX1Y1 ), sectorByteSize );
   
   //Rotate Sectors
-  Serial.println(F("Track64-004"));
   unsigned char *sectorStorage;
   sectorStorage = (unsigned char *)malloc(sectorByteSize);
   memmove(sectorStorage, sectorX1Y0, sectorByteSize );
@@ -182,7 +181,6 @@ unsigned char* BMIMGmanipulate::rotate64x64ImageClockwise(unsigned char imageIN6
   memmove(sectorX1Y1, sectorStorage, sectorByteSize );
   free(sectorStorage);
   
-  Serial.println(F("Track64-005"));
   for (uint16_t index = 0; index < sectorByteHeight; index++) {
     memcpy(&imageOutput[ index*imageByteWidth ], &sectorX0Y0[ index*sectorByteWidth ], sectorByteWidth);
     memcpy(&imageOutput[ index*imageByteWidth+sectorByteWidth ], &sectorX1Y0[ index*sectorByteWidth ], sectorByteWidth);
@@ -205,11 +203,6 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
   unsigned int sectorByteHeight = imageByteHeight>>1;
   unsigned int sectorByteSize = sectorByteWidth*sectorByteHeight;
   
-  //unsigned char sectorX0Y0[ sectorByteSize ];
-  //unsigned char sectorX1Y0[ sectorByteSize ];
-  //unsigned char sectorX0Y1[ sectorByteSize ];
-  //unsigned char sectorX1Y1[ sectorByteSize ];
-  
   unsigned char* sectorX0Y0;
   unsigned char* sectorX1Y0;
   unsigned char* sectorX0Y1;
@@ -226,16 +219,12 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
     memcpy(&sectorX0Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2 ], sectorByteWidth);
     memcpy(&sectorX1Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], sectorByteWidth);
   }
-  //Serial.println("Track128-001");
-  //Serial.println(ESP.getFreeHeap());
   memmove(sectorX0Y0, rotate64x64ImageClockwise( sectorX0Y0 ), sectorByteSize );
   memmove(sectorX1Y0, rotate64x64ImageClockwise( sectorX1Y0 ), sectorByteSize );
   memmove(sectorX0Y1, rotate64x64ImageClockwise( sectorX0Y1 ), sectorByteSize );
   memmove(sectorX1Y1, rotate64x64ImageClockwise( sectorX1Y1 ), sectorByteSize );
   
   //Rotate Sectors
-  //Serial.println("Track128-002");
-  //Serial.println(ESP.getFreeHeap());
   unsigned char *sectorStorage;
   sectorStorage = (unsigned char *)malloc(sectorByteSize);
   memmove(sectorStorage, sectorX1Y0, sectorByteSize );
@@ -245,8 +234,6 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
   memmove(sectorX1Y1, sectorStorage, sectorByteSize );
   free(sectorStorage);
   
-  //Serial.println("Track128-003");
-  //Serial.println(ESP.getFreeHeap());
   for (uint16_t index = 0; index < sectorByteHeight; index++) {
     memcpy(&imageInput[ index*imageByteWidth ], &sectorX0Y0[ index*sectorByteWidth ], sectorByteWidth);
     memcpy(&imageInput[ index*imageByteWidth+sectorByteWidth ], &sectorX1Y0[ index*sectorByteWidth ], sectorByteWidth);
