@@ -789,7 +789,9 @@ IPAddress ip(192, 168, 0, 50);
 IPAddress gateway(192, 168, 0, 1);
 IPAddress subnet(255, 255, 255, 0);
 
-
+IPAddress local_IP(192, 168, 4, 22);
+IPAddress local_gateway(192, 168, 4, 9);
+IPAddress local_subnet(255, 255, 255, 0);
 
 
 unsigned int countNewLinesFromFile(const char *filePath, fs::FS &fs){
@@ -969,6 +971,10 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
   
   //Check if SSID And PASS are Valid
   Serial.println("Checking if Valid!");
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    Serial.print("SSID: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print("PASS: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
+  }
   bool credentialsChanged = false;
   for (int index = 0; index < wifiCredentialList.length; index++) {
     if ( ensureValid_Credentials( wifiCredentialList.credentials[ index ] ) ){
@@ -976,6 +982,11 @@ void loadWiFiCredentialsList(const char *filename, List_WiFi_Credentials_Struct 
     }
     credentialsChanged = true;
     remove_WiFiCredential_From_WiFiCredentialsList(wifiCredentialList, wifiCredentialList.credentials[ index ]);
+  }
+  Serial.println("Checking if Valid!");
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    Serial.print("SSID: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print("PASS: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
   }
   if (credentialsChanged){
     //resaves changed CredentialsList by removing inValided Credentials
@@ -989,7 +1000,7 @@ void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiC
   //Fix Me?
   bool isINList = false;
   for (int index = 0; index < wifiCredentialList.length; index++) {
-    if (wifiCredentialList.credentials[ index ].ssid == wifiCredential.ssid){
+    if (strcmp(wifiCredentialList.credentials[ index ].ssid, wifiCredential.ssid)==0){
       strlcpy(wifiCredentialList.credentials[ index ].pass,                  // <- destination
           wifiCredential.pass,  // <- source
           sizeof(wifiCredentialList.credentials[ index ].pass));         // <- destination's capacity
@@ -1001,28 +1012,38 @@ void saveWiFiCredentialToWiFiCredentialsList(List_WiFi_Credentials_Struct &wifiC
   if (isINList){
     return;
   }
-  Serial.println(wifiCredential.ssid);
-  Serial.println(wifiCredential.pass);
-  Serial.println(wifiCredentialList.length);
-  wifiCredentialList.length += 1;
+  Credentials_WiFi_Struct *tempCredentials;
+  tempCredentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    strcpy(tempCredentials[ index ].ssid, wifiCredentialList.credentials[ index ].ssid);
+    strcpy(tempCredentials[ index ].pass, wifiCredentialList.credentials[ index ].pass);
+  }
   Serial.println("Relocating og List");
-  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)realloc(wifiCredentialList.credentials, wifiCredentialList.length);
+  wifiCredentialList.length += 1;
+  free(wifiCredentialList.credentials);
+  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
   Serial.println("malloc/calloc/realloc og List Complete");
+  for (int index = 0; index < (wifiCredentialList.length - 1); index++) {
+    strcpy(wifiCredentialList.credentials[ index ].ssid, tempCredentials[ index ].ssid);
+    strcpy(wifiCredentialList.credentials[ index ].pass, tempCredentials[ index ].pass);
+  }
   Serial.println("adding New index!");
   strcpy(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].ssid, wifiCredential.ssid);
   strcpy(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].pass, wifiCredential.pass);
-  Serial.println(wifiCredential.ssid);
-  Serial.println(wifiCredential.pass);
-  Serial.println(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].ssid);
-  Serial.println(wifiCredentialList.credentials[ wifiCredentialList.length-1 ].pass);
-  Serial.println(wifiCredentialList.length);
-  
+  free(tempCredentials);
 }
 
 
 
 void remove_WiFiCredential_From_WiFiCredentialsList(List_WiFi_Credentials_Struct &wifiCredentialList, Credentials_WiFi_Struct &wifiCredential) {
   Serial.println("remove_WiFiCredential_From_WiFiCredentialsList()");
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    Serial.print("SSID: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print("PASS: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
+  }
+  Serial.println("Remove");
+  Serial.print("SSID: ");Serial.println(wifiCredential.ssid);
+  Serial.print("PASS: ");Serial.println(wifiCredential.pass);
   //will remove saved "WiFiCredential" if ssid is on the List!
   bool isINList = false;
   unsigned int selectIndex = 0;
@@ -1045,22 +1066,19 @@ void remove_WiFiCredential_From_WiFiCredentialsList(List_WiFi_Credentials_Struct
   //Reallocate by making a temp Array of the new size add all the Saved Credentials to that, then call calloc on "wifiCredentialList.credentials" and re-add the Credentials from the Temp Array
   Serial.println("Relocating og List");
   Credentials_WiFi_Struct *tempList;
-  //tempList = &(wifiCredentialList.credentials);
   tempList = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
   
-  //wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
   Serial.println("malloc/calloc/realloc og List Complete");
   Serial.println("Populate Resize List!");
-  //bug: results in all saved Credentials to be removed if one is invalid! (Status : unFixed)
-  
+  //bug: results in all saved Credentials to be removed if one is invalid! (Status : Fixed)
+  //Finish me!
   unsigned int indexoffset = 0;
   for (unsigned int index = 0; index < (wifiCredentialList.length+1); index++) {
     Serial.print("indexoffset:");Serial.println( indexoffset );
     Serial.print("index:");Serial.println( index );
     if ( wifiCredentialList.credentials[ index ].ssid != wifiCredential.ssid ){
-      Serial.println("NotEqual")
-      //strcpy(wifiCredentialList.credentials[ indexoffset ].ssid, tempList[ index ].ssid);
-      //strcpy(wifiCredentialList.credentials[ indexoffset ].pass, tempList[ index ].pass);
+      Serial.println("NotEqual");
+      //Fix Me!
       strcpy(tempList[ indexoffset ].ssid, wifiCredentialList.credentials[ index ].ssid);
       strcpy(tempList[ indexoffset ].pass, wifiCredentialList.credentials[ index ].pass);
       Serial.println(tempList[ indexoffset ].ssid);
@@ -1071,21 +1089,15 @@ void remove_WiFiCredential_From_WiFiCredentialsList(List_WiFi_Credentials_Struct
     }
   }
   free(wifiCredentialList.credentials);
-  /*
+  wifiCredentialList.credentials = (Credentials_WiFi_Struct*)calloc(wifiCredentialList.length, sizeof(Credentials_WiFi_Struct));
   for (unsigned int index = 0; index < (wifiCredentialList.length); index++) {
-    Serial.print("TempListP[");Serial.print( index );Serial.println("]:");
-    Serial.println(tempList[ index ].ssid);
-    Serial.println(tempList[ index ].pass);
-    strcpy(wifiCredentialList.credentials[ index ].ssid, tempList[ index ].ssid);
-    strcpy(wifiCredentialList.credentials[ index ].pass, tempList[ index ].pass);
-    Serial.print("Resized List[");Serial.print( index );Serial.println("]:");
-    Serial.println(wifiCredentialList.credentials[ index ].ssid);
-    Serial.println(wifiCredentialList.credentials[ index ].pass);
+    ;
   }
-  */
-  //free(tempList);
   
-  
+  for (int index = 0; index < wifiCredentialList.length; index++) {
+    Serial.print("SSID: ");Serial.println(wifiCredentialList.credentials[ index ].ssid);
+    Serial.print("PASS: ");Serial.println(wifiCredentialList.credentials[ index ].pass);
+  }
   
   
 }
@@ -1284,7 +1296,6 @@ void OnWiFiEvent(WiFiEvent_t event)
 
 
 
-
 void startSoftAP(Stream &serialport){
   //https://randomnerdtutorials.com/esp32-access-point-ap-web-server/
   char ssid[33]     = "ESP32-Access-Point";
@@ -1306,6 +1317,8 @@ void disable_STA_WiFi() {
   WiFi.disconnect(true);  // Disconnect from the network
   disableWiFi_STA_Mode();
 }
+
+
 
 void enable_STA_WiFi() {
   //Remove This Function if it becomes basically on necessary
@@ -1403,6 +1416,9 @@ void enableWiFi_STA_Mode() {
  */
 
 
+void printAPStationNum(Stream &serialport){
+  serialport.printf("Stations connected to soft-AP = %d\n", WiFi.softAPgetStationNum());
+}
 
 
 
@@ -2213,15 +2229,15 @@ void setup()   {
 
 
   /*
-    Dictionary *dict = new Dictionary();//buttonNamesDict
-    dict->insert("0", "key_Up");
-    dict->insert("1", "key_Start");
-    dict->insert("2", "key_Select");
-    dict->insert("3", "key_A");
-    dict->insert("4", "key_Left");
-    dict->insert("5", "key_Down");
-    dict->insert("6", "key_Right");
-    dict->insert("7", "key_B");
+    Dictionary *buttonNamesDict = new Dictionary();//buttonNamesDict
+    buttonNamesDict->insert("0", "key_Up");
+    buttonNamesDict->insert("1", "key_Start");
+    buttonNamesDict->insert("2", "key_Select");
+    buttonNamesDict->insert("3", "key_A");
+    buttonNamesDict->insert("4", "key_Left");
+    buttonNamesDict->insert("5", "key_Down");
+    buttonNamesDict->insert("6", "key_Right");
+    buttonNamesDict->insert("7", "key_B");
   */
 
 
@@ -2329,7 +2345,8 @@ void setup()   {
   */
 
   printFreeHeap(Serial);
-
+  bool hexTest = false;//true;
+  if (hexTest)
   {
   File fileBMP;
   fileBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.hex");
@@ -2392,6 +2409,9 @@ void setup()   {
   //delay(500);
 
   printFreeHeap(Serial);
+  
+  bool rotTest = true;//true;
+  if (rotTest)
   {
   //"/boyKisserFaceGif_bitmapgif.txt"
   File fileBMP;
@@ -2499,6 +2519,8 @@ void setup()   {
   
   
   Serial.println("Starting WiFi Setup!");
+  Serial.print("Setting soft-AP configuration ... ");
+  Serial.println(WiFi.softAPConfig(local_IP, local_gateway, local_subnet) ? "Ready" : "Failed!");
   
   //WiFi Setup
   //https://www.upesy.com/blogs/tutorials/how-to-connect-wifi-acces-point-with-esp32

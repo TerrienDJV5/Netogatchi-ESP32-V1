@@ -14,7 +14,8 @@ class BMIMGmanipulate {
     void rotate8x8ImageClockwise(unsigned char imageIN8x8[]);
     unsigned char* rotate16x16ImageClockwise(unsigned char imageIN16x16[2*16]);
     unsigned char* rotate32x32ImageClockwise(unsigned char imageIN32x32[4*32]);
-    unsigned char* rotate64x64ImageClockwise(unsigned char imageIN64x64[8*64]);
+    //unsigned char* rotate64x64ImageClockwise(unsigned char imageIN64x64[8*64]);
+    void rotate64x64ImageClockwise(unsigned char imageInput[]);
     void rotate128x128ImageClockwise(unsigned char imageInput[]);
     
   public:
