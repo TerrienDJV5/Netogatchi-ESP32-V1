@@ -16,10 +16,13 @@ void BMIMGmanipulate::init() {
 unsigned int BMIMGmanipulate::calculateMinimunByteForBitWidth( unsigned int bitWidth ){
   return (bitWidth%8 + bitWidth)>>3; //(n>>3) === abs(n/8)
 }
-
+unsigned char BMIMGmanipulate::getRightShiftAND( unsigned char valueIN, byte rshiftCount, byte andValue ){
+  return (valueIN>>rshiftCount) & andValue);
+}
 
 void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
-  unsigned char imageOutput[8];
+  unsigned char* imageOutput;
+  imageOutput = (unsigned char*)calloc(8, sizeof(unsigned char));
   memset(imageOutput,0,8);
   //
   imageOutput[ 0 ] = ((imageIN8x8[0]>>7) & B00000001) | ((imageIN8x8[1]>>6) & B00000010);
@@ -58,118 +61,40 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   imageOutput[ 6 ] += ((imageIN8x8[6]<<5) & B01000000) | ((imageIN8x8[7]<<6) & B10000000);
   imageOutput[ 7 ] += ((imageIN8x8[6]<<6) & B01000000) | ((imageIN8x8[7]<<7) & B10000000);
   memmove(imageIN8x8, imageOutput, 8);
+  free(imageOutput);
 }
 
 
 
-
-unsigned char* BMIMGmanipulate::rotate16x16ImageClockwise(unsigned char imageIN16x16[2*16]){
-  static unsigned char imageOutput[2*16];
-  memset(imageOutput,0,2*16);
-  unsigned char sectorX0Y0[8];
-  unsigned char sectorX1Y0[8];
-  unsigned char sectorX0Y1[8];
-  unsigned char sectorX1Y1[8];
+void BMIMGmanipulate::rotate16x16ImageClockwise(unsigned char imageInput[]){
+  unsigned int imageByteWidth = 2;
+  unsigned int imageByteHeight = 16;
+  unsigned int fullImageByteSize = imageByteWidth*imageByteHeight;
   
-  for (uint16_t index = 0; index < 8; index++) {
-    memcpy(&sectorX0Y0[ index*1 ], &imageIN16x16[ index*2+0 ], 1);
-    memcpy(&sectorX1Y0[ index*1 ], &imageIN16x16[ index*2+1 ], 1);
-    memcpy(&sectorX0Y1[ index*1 ], &imageIN16x16[ index*2+1*16 ], 1);
-    memcpy(&sectorX1Y1[ index*1 ], &imageIN16x16[ index*2+1*16+1 ], 1);
+  unsigned int sectorByteWidth = imageByteWidth>>1;
+  unsigned int sectorByteHeight = imageByteHeight>>1;
+  unsigned int sectorByteSize = sectorByteWidth*sectorByteHeight;
+  
+  unsigned char* sectorX0Y0;
+  unsigned char* sectorX1Y0;
+  unsigned char* sectorX0Y1;
+  unsigned char* sectorX1Y1;
+  
+  sectorX0Y0 = (unsigned char*)malloc( sectorByteSize );
+  sectorX1Y0 = (unsigned char*)malloc( sectorByteSize );
+  sectorX0Y1 = (unsigned char*)malloc( sectorByteSize );
+  sectorX1Y1 = (unsigned char*)malloc( sectorByteSize );
+  
+  for (uint16_t index = 0; index < sectorByteHeight; index++) {
+    memcpy(&sectorX0Y0[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth ], sectorByteWidth);
+    memcpy(&sectorX1Y0[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteWidth ], sectorByteWidth);
+    memcpy(&sectorX0Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2 ], sectorByteWidth);
+    memcpy(&sectorX1Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], sectorByteWidth);
   }
-  
   rotate8x8ImageClockwise( sectorX0Y0 );
   rotate8x8ImageClockwise( sectorX1Y0 );
   rotate8x8ImageClockwise( sectorX0Y1 );
   rotate8x8ImageClockwise( sectorX1Y1 );
-  
-  //Rotate Sectors
-  unsigned char sectorStorage[8];
-  memmove(sectorStorage, sectorX1Y0, 8);
-  memmove(sectorX1Y0, sectorX0Y0, 8);
-  memmove(sectorX0Y0, sectorX0Y1, 8);
-  memmove(sectorX0Y1, sectorX1Y1, 8);
-  memmove(sectorX1Y1, sectorStorage, 8);
-  
-  for (uint16_t index = 0; index < 8; index++) {
-    memcpy(&imageOutput[ index*2+0 ], &sectorX0Y0[ index*1 ], 1);
-    memcpy(&imageOutput[ index*2+1 ], &sectorX1Y0[ index*1 ], 1);
-    memcpy(&imageOutput[ index*2+1*16 ], &sectorX0Y1[ index*1 ], 1);
-    memcpy(&imageOutput[ index*2+1*16+1 ], &sectorX1Y1[ index*1 ], 1);
-  }
-  return imageOutput;
-}
-
-
-unsigned char* BMIMGmanipulate::rotate32x32ImageClockwise(unsigned char imageIN32x32[4*32]){
-  static unsigned char imageOutput[4*32];
-  memset(imageOutput,0,4*32);
-  unsigned char sectorX0Y0[32];
-  unsigned char sectorX1Y0[32];
-  unsigned char sectorX0Y1[32];
-  unsigned char sectorX1Y1[32];
-  
-  for (uint16_t index = 0; index < 16; index++) {
-    memcpy(&sectorX0Y0[ index*2 ], &imageIN32x32[ index*4+0 ], 2);
-    memcpy(&sectorX1Y0[ index*2 ], &imageIN32x32[ index*4+2 ], 2);
-    memcpy(&sectorX0Y1[ index*2 ], &imageIN32x32[ index*4+2*32 ], 2);
-    memcpy(&sectorX1Y1[ index*2 ], &imageIN32x32[ index*4+2*32+2 ], 2);
-  }
-  
-  memmove(sectorX0Y0, rotate16x16ImageClockwise( sectorX0Y0 ), 32);
-  memmove(sectorX1Y0, rotate16x16ImageClockwise( sectorX1Y0 ), 32);
-  memmove(sectorX0Y1, rotate16x16ImageClockwise( sectorX0Y1 ), 32);
-  memmove(sectorX1Y1, rotate16x16ImageClockwise( sectorX1Y1 ), 32);
-  
-  //Rotate Sectors
-  //unsigned char sectorStorage[32];
-  unsigned char *sectorStorage;
-  sectorStorage = (unsigned char *)malloc(32);
-  memmove(sectorStorage, sectorX1Y0, 32);
-  memmove(sectorX1Y0, sectorX0Y0, 32);
-  memmove(sectorX0Y0, sectorX0Y1, 32);
-  memmove(sectorX0Y1, sectorX1Y1, 32);
-  memmove(sectorX1Y1, sectorStorage, 32);
-  free(sectorStorage);
-  
-  for (uint16_t index = 0; index < 16; index++) {
-    memcpy(&imageOutput[ index*4+0 ], &sectorX0Y0[ index*2 ], 2);
-    memcpy(&imageOutput[ index*4+2 ], &sectorX1Y0[ index*2 ], 2);
-    memcpy(&imageOutput[ index*4+2*32 ], &sectorX0Y1[ index*2 ], 2);
-    memcpy(&imageOutput[ index*4+2*32+2 ], &sectorX1Y1[ index*2 ], 2);
-  }
-  
-  return imageOutput;
-}
-
-/*
-unsigned char* BMIMGmanipulate::rotate64x64ImageClockwise(unsigned char imageIN64x64[8*64]){
-  const unsigned int imageByteWidth = 8;
-  const unsigned int imageByteHeight = 64;
-  const unsigned int fullImageByteSize = imageByteWidth*imageByteHeight;
-  
-  const unsigned int sectorByteWidth = imageByteWidth>>1;
-  const unsigned int sectorByteHeight = imageByteHeight>>1;
-  const unsigned int sectorByteSize = sectorByteWidth*sectorByteHeight;
-  
-  static unsigned char imageOutput[fullImageByteSize];
-  memset(imageOutput,0,fullImageByteSize);
-  unsigned char sectorX0Y0[ sectorByteSize ];
-  unsigned char sectorX1Y0[ sectorByteSize ];
-  unsigned char sectorX0Y1[ sectorByteSize ];
-  unsigned char sectorX1Y1[ sectorByteSize ];
-  
-  for (uint16_t index = 0; index < sectorByteHeight; index++) {
-    memcpy(&sectorX0Y0[ index*sectorByteWidth ], &imageIN64x64[ index*imageByteWidth ], sectorByteWidth);
-    memcpy(&sectorX1Y0[ index*sectorByteWidth ], &imageIN64x64[ index*imageByteWidth+sectorByteWidth ], sectorByteWidth);
-    memcpy(&sectorX0Y1[ index*sectorByteWidth ], &imageIN64x64[ index*imageByteWidth+sectorByteSize*2 ], sectorByteWidth);
-    memcpy(&sectorX1Y1[ index*sectorByteWidth ], &imageIN64x64[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], sectorByteWidth);
-  }
-  
-  memmove(sectorX0Y0, rotate32x32ImageClockwise( sectorX0Y0 ), sectorByteSize );
-  memmove(sectorX1Y0, rotate32x32ImageClockwise( sectorX1Y0 ), sectorByteSize );
-  memmove(sectorX0Y1, rotate32x32ImageClockwise( sectorX0Y1 ), sectorByteSize );
-  memmove(sectorX1Y1, rotate32x32ImageClockwise( sectorX1Y1 ), sectorByteSize );
   
   //Rotate Sectors
   unsigned char *sectorStorage;
@@ -182,15 +107,72 @@ unsigned char* BMIMGmanipulate::rotate64x64ImageClockwise(unsigned char imageIN6
   free(sectorStorage);
   
   for (uint16_t index = 0; index < sectorByteHeight; index++) {
-    memcpy(&imageOutput[ index*imageByteWidth ], &sectorX0Y0[ index*sectorByteWidth ], sectorByteWidth);
-    memcpy(&imageOutput[ index*imageByteWidth+sectorByteWidth ], &sectorX1Y0[ index*sectorByteWidth ], sectorByteWidth);
-    memcpy(&imageOutput[ index*imageByteWidth+sectorByteSize*2 ], &sectorX0Y1[ index*sectorByteWidth ], sectorByteWidth);
-    memcpy(&imageOutput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], &sectorX1Y1[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth ], &sectorX0Y0[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteWidth ], &sectorX1Y0[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteSize*2 ], &sectorX0Y1[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], &sectorX1Y1[ index*sectorByteWidth ], sectorByteWidth);
   }
-  Serial.println("Track64-Return64x64");
-  return imageOutput;
+  free(sectorX0Y0);
+  free(sectorX1Y0);
+  free(sectorX0Y1);
+  free(sectorX1Y1);
+  
 }
-*/
+
+
+void BMIMGmanipulate::rotate32x32ImageClockwise(unsigned char imageInput[]){
+  unsigned int imageByteWidth = 4;
+  unsigned int imageByteHeight = 32;
+  unsigned int fullImageByteSize = imageByteWidth*imageByteHeight;
+  
+  unsigned int sectorByteWidth = imageByteWidth>>1;
+  unsigned int sectorByteHeight = imageByteHeight>>1;
+  unsigned int sectorByteSize = sectorByteWidth*sectorByteHeight;
+  
+  unsigned char* sectorX0Y0;
+  unsigned char* sectorX1Y0;
+  unsigned char* sectorX0Y1;
+  unsigned char* sectorX1Y1;
+  
+  sectorX0Y0 = (unsigned char*)malloc( sectorByteSize );
+  sectorX1Y0 = (unsigned char*)malloc( sectorByteSize );
+  sectorX0Y1 = (unsigned char*)malloc( sectorByteSize );
+  sectorX1Y1 = (unsigned char*)malloc( sectorByteSize );
+  
+  for (uint16_t index = 0; index < sectorByteHeight; index++) {
+    memcpy(&sectorX0Y0[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth ], sectorByteWidth);
+    memcpy(&sectorX1Y0[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteWidth ], sectorByteWidth);
+    memcpy(&sectorX0Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2 ], sectorByteWidth);
+    memcpy(&sectorX1Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], sectorByteWidth);
+  }
+  rotate16x16ImageClockwise( sectorX0Y0 );
+  rotate16x16ImageClockwise( sectorX1Y0 );
+  rotate16x16ImageClockwise( sectorX0Y1 );
+  rotate16x16ImageClockwise( sectorX1Y1 );
+  
+  //Rotate Sectors
+  unsigned char *sectorStorage;
+  sectorStorage = (unsigned char *)malloc(sectorByteSize);
+  memmove(sectorStorage, sectorX1Y0, sectorByteSize );
+  memmove(sectorX1Y0, sectorX0Y0, sectorByteSize );
+  memmove(sectorX0Y0, sectorX0Y1, sectorByteSize );
+  memmove(sectorX0Y1, sectorX1Y1, sectorByteSize );
+  memmove(sectorX1Y1, sectorStorage, sectorByteSize );
+  free(sectorStorage);
+  
+  for (uint16_t index = 0; index < sectorByteHeight; index++) {
+    memcpy(&imageInput[ index*imageByteWidth ], &sectorX0Y0[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteWidth ], &sectorX1Y0[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteSize*2 ], &sectorX0Y1[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], &sectorX1Y1[ index*sectorByteWidth ], sectorByteWidth);
+  }
+  free(sectorX0Y0);
+  free(sectorX1Y0);
+  free(sectorX0Y1);
+  free(sectorX1Y1);
+  
+}
+
 
 
 
@@ -220,10 +202,10 @@ void BMIMGmanipulate::rotate64x64ImageClockwise(unsigned char imageInput[]){
     memcpy(&sectorX0Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2 ], sectorByteWidth);
     memcpy(&sectorX1Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], sectorByteWidth);
   }
-  memmove(sectorX0Y0, rotate32x32ImageClockwise( sectorX0Y0 ), sectorByteSize );
-  memmove(sectorX1Y0, rotate32x32ImageClockwise( sectorX1Y0 ), sectorByteSize );
-  memmove(sectorX0Y1, rotate32x32ImageClockwise( sectorX0Y1 ), sectorByteSize );
-  memmove(sectorX1Y1, rotate32x32ImageClockwise( sectorX1Y1 ), sectorByteSize );
+  rotate32x32ImageClockwise( sectorX0Y0 );
+  rotate32x32ImageClockwise( sectorX1Y0 );
+  rotate32x32ImageClockwise( sectorX0Y1 );
+  rotate32x32ImageClockwise( sectorX1Y1 );
   
   //Rotate Sectors
   unsigned char *sectorStorage;
@@ -279,11 +261,6 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
   rotate64x64ImageClockwise( sectorX1Y0 );
   rotate64x64ImageClockwise( sectorX0Y1 );
   rotate64x64ImageClockwise( sectorX1Y1 );
-  //memmove(sectorX0Y0, rotate64x64ImageClockwise( sectorX0Y0 ), sectorByteSize );
-  //memmove(sectorX1Y0, rotate64x64ImageClockwise( sectorX1Y0 ), sectorByteSize );
-  //memmove(sectorX0Y1, rotate64x64ImageClockwise( sectorX0Y1 ), sectorByteSize );
-  //memmove(sectorX1Y1, rotate64x64ImageClockwise( sectorX1Y1 ), sectorByteSize );
-  
   
   //Rotate Sectors
   unsigned char *sectorStorage;
@@ -309,7 +286,8 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
 }
 //*/
 
-
+//890925  ->  //890781  ->  //
+//59392   ->  //59232   ->  //
 
 
 
@@ -415,13 +393,15 @@ void BMIMGmanipulate::rotateBitImageClockwise(unsigned char imageOUT[], unsigned
   }
   if ( (imgLargestValue <= 16) and (imgLargestValue > 8) ){
     Serial.println("resized16x16");
-    imageTMP2 = rotate16x16ImageClockwise( imageTMP1 );
-    memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 16 )*16);
+    //imageTMP2 = rotate16x16ImageClockwise( imageTMP1 );
+    //memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 16 )*16);
+    rotate16x16ImageClockwise( imageTMP1 );
   }
   if ( (imgLargestValue <= 32) and (imgLargestValue > 16) ){
     Serial.println("resized32x32");
-    imageTMP2 = rotate32x32ImageClockwise( imageTMP1 );
-    memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 32 )*32);
+    //imageTMP2 = rotate32x32ImageClockwise( imageTMP1 );
+    //memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 32 )*32);
+    rotate32x32ImageClockwise( imageTMP1 );
   }
   if ( (imgLargestValue <= 64) and (imgLargestValue > 32) ){
     Serial.println("resized64x64");

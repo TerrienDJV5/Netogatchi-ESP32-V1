@@ -2422,6 +2422,7 @@ void setup()   {
   }
   Serial.println("File Content:");
   while (fileBMP.available()) {
+    printFreeHeap(Serial);
     char filereadBuffer[2048];
     char fileImageBuffer[2048];
     memset(filereadBuffer, '\0', 2048);
@@ -2432,9 +2433,11 @@ void setup()   {
     //Serial.println();
     //Serial.write(fileImageBuffer, strlen(fileImageBuffer));
     //Serial.println();
+    printFreeHeap(Serial);
     display.clearDisplay();
     display.drawBitmap(0, 0, convertTextHextoCharArray( fileImageBuffer ), 85, 64, WHITE);//Test Image Read
     ///*
+    printFreeHeap(Serial);
     unsigned char* rotateImageTest;
     rotateImageTest = (unsigned char *) calloc(4 * 32, sizeof(unsigned char *)); //32*32
     bitmapIMGmanipulate0.rotateBitImageClockwise( rotateImageTest, (unsigned char*)rotateImageTestIcon, 32, 32);//rotates 90 deg clockwise //new Px Width and Height will be flipped
@@ -2444,6 +2447,7 @@ void setup()   {
     Serial.println("Displayed");
     //delay(2000);
     ///*
+    printFreeHeap(Serial);
     unsigned char* betterRotateImageTest;
     betterRotateImageTest = (unsigned char *) calloc(16 * 128, sizeof(unsigned char *)); //85*64
     Serial.println("CheckPoint");
