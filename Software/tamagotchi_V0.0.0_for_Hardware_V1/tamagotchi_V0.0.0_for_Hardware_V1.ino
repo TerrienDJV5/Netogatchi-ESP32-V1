@@ -548,7 +548,7 @@ static char smOptionName_List[][32 + 1] = {
   "SPIFFS File System Unfinished",
   "SD File System Menu Unfinished",
   "IP Menu",
-  "Op11",
+  "Composite Video Test",
   "Op12",
   "Op13",
   "Op14",
@@ -2964,9 +2964,14 @@ void loop()
     menu_SPIFFS();
   }
 
-  //IP menu //currentMenuID==11
-  if (currentMenuID == 11) {
+  //IP menu //currentMenuID==10
+  if (currentMenuID == 10) {
     menu_IP();
+  }
+  //Composite Video Test //currentMenuID==11
+  if (currentMenuID == 11) {
+    //Add Me As an Option
+    ;
   }
   
   
@@ -3325,17 +3330,17 @@ void menu_SELECTION(){
   
 
 void menu_LORA(){
+  //ToDo: make this its own Loop And only breakOut of it if the (currentMenuID!=2)
   display.clearDisplay();
   //https://github.com/xreef/EByte_LoRa_E220_Series_Library
   display.setCursor(0, 1 * 8);
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.print("LoRa Menu"); display.println();
-  //ToDo: add time and date for when Each message was received
+  //https://cplusplus.com/reference/string/string/
   static String timeLog;
   static String messageLog;
   String message;
-  https://cplusplus.com/reference/string/string/
   // If something available
   if (e220ttl.available() > 1) {
     Serial.println("Message received!");
