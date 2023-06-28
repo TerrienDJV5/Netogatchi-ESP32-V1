@@ -42,53 +42,50 @@ byte BMIMGmanipulate::ringRShift_Byte(byte initValue, byte shiftOffsetIN){//B000
   return ((initValue >> shiftOffset) | cache);
 }
 
-void BMIMGmanipulate::rowRShift8x8DecFunc(unsigned char rowRShift8[], unsigned char initValue, byte shiftOffsetIN){
+
+/*
+unsigned char* arrayCache2;
+byte* shift8Values;
+arrayCache2 = (unsigned char*)calloc(8, sizeof(unsigned char));
+shift8Values = (byte*)calloc(8, sizeof(byte));
+memset(arrayCache2,0,8);
+rowRShift8x8DecFunc(arrayCache2, 69, 1);
+rowLShift8x8IncFunc(arrayCache2, 69, 1);
+rowRShift8x8_ShiftArrayFunc(arrayCache2, shift8Values, 69);
+rowLShift8x8_ShiftArrayFunc(arrayCache2, shift8Values, 69);
+ */
+
+void BMIMGmanipulate::arrayx8_IndexShiftoffset_unsignedChar_Func(unsigned char inputx8[], byte shiftOffsetIN, bool incFlag){
   byte shiftOffset = shiftOffsetIN & B00000111;
-  rowRShift8[(0+shiftOffset)%8] = initValue>>(7);
-  rowRShift8[(1+shiftOffset)%8] = initValue>>(6);
-  rowRShift8[(2+shiftOffset)%8] = initValue>>(5);
-  rowRShift8[(3+shiftOffset)%8] = initValue>>(4);
-  rowRShift8[(4+shiftOffset)%8] = initValue>>(3);
-  rowRShift8[(5+shiftOffset)%8] = initValue>>(2);
-  rowRShift8[(6+shiftOffset)%8] = initValue>>(1);
-  rowRShift8[(7+shiftOffset)%8] = initValue>>(0);
-}
-void BMIMGmanipulate::rowLShift8x8DecFunc(unsigned char rowLShift8[], unsigned char initValue, byte shiftOffsetIN){
-  byte shiftOffset = shiftOffsetIN & B00000111;
-  rowLShift8[(0+shiftOffset)%8] = initValue<<(7);
-  rowLShift8[(1+shiftOffset)%8] = initValue<<(6);
-  rowLShift8[(2+shiftOffset)%8] = initValue<<(5);
-  rowLShift8[(3+shiftOffset)%8] = initValue<<(4);
-  rowLShift8[(4+shiftOffset)%8] = initValue<<(3);
-  rowLShift8[(5+shiftOffset)%8] = initValue<<(2);
-  rowLShift8[(6+shiftOffset)%8] = initValue<<(1);
-  rowLShift8[(7+shiftOffset)%8] = initValue<<(0);
-}
-void BMIMGmanipulate::rowRShift8x8IncFunc(unsigned char rowRShift8[], unsigned char initValue, byte shiftOffsetIN){
-  byte shiftOffset = shiftOffsetIN & B00000111;
-  rowRShift8[(0+shiftOffset)%8] = initValue>>(0);
-  rowRShift8[(1+shiftOffset)%8] = initValue>>(1);
-  rowRShift8[(2+shiftOffset)%8] = initValue>>(2);
-  rowRShift8[(3+shiftOffset)%8] = initValue>>(3);
-  rowRShift8[(4+shiftOffset)%8] = initValue>>(4);
-  rowRShift8[(5+shiftOffset)%8] = initValue>>(5);
-  rowRShift8[(6+shiftOffset)%8] = initValue>>(6);
-  rowRShift8[(7+shiftOffset)%8] = initValue>>(7);
-}
-void BMIMGmanipulate::rowLShift8x8IncFunc(unsigned char rowLShift8[], unsigned char initValue, byte shiftOffsetIN){
-  byte shiftOffset = shiftOffsetIN & B00000111;
-  rowLShift8[(0+shiftOffset)%8] = initValue<<(0);
-  rowLShift8[(1+shiftOffset)%8] = initValue<<(1);
-  rowLShift8[(2+shiftOffset)%8] = initValue<<(2);
-  rowLShift8[(3+shiftOffset)%8] = initValue<<(3);
-  rowLShift8[(4+shiftOffset)%8] = initValue<<(4);
-  rowLShift8[(5+shiftOffset)%8] = initValue<<(5);
-  rowLShift8[(6+shiftOffset)%8] = initValue<<(6);
-  rowLShift8[(7+shiftOffset)%8] = initValue<<(7);
+  unsigned char* cacheChar;
+  cacheChar = (unsigned char*)calloc(8, sizeof(unsigned char));
+  memcpy(cacheChar, inputx8, 8*sizeof(unsigned char));
+  if (incFlag){
+    inputx8[0] = cacheChar[(0+shiftOffset)%8];
+    inputx8[1] = cacheChar[(1+shiftOffset)%8];
+    inputx8[2] = cacheChar[(2+shiftOffset)%8];
+    inputx8[3] = cacheChar[(3+shiftOffset)%8];
+    inputx8[4] = cacheChar[(4+shiftOffset)%8];
+    inputx8[5] = cacheChar[(5+shiftOffset)%8];
+    inputx8[6] = cacheChar[(6+shiftOffset)%8];
+    inputx8[7] = cacheChar[(7+shiftOffset)%8];
+  }else{
+    inputx8[0] = cacheChar[(0-shiftOffset)%8];
+    inputx8[1] = cacheChar[(1-shiftOffset)%8];
+    inputx8[2] = cacheChar[(2-shiftOffset)%8];
+    inputx8[3] = cacheChar[(3-shiftOffset)%8];
+    inputx8[4] = cacheChar[(4-shiftOffset)%8];
+    inputx8[5] = cacheChar[(5-shiftOffset)%8];
+    inputx8[6] = cacheChar[(6-shiftOffset)%8];
+    inputx8[7] = cacheChar[(7-shiftOffset)%8];
+  }
+  free(cacheChar);
 }
 
 
-void BMIMGmanipulate::rowRShift8x8_ShiftArrayFunc(unsigned char rowRShift8[], byte shiftx8_IN[], unsigned char initValue){
+
+
+void BMIMGmanipulate::rowRShift8x8_ShiftArrayFunc(unsigned char rowRShift8[], const byte shiftx8_IN[], unsigned char initValue){
   rowRShift8[0] = initValue>>(shiftx8_IN[0]);
   rowRShift8[1] = initValue>>(shiftx8_IN[1]);
   rowRShift8[2] = initValue>>(shiftx8_IN[2]);
@@ -98,7 +95,7 @@ void BMIMGmanipulate::rowRShift8x8_ShiftArrayFunc(unsigned char rowRShift8[], by
   rowRShift8[6] = initValue>>(shiftx8_IN[6]);
   rowRShift8[7] = initValue>>(shiftx8_IN[7]);
 }
-void BMIMGmanipulate::rowLShift8x8_ShiftArrayFunc(unsigned char rowLShift8[], byte shiftx8_IN[], unsigned char initValue){
+void BMIMGmanipulate::rowLShift8x8_ShiftArrayFunc(unsigned char rowLShift8[], const byte shiftx8_IN[], unsigned char initValue){
   rowLShift8[0] = initValue<<(shiftx8_IN[0]);
   rowLShift8[1] = initValue<<(shiftx8_IN[1]);
   rowLShift8[2] = initValue<<(shiftx8_IN[2]);
@@ -109,24 +106,52 @@ void BMIMGmanipulate::rowLShift8x8_ShiftArrayFunc(unsigned char rowLShift8[], by
   rowLShift8[7] = initValue<<(shiftx8_IN[7]);
 }
 
-void BMIMGmanipulate::row8xUnsignedChar_logicArrayFunc(unsigned char outputx8[], byte shiftx8_IN[], char logicTypex8_IN[], unsigned char initValue){
-  for (uint16_t index = 0; index < 8; index++) {
-    if (logicTypex8_IN[ index ] == ' '){
-      outputx8[ index ] = initValue;
-      continue;
-    }
-    if (logicTypex8_IN[ index ] == 'R'){//>>
-      outputx8[ index ] = initValue>>(shiftx8_IN[ index ]);
-      continue;
-    }
-    if (logicTypex8_IN[ index ] == 'L'){//<<
-      outputx8[ index ] = initValue<<(shiftx8_IN[ index ]);
-      continue;
-    }
-  }
+
+
+void BMIMGmanipulate::rowRShift8x8DecFunc(unsigned char rowRShift8[], unsigned char initValue, byte shiftOffsetIN){
+  byte shiftOffset = shiftOffsetIN & B00000111;
+  /*
+  rowRShift8[(0+shiftOffset)%8] = initValue>>(7);
+  rowRShift8[(1+shiftOffset)%8] = initValue>>(6);
+  rowRShift8[(2+shiftOffset)%8] = initValue>>(5);
+  rowRShift8[(3+shiftOffset)%8] = initValue>>(4);
+  rowRShift8[(4+shiftOffset)%8] = initValue>>(3);
+  rowRShift8[(5+shiftOffset)%8] = initValue>>(2);
+  rowRShift8[(6+shiftOffset)%8] = initValue>>(1);
+  rowRShift8[(7+shiftOffset)%8] = initValue>>(0);
+  //*/
+  rowRShift8x8_ShiftArrayFunc(rowRShift8, (const byte[]){0,1,2,3,4,5,6,7}, initValue);
+  arrayx8_IndexShiftoffset_unsignedChar_Func(rowRShift8, shiftOffsetIN, false);
+}
+void BMIMGmanipulate::rowLShift8x8DecFunc(unsigned char rowLShift8[], unsigned char initValue, byte shiftOffsetIN){
+  byte shiftOffset = shiftOffsetIN & B00000111;
+  /*
+  rowLShift8[(0+shiftOffset)%8] = initValue<<(7);
+  rowLShift8[(1+shiftOffset)%8] = initValue<<(6);
+  rowLShift8[(2+shiftOffset)%8] = initValue<<(5);
+  rowLShift8[(3+shiftOffset)%8] = initValue<<(4);
+  rowLShift8[(4+shiftOffset)%8] = initValue<<(3);
+  rowLShift8[(5+shiftOffset)%8] = initValue<<(2);
+  rowLShift8[(6+shiftOffset)%8] = initValue<<(1);
+  rowLShift8[(7+shiftOffset)%8] = initValue<<(0);
+  */
+  rowLShift8x8_ShiftArrayFunc(rowLShift8, (const byte[]){0,1,2,3,4,5,6,7}, initValue);
+  arrayx8_IndexShiftoffset_unsignedChar_Func(rowLShift8, shiftOffsetIN, false);
+}
+void BMIMGmanipulate::rowRShift8x8IncFunc(unsigned char rowRShift8[], unsigned char initValue, byte shiftOffsetIN){
+  byte shiftOffset = shiftOffsetIN & B00000111;
+  rowRShift8x8_ShiftArrayFunc(rowRShift8, (const byte[]){0,1,2,3,4,5,6,7}, initValue);
+  arrayx8_IndexShiftoffset_unsignedChar_Func(rowRShift8, shiftOffsetIN, true);
+}
+void BMIMGmanipulate::rowLShift8x8IncFunc(unsigned char rowLShift8[], unsigned char initValue, byte shiftOffsetIN){
+  byte shiftOffset = shiftOffsetIN & B00000111;
+  rowLShift8x8_ShiftArrayFunc(rowLShift8, (const byte[]){0,1,2,3,4,5,6,7}, initValue);
+  arrayx8_IndexShiftoffset_unsignedChar_Func(rowLShift8, shiftOffsetIN, true);
 }
 
-void BMIMGmanipulate::logicOP_UnsignedCharX1_logicArrayFunc(unsigned char &output, unsigned char &input0, unsigned char &input1, logicTypes logicType_IN){
+
+
+void BMIMGmanipulate::logicOP_UnsignedCharX1_logicArrayFunc(unsigned char &output, unsigned char &input0, unsigned char &input1, const logicTypes logicType_IN){
   if (logicType_IN == passThrough){
     output = input0;
   }
@@ -159,7 +184,7 @@ void BMIMGmanipulate::logicOP_UnsignedCharX1_logicArrayFunc(unsigned char &outpu
 }
 
 
-void BMIMGmanipulate::logicOP_UnsignedCharX8_logicArrayFunc(unsigned char arrayx8_Output[], unsigned char arrayx8_Input0[], unsigned char arrayx8_Input1[], logicTypes logicTypex8_IN[]){
+void BMIMGmanipulate::logicOP_UnsignedCharX8_logicArrayFunc(unsigned char arrayx8_Output[], unsigned char arrayx8_Input0[], unsigned char arrayx8_Input1[], const logicTypes logicTypex8_IN[]){
   logicOP_UnsignedCharX1_logicArrayFunc(arrayx8_Output[ 0 ], arrayx8_Input0[ 0 ], arrayx8_Input1[ 0 ], logicTypex8_IN[ 0 ]);
   logicOP_UnsignedCharX1_logicArrayFunc(arrayx8_Output[ 1 ], arrayx8_Input0[ 1 ], arrayx8_Input1[ 1 ], logicTypex8_IN[ 1 ]);
   logicOP_UnsignedCharX1_logicArrayFunc(arrayx8_Output[ 2 ], arrayx8_Input0[ 2 ], arrayx8_Input1[ 2 ], logicTypex8_IN[ 2 ]);
@@ -176,114 +201,93 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   unsigned char* imageOutput;
   imageOutput = (unsigned char*)calloc(8, sizeof(unsigned char));
   memset(imageOutput,0,8);
-  byte* cS;//columnSelect
-  cS = (byte*)calloc(8, sizeof(byte));
-  cS[0] = B00000001;cS[1] = B00000010;cS[2] = B00000100;cS[3] = B00001000;cS[4] = B00010000;cS[5] = B00100000;cS[6] = B01000000;cS[7] = B10000000;
-  unsigned char* rowValues;
+  
+  unsigned char* shiftValueCache;
+  shiftValueCache = (unsigned char*)calloc(15, sizeof(unsigned char));
+  memcpy(shiftValueCache, (const unsigned char[]){7,6,5,4,3,2,1,0,1,2,3,4,5,6,7}, (15)*sizeof(unsigned char));
+  
+  logicTypes* logicTypeShiftCache;
+  logicTypeShiftCache = (logicTypes*)calloc(15, sizeof(logicTypes));
+  memcpy(logicTypeShiftCache, (const logicTypes[]){bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,passThrough,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift}, (15)*sizeof(logicTypes));
+  
+  
+  
+  logicTypes* logicTypeFullx8_OR;
+  logicTypeFullx8_OR = (logicTypes*)calloc(8, sizeof(logicTypes));
+  memcpy(logicTypeFullx8_OR, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
+  logicTypes* logicTypeFullx8_AND;
+  logicTypeFullx8_AND = (logicTypes*)calloc(8, sizeof(logicTypes));
+  memcpy(logicTypeFullx8_AND, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
+  
   unsigned char* arrayCache0;
   unsigned char* arrayCache1;
-  byte* shift8Values;
-  logicTypes* shift8TypeValues;
-  rowValues = (unsigned char*)calloc(8, sizeof(unsigned char));
   arrayCache0 = (unsigned char*)calloc(8, sizeof(unsigned char));
   arrayCache1 = (unsigned char*)calloc(8, sizeof(unsigned char));
-  shift8Values = (byte*)calloc(8, sizeof(byte));
-  shift8TypeValues = (logicTypes*)calloc(8, sizeof(logicTypes));
-  memset(rowValues,0,8);
-  rowRShift8x8DecFunc(rowValues, imageIN8x8[0], 0);
-  rowLShift8x8IncFunc(rowValues, imageIN8x8[0], 0);
-  rowRShift8x8_ShiftArrayFunc(rowValues, shift8Values, imageIN8x8[0]);
-  rowLShift8x8_ShiftArrayFunc(rowValues, shift8Values, imageIN8x8[0]);
-
+  memset(arrayCache1,0,8);
+  
+  
   memset(arrayCache0, imageIN8x8[0], 8);
-  memcpy(arrayCache1, (const unsigned char[]){7,6,5,4,3,2,1,0}, 8*sizeof(unsigned char));
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,passThrough}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, arrayCache0, arrayCache1, shift8TypeValues);
-  memset(arrayCache1, 0B00000001, 8);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, rowValues, arrayCache1, shift8TypeValues);
-  memcpy(shift8TypeValues, (const logicTypes []){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, rowValues, shift8TypeValues);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+0, logicTypeShiftCache+0);
+  memset(arrayCache0, 0B00000001, 8);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
+  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
   
   memset(arrayCache0, imageIN8x8[1], 8);
-  memcpy(arrayCache1, (const unsigned char[]){6,5,4,3,2,1,0,1}, 8*sizeof(unsigned char));
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,passThrough,bitwiseLShift}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, arrayCache0, arrayCache1, shift8TypeValues);
-  memset(arrayCache1, 0B00000010, 8);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, rowValues, arrayCache1, shift8TypeValues);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, rowValues, shift8TypeValues);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+1, logicTypeShiftCache+1);
+  memset(arrayCache0, 0B00000010, 8);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
+  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
   
 
   memset(arrayCache0, imageIN8x8[2], 8);
-  memcpy(arrayCache1, (const unsigned char[]){5,4,3,2,1,0,1,2}, 8*sizeof(unsigned char));
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,passThrough,bitwiseLShift,bitwiseLShift}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, arrayCache0, arrayCache1, shift8TypeValues);
-  memset(arrayCache1, 0B00000100, 8);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, rowValues, arrayCache1, shift8TypeValues);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, rowValues, shift8TypeValues);
-
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+2, logicTypeShiftCache+2);
+  memset(arrayCache0, 0B00000100, 8);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
+  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
+  
   memset(arrayCache0, imageIN8x8[3], 8);
-  memcpy(arrayCache1, (const unsigned char[]){4,3,2,1,0,1,2,3}, 8*sizeof(unsigned char));
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,passThrough,bitwiseLShift,bitwiseLShift,bitwiseLShift}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, arrayCache0, arrayCache1, shift8TypeValues);
-  memset(arrayCache1, 0B00001000, 8);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, rowValues, arrayCache1, shift8TypeValues);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, rowValues, shift8TypeValues);
-
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+3, logicTypeShiftCache+3);
+  memset(arrayCache0, 0B00001000, 8);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
+  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
+  
 
   memset(arrayCache0, imageIN8x8[4], 8);
-  memcpy(arrayCache1, (const unsigned char[]){3,2,1,0,1,2,3,4}, 8*sizeof(unsigned char));
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseRShift,bitwiseRShift,bitwiseRShift,passThrough,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, arrayCache0, arrayCache1, shift8TypeValues);
-  memset(arrayCache1, 0B00010000, 8);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, rowValues, arrayCache1, shift8TypeValues);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, rowValues, shift8TypeValues);
-
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+4, logicTypeShiftCache+4);
+  memset(arrayCache0, 0B00010000, 8);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
+  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
+  
   memset(arrayCache0, imageIN8x8[5], 8);
-  memcpy(arrayCache1, (const unsigned char[]){2,1,0,1,2,3,4,5}, 8*sizeof(unsigned char));
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseRShift,bitwiseRShift,passThrough,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, arrayCache0, arrayCache1, shift8TypeValues);
-  memset(arrayCache1, 0B00100000, 8);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, rowValues, arrayCache1, shift8TypeValues);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, rowValues, shift8TypeValues);
-
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+5, logicTypeShiftCache+5);
+  memset(arrayCache0, 0B00100000, 8);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
+  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
+  
 
   memset(arrayCache0, imageIN8x8[6], 8);
-  memcpy(arrayCache1, (const unsigned char[]){1,0,1,2,3,4,5,6}, 8*sizeof(unsigned char));
-  memcpy(shift8TypeValues, (const char[]){bitwiseRShift,passThrough,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, arrayCache0, arrayCache1, shift8TypeValues);
-  memset(arrayCache1, 0B01000000, 8);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, rowValues, arrayCache1, shift8TypeValues);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, rowValues, shift8TypeValues);
-
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+6, logicTypeShiftCache+6);
+  memset(arrayCache0, 0B01000000, 8);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
+  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
+  
   memset(arrayCache0, imageIN8x8[7], 8);
-  memcpy(arrayCache1, (const unsigned char[]){0,1,2,3,4,5,6,7}, 8*sizeof(unsigned char));
-  memcpy(shift8TypeValues, (const logicTypes[]){passThrough,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, arrayCache0, arrayCache1, shift8TypeValues);
-  memset(arrayCache1, 0B10000000, 8);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(rowValues, rowValues, arrayCache1, shift8TypeValues);
-  memcpy(shift8TypeValues, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, rowValues, shift8TypeValues);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+7, logicTypeShiftCache+7);
+  memset(arrayCache0, 0B10000000, 8);
+  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
+  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
   
 
   
   
   /*
+  byte* cS;//columnSelect
+  cS = (byte*)calloc(8, sizeof(byte));
+  cS[0] = B00000001;cS[1] = B00000010;cS[2] = B00000100;cS[3] = B00001000;cS[4] = B00010000;cS[5] = B00100000;cS[6] = B01000000;cS[7] = B10000000;
+  
   //
-  imageOutput[ 0 ] = getRShiftAND( imageIN8x8[0], 7, cS[0] ) | ((imageIN8x8[1]>>6) & B00000010);
+  //imageOutput[ 0 ] = getRShiftAND( imageIN8x8[0], 7, cS[0] ) | ((imageIN8x8[1]>>6) & B00000010);
+  imageOutput[ 0 ] = ((imageIN8x8[0]>>7) & B00000001) | ((imageIN8x8[1]>>6) & B00000010);
   imageOutput[ 1 ] = ((imageIN8x8[0]>>6) & B00000001) | ((imageIN8x8[1]>>5) & B00000010);
   imageOutput[ 2 ] = ((imageIN8x8[0]>>5) & B00000001) | ((imageIN8x8[1]>>4) & B00000010);
   imageOutput[ 3 ] = ((imageIN8x8[0]>>4) & B00000001) | ((imageIN8x8[1]>>3) & B00000010);
@@ -318,18 +322,19 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   imageOutput[ 5 ] += ((imageIN8x8[6]<<4) & B01000000) | ((imageIN8x8[7]<<5) & B10000000);
   imageOutput[ 6 ] += ((imageIN8x8[6]<<5) & B01000000) | ((imageIN8x8[7]<<6) & B10000000);
   imageOutput[ 7 ] += ((imageIN8x8[6]<<6) & B01000000) | ((imageIN8x8[7]<<7) & B10000000);
+  free(cS);
   //*/
   memmove(imageIN8x8, imageOutput, 8);
   free(imageOutput);
-  free(cS);
-  free(rowValues);
+  free(shiftValueCache);
+  free(logicTypeShiftCache);
+  
   free(arrayCache0);
   free(arrayCache1);
-  free(shift8Values);
-  free(shift8TypeValues);
   
+  free(logicTypeFullx8_AND);
+  free(logicTypeFullx8_OR);
 }
-
 
 
 void BMIMGmanipulate::rotate16x16ImageClockwise(unsigned char imageInput[]){
@@ -441,8 +446,6 @@ void BMIMGmanipulate::rotate32x32ImageClockwise(unsigned char imageInput[]){
 
 
 
-
-
 void BMIMGmanipulate::rotate64x64ImageClockwise(unsigned char imageInput[]){
   unsigned int imageByteWidth = 8;
   unsigned int imageByteHeight = 64;
@@ -497,7 +500,7 @@ void BMIMGmanipulate::rotate64x64ImageClockwise(unsigned char imageInput[]){
 }
 
 
-///*
+
 void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
   unsigned int imageByteWidth = 16;
   unsigned int imageByteHeight = 128;
@@ -550,10 +553,71 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
   free(sectorX1Y1);
   
 }
-//*/
 
-//890925  ->  //890781  ->  //890829  ->  //892149  ->  //
-//59392   ->  //59232   ->  //59232   ->  //59232   ->  //
+
+void BMIMGmanipulate::rotate_ImageClockwise_recursionFunc(unsigned char imageInput[], unsigned int imageByteWidth, unsigned int imageByteHeight ){
+  //unsigned int imageByteWidth = 2;
+  //unsigned int imageByteHeight = 16;
+  unsigned int fullImageByteSize = imageByteWidth*imageByteHeight;
+  
+  unsigned int sectorByteWidth = imageByteWidth>>1;
+  unsigned int sectorByteHeight = imageByteHeight>>1;
+  unsigned int sectorByteSize = sectorByteWidth*sectorByteHeight;
+  
+  unsigned char* sectorX0Y0;
+  unsigned char* sectorX1Y0;
+  unsigned char* sectorX0Y1;
+  unsigned char* sectorX1Y1;
+  
+  sectorX0Y0 = (unsigned char*)malloc( sectorByteSize );
+  sectorX1Y0 = (unsigned char*)malloc( sectorByteSize );
+  sectorX0Y1 = (unsigned char*)malloc( sectorByteSize );
+  sectorX1Y1 = (unsigned char*)malloc( sectorByteSize );
+  
+  for (uint16_t index = 0; index < sectorByteHeight; index++) {
+    memcpy(&sectorX0Y0[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth ], sectorByteWidth);
+    memcpy(&sectorX1Y0[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteWidth ], sectorByteWidth);
+    memcpy(&sectorX0Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2 ], sectorByteWidth);
+    memcpy(&sectorX1Y1[ index*sectorByteWidth ], &imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], sectorByteWidth);
+  }
+  if (imageByteWidth==2 and imageByteHeight==16){
+    rotate8x8ImageClockwise( sectorX0Y0 );
+    rotate8x8ImageClockwise( sectorX1Y0 );
+    rotate8x8ImageClockwise( sectorX0Y1 );
+    rotate8x8ImageClockwise( sectorX1Y1 );
+  }else{
+    rotate_ImageClockwise_recursionFunc(sectorX0Y0, (imageByteWidth/2), (imageByteHeight/2) );
+    rotate_ImageClockwise_recursionFunc(sectorX1Y0, (imageByteWidth/2), (imageByteHeight/2) );
+    rotate_ImageClockwise_recursionFunc(sectorX0Y1, (imageByteWidth/2), (imageByteHeight/2) );
+    rotate_ImageClockwise_recursionFunc(sectorX1Y1, (imageByteWidth/2), (imageByteHeight/2) );
+  }
+  
+  
+  //Rotate Sectors
+  unsigned char *sectorStorage;
+  sectorStorage = (unsigned char *)malloc(sectorByteSize);
+  memmove(sectorStorage, sectorX1Y0, sectorByteSize );
+  memmove(sectorX1Y0, sectorX0Y0, sectorByteSize );
+  memmove(sectorX0Y0, sectorX0Y1, sectorByteSize );
+  memmove(sectorX0Y1, sectorX1Y1, sectorByteSize );
+  memmove(sectorX1Y1, sectorStorage, sectorByteSize );
+  free(sectorStorage);
+  
+  for (uint16_t index = 0; index < sectorByteHeight; index++) {
+    memcpy(&imageInput[ index*imageByteWidth ], &sectorX0Y0[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteWidth ], &sectorX1Y0[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteSize*2 ], &sectorX0Y1[ index*sectorByteWidth ], sectorByteWidth);
+    memcpy(&imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], &sectorX1Y1[ index*sectorByteWidth ], sectorByteWidth);
+  }
+  free(sectorX0Y0);
+  free(sectorX1Y0);
+  free(sectorX0Y1);
+  free(sectorX1Y1);
+  
+}
+
+//890925  ->  //890781  ->  //890829  ->  //892149  ->  //892325  ->  //892041  ->  //891989  ->  //890433  ->  //
+//59392   ->  //59232   ->  //59232   ->  //59232   ->  //59240   ->  //59240   ->  //59240   ->  //59240   ->  //
 
 
 
@@ -621,25 +685,21 @@ void BMIMGmanipulate::rotateBitImageClockwise(unsigned char imageOUT[], unsigned
   if ( (imgLargestValue <= 8) and (imgLargestValue > 0) ){
     Serial.println("rotate8x8");
     imageTMP1 = (unsigned char *) malloc(calculateMinimunByteForBitWidth( 8 )*8);
-    //imageTMP2 = (unsigned char *) malloc(calculateMinimunByteForBitWidth( 8 )*8);
     resizeBitImage(imageTMP1, imageIN, 8, 8, imgInPxWidth, imgInPxHeight);
   }
   if ( (imgLargestValue <= 16) and (imgLargestValue > 8) ){
     Serial.println("rotate16x16");
     imageTMP1 = (unsigned char *) malloc(calculateMinimunByteForBitWidth( 16 )*16);
-    //imageTMP2 = (unsigned char *) malloc(calculateMinimunByteForBitWidth( 16 )*16);
     resizeBitImage(imageTMP1, imageIN, 16, 16, imgInPxWidth, imgInPxHeight);
   }
   if ( (imgLargestValue <= 32) and (imgLargestValue > 16) ){
     Serial.println("rotate32x32");
     imageTMP1 = (unsigned char *) malloc(calculateMinimunByteForBitWidth( 32 )*32);
-    //imageTMP2 = (unsigned char *) malloc(calculateMinimunByteForBitWidth( 32 )*32);
     resizeBitImage(imageTMP1, imageIN, 32, 32, imgInPxWidth, imgInPxHeight);
   }
   if ( (imgLargestValue <= 64) and (imgLargestValue > 32) ){
     Serial.println("rotate64x64");
     imageTMP1 = (unsigned char *) malloc(calculateMinimunByteForBitWidth( 64 )*64);
-    //imageTMP2 = (unsigned char *) malloc(calculateMinimunByteForBitWidth( 64 )*64);
     resizeBitImage(imageTMP1, imageIN, 64, 64, imgInPxWidth, imgInPxHeight);
   }
   if ( (imgLargestValue <= 128) and (imgLargestValue > 64) ){
@@ -654,30 +714,26 @@ void BMIMGmanipulate::rotateBitImageClockwise(unsigned char imageOUT[], unsigned
   if ( (imgLargestValue <= 8) and (imgLargestValue > 0) ){
     Serial.println("resized8x8");
     rotate8x8ImageClockwise( imageTMP1 );
-    //imageTMP2 = rotate8x8ImageClockwise( imageTMP1 );
-    //memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 8 )*8);
   }
   if ( (imgLargestValue <= 16) and (imgLargestValue > 8) ){
     Serial.println("resized16x16");
-    //imageTMP2 = rotate16x16ImageClockwise( imageTMP1 );
-    //memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 16 )*16);
-    rotate16x16ImageClockwise( imageTMP1 );
+    //rotate16x16ImageClockwise( imageTMP1 );
+    rotate_ImageClockwise_recursionFunc(imageTMP1, 2, 16 );
   }
   if ( (imgLargestValue <= 32) and (imgLargestValue > 16) ){
     Serial.println("resized32x32");
-    //imageTMP2 = rotate32x32ImageClockwise( imageTMP1 );
-    //memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 32 )*32);
-    rotate32x32ImageClockwise( imageTMP1 );
+    //rotate32x32ImageClockwise( imageTMP1 );
+    rotate_ImageClockwise_recursionFunc(imageTMP1, 4, 32 );
   }
   if ( (imgLargestValue <= 64) and (imgLargestValue > 32) ){
     Serial.println("resized64x64");
-    //imageTMP2 = rotate64x64ImageClockwise( imageTMP1 );
-    //memcpy(imageTMP1, imageTMP2, calculateMinimunByteForBitWidth( 64 )*64);
-    rotate64x64ImageClockwise( imageTMP1 );
+    //rotate64x64ImageClockwise( imageTMP1 );
+    rotate_ImageClockwise_recursionFunc(imageTMP1, 8, 64 );
   }
   if ( (imgLargestValue <= 128) and (imgLargestValue > 64) ){
     Serial.println("resized128x128");
-    rotate128x128ImageClockwise( imageTMP1 );
+    //rotate128x128ImageClockwise( imageTMP1 );
+    rotate_ImageClockwise_recursionFunc(imageTMP1, 16, 128 );
   }
   Serial.println(ESP.getFreeHeap());
   

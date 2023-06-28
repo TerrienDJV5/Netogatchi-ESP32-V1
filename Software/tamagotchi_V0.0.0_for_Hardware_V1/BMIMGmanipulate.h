@@ -28,23 +28,25 @@ class BMIMGmanipulate {
     void set8x8imageBit(unsigned char imageIN8x8[], byte xIN, byte yIN, bool newState);
     byte ringRShift_Byte(byte initValue, byte shiftOffsetIN);
     
+    void arrayx8_IndexShiftoffset_unsignedChar_Func(unsigned char inputx8[], byte shiftOffsetIN, bool incFlag = true);
+    
+    void rowRShift8x8_ShiftArrayFunc(unsigned char rowRShift8[], const byte shiftx8_IN[], unsigned char initValue);
+    void rowLShift8x8_ShiftArrayFunc(unsigned char rowLShift8[], const byte shiftx8_IN[], unsigned char initValue);
+    
     void rowRShift8x8DecFunc(unsigned char rowRShift8[], unsigned char initValue, byte shiftOffsetIN = 0);
     void rowLShift8x8DecFunc(unsigned char rowLShift8[], unsigned char initValue, byte shiftOffsetIN = 0);
     void rowRShift8x8IncFunc(unsigned char rowRShift8[], unsigned char initValue, byte shiftOffsetIN = 0);
     void rowLShift8x8IncFunc(unsigned char rowLShift8[], unsigned char initValue, byte shiftOffsetIN = 0);
-
-    void rowRShift8x8_ShiftArrayFunc(unsigned char rowRShift8[], byte shiftx8_IN[], unsigned char initValue);
-    void rowLShift8x8_ShiftArrayFunc(unsigned char rowLShift8[], byte shiftx8_IN[], unsigned char initValue);
-    void row8xUnsignedChar_logicArrayFunc(unsigned char outputx8[], byte shiftx8_IN[], char logicTypex8_IN[], unsigned char initValue);
-
-    void logicOP_UnsignedCharX1_logicArrayFunc(unsigned char &output, unsigned char &input0, unsigned char &input1, logicTypes logicType_IN);
-    void logicOP_UnsignedCharX8_logicArrayFunc(unsigned char arrayx8_Output[], unsigned char arrayx8_Input0[], unsigned char arrayx8_Input1[], logicTypes logicTypex8_IN[]);
+    
+    void logicOP_UnsignedCharX1_logicArrayFunc(unsigned char &output, unsigned char &input0, unsigned char &input1, const logicTypes logicType_IN);
+    void logicOP_UnsignedCharX8_logicArrayFunc(unsigned char arrayx8_Output[], unsigned char arrayx8_Input0[], unsigned char arrayx8_Input1[], const logicTypes logicTypex8_IN[]);
     
     void rotate8x8ImageClockwise(unsigned char imageIN8x8[]);
     void rotate16x16ImageClockwise(unsigned char imageInput[]);
     void rotate32x32ImageClockwise(unsigned char imageInput[]);
     void rotate64x64ImageClockwise(unsigned char imageInput[]);
     void rotate128x128ImageClockwise(unsigned char imageInput[]);
+    void rotate_ImageClockwise_recursionFunc(unsigned char imageInput[], unsigned int imageByteWidth, unsigned int imageByteHeight );
     
   public:
     BMIMGmanipulate(bool useStaticBuffer);
