@@ -2876,7 +2876,7 @@ void loop()
     
 
   if (timeConfigured==false){
-    if (WiFi.status() != WL_CONNECTED){
+    if (WiFi.status() == WL_CONNECTED){
       configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
       timeConfigured = true;
     }
@@ -3008,7 +3008,7 @@ void loop()
       currentMenuID = 1;
     }
   }
-  if (!(currentMenuID==0 | currentMenuID==1)){
+  if (!(currentMenuID==0 | currentMenuID==1 | currentMenuID==2)){
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("currentMenuID:"); display.println(currentMenuID);
@@ -3321,6 +3321,9 @@ void menu_SELECTION(){
 }
 
 
+
+  
+
 void menu_LORA(){
   display.clearDisplay();
   //https://github.com/xreef/EByte_LoRa_E220_Series_Library
@@ -3328,6 +3331,8 @@ void menu_LORA(){
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.print("LoRa Menu"); display.println();
+  //ToDo: add time and date for when Each message was received
+  static String timeLog;
   static String messageLog;
   String message;
   https://cplusplus.com/reference/string/string/
@@ -3347,10 +3352,22 @@ void menu_LORA(){
       Serial.println(rc.status.getResponseDescription());
       display.println(rc.status.getResponseDescription());
     } else {
-      // Print the data received
+      struct tm timeinfo;
+      if(!getLocalTime(&timeinfo)){
+        Serial.println("Failed to obtain time");
+      }
+      Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+      char timeInfoChar[64+1];
+      strftime(timeInfoChar,64+1, "%A, %B %d %Y %H:%M:%S", &timeinfo);
+      Serial.println(timeInfoChar);
+      timeLog = timeInfoChar;
       messageLog = rc.data;
+      // Print the data received
       Serial.println(rc.status.getResponseDescription());
       Serial.println(rc.data);
+      Serial.println(rc.data[0], DEC);//IDK
+      Serial.println(rc.data[1], DEC);//IDK
+      Serial.println(rc.data[2], DEC);//channel
       display.println(rc.status.getResponseDescription());
       display.println(rc.data);
       #ifdef ENABLE_RSSI
@@ -3372,6 +3389,9 @@ void menu_LORA(){
     
   }
   display.println("MessageLog: ");
+  display.print(timeLog);
+  display.println();
+  
   display.print("\"");
   display.print(messageLog);
   display.print("\"");
