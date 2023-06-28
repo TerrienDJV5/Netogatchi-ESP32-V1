@@ -150,6 +150,7 @@
 
 //Library startups
 #include "Arduino.h"
+#include <string>
 
 #include "FS.h"
 #include "SPIFFS.h"
@@ -3327,6 +3328,9 @@ void menu_LORA(){
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.print("LoRa Menu"); display.println();
+  String messageLog;
+  String message;
+  https://cplusplus.com/reference/string/string/
   // If something available
   if (e220ttl.available() > 1) {
     Serial.println("Message received!");
@@ -3344,6 +3348,7 @@ void menu_LORA(){
       display.println(rc.status.getResponseDescription());
     } else {
       // Print the data received
+      messageLog = rc.data;
       Serial.println(rc.status.getResponseDescription());
       Serial.println(rc.data);
       display.println(rc.status.getResponseDescription());
@@ -3355,22 +3360,18 @@ void menu_LORA(){
     }
     {
       // Send message
-      ResponseStatus rs = e220ttl.sendBroadcastFixedMessage(23, "Message Received");
+      //ResponseStatus rs = e220ttl.sendBroadcastFixedMessage(0, 0, 0x17, &messaggione, sizeof(Messaggione));
+      ResponseStatus rs = e220ttl.sendBroadcastFixedMessage(0x17, "Message Received!");
       // Check If there is some problem of succesfully send
       Serial.println(rs.getResponseDescription());
-      display.println(rs.getResponseDescription());
     }
+    {
+      String input = "Oh, i bet you like kissing boys, boykisser!";
+      e220ttl.sendMessage(input);
+    }
+    
   }
-  {
-    // Send message
-    ResponseStatus rs = e220ttl.sendMessage("Hello, world?");
-    // Check If there is some problem of succesfully send
-    Serial.println(rs.getResponseDescription());
-  }
-  {
-    String input = "Oh, i bet you like kissing boys, boykisser!";
-    e220ttl.sendMessage(input);
-  }
+  display.print("MessageLog: "); display.println(messageLog);
   display.setCursor(0, 5 * 8);
 }
 
