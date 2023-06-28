@@ -3328,7 +3328,7 @@ void menu_LORA(){
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.print("LoRa Menu"); display.println();
-  String messageLog;
+  static String messageLog;
   String message;
   https://cplusplus.com/reference/string/string/
   // If something available
@@ -3371,7 +3371,11 @@ void menu_LORA(){
     }
     
   }
-  display.print("MessageLog: "); display.println(messageLog);
+  display.println("MessageLog: ");
+  display.print("\"");
+  display.print(messageLog);
+  display.print("\"");
+  display.println();
   display.setCursor(0, 5 * 8);
 }
 
