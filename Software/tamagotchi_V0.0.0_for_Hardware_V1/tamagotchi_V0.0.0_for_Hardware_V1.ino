@@ -2696,8 +2696,6 @@ void Task2code( void * pvParameters ) {
 }
 
 
-
-
 void Task4code( void * pvParameters ) {
   Serial.print("Task4 running on core "); Serial.println(xPortGetCoreID());
   for (;;) {
@@ -2804,13 +2802,14 @@ void TaskBuzzercode( void * pvParameters ) {
   char *cName = ((char*)pvParameters);
   Serial.println(cName);
   //Work on Me!
-  int sound[1024];
+  int *sound;
+  sound = (int*)calloc(1024, sizeof(int));
   for (int index = 0; index < 1024; index++) {
     analogWrite(buzzerPin, sound[ index ]);
     delayMicroseconds(10);
   }
   
-  
+  free(sound);
   Serial.println("Ending TaskBuzzer");
   vTaskDelete( NULL );
 }
@@ -2861,22 +2860,8 @@ void loop()
   ftpSrv.handleFTP();        //make sure in loop you call handleFTP()!!  
   // server.handleClient();   //example if running a webserver you still need to call .handleClient();
   
-  
-  
-  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
-  Serial.println("Try Creating Task5!");
-  xTaskCreatePinnedToCore(
-    Task5code,   /* Task function. */
-    "Task5",     /* name of task. */
-    1024,       /* Stack size of task */
-    NULL,        /* parameter of the task */
-    5,           /* priority of the task */
-    &Task5,      /* Task handle to keep track of created task */
-    1);          /* pin task to core 1 */
 
-
-  char *localIntVar;
-  localIntVar = (char*)malloc(64);
+  char localIntVar[64];
   strcpy(localIntVar, "Buzzer.pwm");
   //create a task that will be executed in the TaskBuzzercode() function, with priority 20 and executed on core 1
   xTaskCreatePinnedToCore(
