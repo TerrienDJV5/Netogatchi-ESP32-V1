@@ -214,7 +214,7 @@ Preferences preferences;
 #include <Adafruit_SH1106.h>
 #include "Taskbar.h"
 
-#include "ImageObject.h"
+#include <BetterImageStorageObject.h>//By Terrien
 
 
 #include "BMIMGmanipulate.h"
