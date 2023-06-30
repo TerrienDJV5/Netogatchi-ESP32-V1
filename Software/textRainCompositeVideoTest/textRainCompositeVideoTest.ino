@@ -55,7 +55,8 @@ void setup()
 {
 
   //espd.begin(ESPD_DAC1);
-  espd.begin(ESPD_DAC2);
+  //  espd.begin(ESPD_DAC2);
+  espd.begin(1);
 
   spr.setColorDepth(8);
   spr.createSprite(VIDEO_WIDTH, VIDEO_HEIGHT);

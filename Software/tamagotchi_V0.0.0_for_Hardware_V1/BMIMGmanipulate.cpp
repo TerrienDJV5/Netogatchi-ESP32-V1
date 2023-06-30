@@ -198,10 +198,13 @@ void BMIMGmanipulate::logicOP_UnsignedCharX8_logicArrayFunc(unsigned char arrayx
 
 
 void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
+  unsigned char imageOutput[8];
+  /*
   unsigned char* imageOutput;
   imageOutput = (unsigned char*)calloc(8, sizeof(unsigned char));
   memset(imageOutput,0,8);
-  
+  */
+  /*
   unsigned char* shiftValueCache;
   shiftValueCache = (unsigned char*)calloc(15, sizeof(unsigned char));
   memcpy(shiftValueCache, (const unsigned char[]){7,6,5,4,3,2,1,0,1,2,3,4,5,6,7}, (15)*sizeof(unsigned char));
@@ -276,7 +279,7 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   memset(arrayCache0, 0B10000000, 8);
   logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
   logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  
+  */
 
   
   
@@ -284,7 +287,8 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   byte* cS;//columnSelect
   cS = (byte*)calloc(8, sizeof(byte));
   cS[0] = B00000001;cS[1] = B00000010;cS[2] = B00000100;cS[3] = B00001000;cS[4] = B00010000;cS[5] = B00100000;cS[6] = B01000000;cS[7] = B10000000;
-  
+  */
+  ///*
   //
   //imageOutput[ 0 ] = getRShiftAND( imageIN8x8[0], 7, cS[0] ) | ((imageIN8x8[1]>>6) & B00000010);
   imageOutput[ 0 ] = ((imageIN8x8[0]>>7) & B00000001) | ((imageIN8x8[1]>>6) & B00000010);
@@ -322,10 +326,12 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   imageOutput[ 5 ] += ((imageIN8x8[6]<<4) & B01000000) | ((imageIN8x8[7]<<5) & B10000000);
   imageOutput[ 6 ] += ((imageIN8x8[6]<<5) & B01000000) | ((imageIN8x8[7]<<6) & B10000000);
   imageOutput[ 7 ] += ((imageIN8x8[6]<<6) & B01000000) | ((imageIN8x8[7]<<7) & B10000000);
-  free(cS);
+  
   //*/
+  //free(cS);
   memmove(imageIN8x8, imageOutput, 8);
   free(imageOutput);
+  /*
   free(shiftValueCache);
   free(logicTypeShiftCache);
   
@@ -334,6 +340,7 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   
   free(logicTypeFullx8_AND);
   free(logicTypeFullx8_OR);
+  */
 }
 
 
@@ -554,7 +561,7 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
   
 }
 
-
+//input images types only work for 8x8,16x16,32x32,64x64,128x128
 void BMIMGmanipulate::rotate_ImageClockwise_recursionFunc(unsigned char imageInput[], unsigned int imageByteWidth, unsigned int imageByteHeight ){
   //unsigned int imageByteWidth = 2;
   //unsigned int imageByteHeight = 16;

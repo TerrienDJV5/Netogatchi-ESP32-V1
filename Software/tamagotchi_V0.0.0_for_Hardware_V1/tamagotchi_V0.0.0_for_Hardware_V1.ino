@@ -214,8 +214,12 @@ Preferences preferences;
 #include <Adafruit_SH1106.h>
 #include "Taskbar.h"
 
+#include "ImageObject.h"
+
+
 #include "BMIMGmanipulate.h"
 BMIMGmanipulate bitmapIMGmanipulate0(false);
+
 
 
 //#define _TEST_ADAFRUIT_SH1106
@@ -1496,16 +1500,6 @@ void display_struct_bitmapIMG(Adafruit_SH1106 &display, IMGbitmapStruct &bitmapI
 typedef struct {
   int x;
   int y;
-} Position2D_int_Struct;
-
-typedef struct {
-  long x;
-  long y;
-} Position2D_long_Struct;
-
-typedef struct {
-  int x;
-  int y;
   int z;
 } Position3D_int_Struct;
 
@@ -1514,6 +1508,18 @@ typedef struct {
   long y;
   long z;
 } Position3D_long_Struct;
+
+typedef struct {
+  int x;
+  int y;
+} Position2D_int_Struct;
+
+typedef struct {
+  long x;
+  long y;
+} Position2D_long_Struct;
+
+
 
 
 typedef struct {
@@ -2069,6 +2075,58 @@ void printFile(const char *filename, fs::FS &fs) {
 
 
 
+
+
+
+
+
+
+//###############################################################
+
+
+
+
+//https://www.tutorialspoint.com/cplusplus/cpp_interfaces.htm
+#include <iostream>
+ 
+using namespace std;
+ 
+// Base class
+class Shape {
+   public:
+      // pure virtual function providing interface framework.
+      virtual int getArea() = 0;
+      void setWidth(int w) {
+         width = w;
+      }
+   
+      void setHeight(int h) {
+         height = h;
+      }
+   
+   protected:
+      int width;
+      int height;
+};
+ 
+// Derived classes
+class Rectangle: public Shape {
+   public:
+      int getArea() { 
+         return (width * height); 
+      }
+};
+
+class Triangle: public Shape {
+   public:
+      int getArea() { 
+         return (width * height)/2; 
+      }
+};
+
+
+
+//#################################################
 
 
 
