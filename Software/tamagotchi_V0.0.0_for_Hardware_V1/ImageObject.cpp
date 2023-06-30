@@ -8,47 +8,14 @@
 using namespace std;
 
 
-//how/where image is stored im memory
-typedef struct {
-  uint8_t* data;//Array
-  unsigned int dataByteLength;//ArrayLength
-  
-  unsigned int pixelBitLength;//Max is 32
+#include "ImageObject.h"
 
-  //LSB -> MSB
-  uint8_t redBitOffset;
-  uint8_t greenBitOffset;
-  uint8_t blueBitOffset;
-  uint8_t alphaBitOffset;
-  
-  uint8_t redBitLength;
-  uint8_t greenBitLength;
-  uint8_t blueBitLength;
-  uint8_t alphaBitLength;
-} PixelArrayStruct;
-
-
-typedef struct {
+struct ImageObject::PixelStruct{
   uint8_t red;
   uint8_t green;
   uint8_t blue;
   uint8_t alpha;
-} PixelStruct;
-
-
-
-typedef struct {
-  unsigned int width;
-  unsigned int height;
-  unsigned int pixelCount;
-  PixelArrayStruct PixelArray;
-} ImageStruct;
-
-
-
-
-#include "ImageObject.h"
-
+};
 
 
 
@@ -195,10 +162,7 @@ uint32_t ImageObject::arraybitSelect_o32(uint8_t inputArray[], unsigned int bitI
   return output;
 }
 
-ImageStruct ImageObject::getImageOBJ()
-{
-  return ImageOBJ;
-}
+
 
 unsigned int ImageObject::getWidth()
 {
@@ -214,7 +178,7 @@ unsigned int ImageObject::getPixelCount()
   return ImageOBJ.pixelCount;
 }
 
-PixelStruct ImageObject::getPixelValue(int xPos, int yPos)
+ImageObject::PixelStruct ImageObject::getPixelValue(int xPos, int yPos)
 {
   PixelStruct pixel;
   unsigned int pixelBitindex = (xPos + yPos*ImageOBJ.width)*(ImageOBJ.PixelArray.pixelBitLength);
@@ -235,7 +199,7 @@ void ImageObject::setPixelValue(int xPos, int yPos, PixelStruct pixel)
   ;
 }
 
-PixelStruct ImageObject::setPixelValues(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+ImageObject::PixelStruct ImageObject::setPixelValues(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
   PixelStruct pixel;
   pixel.red = r;
@@ -245,23 +209,23 @@ PixelStruct ImageObject::setPixelValues(uint8_t r, uint8_t g, uint8_t b, uint8_t
   return pixel;
 }
 
-PixelStruct ImageObject::filterPixelValues(PixelStruct pixelIn, uint8_t rBitLength, uint8_t gBitLength, uint8_t bBitLength, uint8_t aBitLength)
+ImageObject::PixelStruct ImageObject::filterPixelValues(PixelStruct pixelIn, uint8_t rBitLength, uint8_t gBitLength, uint8_t bBitLength, uint8_t aBitLength)
 {
   PixelStruct pixelOut;
   byte rMask = (0B11111111<<rBitLength);
   byte gMask = (0B11111111<<gBitLength);
   byte bMask = (0B11111111<<bBitLength);
   byte aMask = (0B11111111<<aBitLength);
-  pixel.red &= rMask;
-  pixel.green &= gMask;
-  pixel.blue &= bMask;
-  pixel.alpha &= aMask;
+  pixelIn.red &= rMask;
+  pixelIn.green &= gMask;
+  pixelIn.blue &= bMask;
+  pixelIn.alpha &= aMask;
   return pixelOut;
 }
 uint32_t ImageObject::ConvertPixelStruct_to_Binary(PixelStruct pixel, uint8_t rBitLength, uint8_t gBitLength, uint8_t bBitLength, uint8_t aBitLength)
 {
   uint32_t pixelBinaryOut;
-  PixelStruct pixelTemp = filterPixelValues(PixelStruct pixelIn, rBitLength, gBitLength, bBitLength, aBitLength);
+  PixelStruct pixelTemp = filterPixelValues(pixel, rBitLength, gBitLength, bBitLength, aBitLength);
   //work on me!
   return pixelBinaryOut;
 }
