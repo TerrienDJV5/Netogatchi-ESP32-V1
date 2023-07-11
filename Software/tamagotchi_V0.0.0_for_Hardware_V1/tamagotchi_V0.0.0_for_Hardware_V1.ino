@@ -62,6 +62,9 @@
 //Check this out?
 //https://github.com/olikraus/u8g2
 
+//https://github.com/janelia-arduino/Vector
+
+
 #include "FreeRTOSConfig.h" //https://www.freertos.org/a00106.html
 #define INCLUDE_eTaskGetState true
 
@@ -214,7 +217,7 @@ Preferences preferences;
 #include <Adafruit_SH1106.h>
 #include "Taskbar.h"
 
-#include <BetterImageStorageObject.h>//By Terrien
+//#include <BetterImageStorageObject.h>//https://github.com/TerrienDJV5/betterImageStorageObject
 
 
 #include "BMIMGmanipulate.h"
@@ -2329,7 +2332,7 @@ void setup()   {
   delay(250);
   
   
-
+  /*
   Serial.println("Testing ImageObject!");
   unsigned char imagebuffer[64] = {
     1,1,1,1,0,0,0,1,
@@ -2342,7 +2345,7 @@ void setup()   {
     1,1,1,1,0,0,0,1,
   };
   //Test And FineTone Me
-  ImageObject boyKisserIMGOBJ(true, false, 8, 8, 1);
+  BetterImageStorageObject boyKisserIMGOBJ(true, false, 8, 8, 1);
   for (int indexY = 0; indexY < 8; indexY++) {
     for (int indexX = 0; indexX < 8; indexX++) {
       uint8_t w = imagebuffer[indexX + indexY*8];
@@ -2368,7 +2371,7 @@ void setup()   {
     Serial.println();
   }
   Serial.println("Testing ImageObject Complete!");
-  
+  //*/
   
   printFreeHeap(Serial);
   /*
@@ -3538,38 +3541,28 @@ void menu_WIFI(){
     }
   }
   
-  Serial.print("WiFi.getMode():"); Serial.print(WiFi.getMode()); Serial.print(", ");
-  if (WiFi.getMode() == WIFI_MODE_NULL) {
-    Serial.println("WiFi.getMode() == WIFI_MODE_NULL");
-  };
-  if (WiFi.getMode() == WIFI_MODE_STA) {
-    Serial.println("WiFi.getMode() == WIFI_MODE_STA");
-  };
-  if (WiFi.getMode() == WIFI_MODE_AP) {
-    Serial.println("WiFi.getMode() == WIFI_MODE_AP");
-  };
-  if (WiFi.getMode() == WIFI_MODE_APSTA) {
-    Serial.println("WiFi.getMode() == WIFI_MODE_APSTA");
-  };
-  if (WiFi.getMode() == WIFI_MODE_MAX) {
-    Serial.println("WiFi.getMode() == WIFI_MODE_MAX");
-  };
-  
-  if (WiFi.getMode() == WIFI_MODE_NULL) {
-    display.println("WiFi.getMode() == WIFI_MODE_NULL");
-  };
-  if (WiFi.getMode() == WIFI_MODE_STA) {
-    display.println("WiFi.getMode() == WIFI_MODE_STA");
-  };
-  if (WiFi.getMode() == WIFI_MODE_AP) {
-    display.println("WiFi.getMode() == WIFI_MODE_AP");
-  };
-  if (WiFi.getMode() == WIFI_MODE_APSTA) {
-    display.println("WiFi.getMode() == WIFI_MODE_APSTA");
-  };
-  if (WiFi.getMode() == WIFI_MODE_MAX) {
-    display.println("WiFi.getMode() == WIFI_MODE_MAX");
-  };
+  const char preSetCharArray[16] = "WiFi.getMode()";
+  Serial.print( preSetCharArray );Serial.print(":"); Serial.print(WiFi.getMode()); Serial.print(", ");
+  switch (WiFi.getMode()){
+    case (WIFI_MODE_NULL):
+      Serial.print( preSetCharArray );Serial.println(" == WIFI_MODE_NULL");
+      break;
+    case (WIFI_MODE_STA):
+      Serial.print( preSetCharArray );Serial.println(" == WIFI_MODE_STA");
+      break;
+    case (WIFI_MODE_AP):
+      Serial.print( preSetCharArray );Serial.println(" == WIFI_MODE_AP");
+      break;
+    case (WIFI_MODE_APSTA):
+      Serial.print( preSetCharArray );Serial.println(" == WIFI_MODE_APSTA");
+      break;
+    case (WIFI_MODE_MAX):
+      Serial.print( preSetCharArray );Serial.println(" == WIFI_MODE_MAX");
+      break;
+    default:
+      Serial.print( preSetCharArray );Serial.print(" == ");Serial.print( WiFi.getMode() );Serial.println();
+      break;
+  }
 }
 
 void menu_IR(){
@@ -3599,8 +3592,6 @@ void menu_IP(){
 
 void checkAllDebugInputs(){
   //https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
-
-
   //Make Serial Debug command into Function in order for usage with both SerialBT and Serial
   serialDebugCommands(Serial);
 #if (FeatureEnable_BT_Serial==true)
@@ -3642,30 +3633,14 @@ void checkAllDebugInputs(){
 #define MAXDEBUG_SUBTARGETCOMMAND_LENGTH 256
 #define MAXDEBUG_SUBCOMMANDINPUT_LENGTH 256
 class DebugCommands {
-  private:
+  public:
     //buffers
     char targetCommand[ MAXDEBUG_TARGETCOMMAND_LENGTH ];
     char commandInputs[ MAXDEBUG_COMMANDINPUT_LENGTH ];
     char subTargetCommand[ MAXDEBUG_SUBTARGETCOMMAND_LENGTH ];
     char subCommandInputs[ MAXDEBUG_SUBCOMMANDINPUT_LENGTH ];
-  public:
-    DebugCommands();
-    void init();
-    //void serialDebugCommands(Stream &serialport);
-
 };
-DebugCommands::DebugCommands() {
-  //
-  init();
-}
-void DebugCommands::init() {
-  //
-}
-/*
-  void DebugCommands::serialDebugCommands(Stream &serialport) {
-  //
-  }
-  //*/
+
 
 
 void serialDebugCommands(Stream &serialport)
@@ -4213,13 +4188,13 @@ void printParameters(Stream &serialport, struct Configuration configuration) {
   serialport.println("----------------------------------------");
 }
 void printModuleInformation(Stream &serialport, struct ModuleInformation moduleInformation) {
-  serialport.println("----------------------------------------");
+  serialport.println(F("----------------------------------------"));
   serialport.print(F("HEAD: "));  serialport.print(moduleInformation.COMMAND, HEX); serialport.print(" "); serialport.print(moduleInformation.STARTING_ADDRESS, HEX); serialport.print(" "); serialport.println(moduleInformation.LENGHT, DEC);
 
   serialport.print(F("Model no.: "));  serialport.println(moduleInformation.model, HEX);
   serialport.print(F("Version  : "));  serialport.println(moduleInformation.version, HEX);
   serialport.print(F("Features : "));  serialport.println(moduleInformation.features, HEX);
-  serialport.println("----------------------------------------");
+  serialport.println(F("----------------------------------------"));
 
 }
 
