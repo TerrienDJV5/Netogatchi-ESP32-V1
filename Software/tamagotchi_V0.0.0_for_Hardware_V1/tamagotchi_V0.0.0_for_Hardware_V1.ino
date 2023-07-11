@@ -2331,48 +2331,6 @@ void setup()   {
   
   delay(250);
   
-  
-  /*
-  Serial.println("Testing ImageObject!");
-  unsigned char imagebuffer[64] = {
-    1,1,1,1,0,0,0,1,
-    1,1,1,1,0,0,1,0,
-    1,1,1,1,0,1,0,0,
-    1,1,1,1,1,0,0,0,
-    1,1,1,1,1,0,0,0,
-    1,1,1,1,0,1,0,0,
-    1,1,1,1,0,0,1,0,
-    1,1,1,1,0,0,0,1,
-  };
-  //Test And FineTone Me
-  BetterImageStorageObject boyKisserIMGOBJ(true, false, 8, 8, 1);
-  for (int indexY = 0; indexY < 8; indexY++) {
-    for (int indexX = 0; indexX < 8; indexX++) {
-      uint8_t w = imagebuffer[indexX + indexY*8];
-      PixelStruct pixel = boyKisserIMGOBJ.setPixelStructValues(w, w, w);
-      boyKisserIMGOBJ.setPixelValue(indexX, indexY, pixel);
-    }
-  }
-  for (int indexY = 0; indexY < boyKisserIMGOBJ.getHeight(); indexY++) {
-    for (int indexX = 0; indexX < boyKisserIMGOBJ.getWidth(); indexX++) {
-      PixelStruct pixel = boyKisserIMGOBJ.getPixelValue(indexX, indexY);
-      Serial.print("{ w=");
-      Serial.print(pixel.white);
-      Serial.print(", r=");
-      Serial.print(pixel.red);
-      Serial.print(", g=");
-      Serial.print(pixel.green);
-      Serial.print(", b=");
-      Serial.print(pixel.blue);
-      Serial.print(", a=");
-      Serial.print(pixel.alpha);
-      Serial.print("},");
-    }
-    Serial.println();
-  }
-  Serial.println("Testing ImageObject Complete!");
-  //*/
-  
   printFreeHeap(Serial);
   /*
   {
