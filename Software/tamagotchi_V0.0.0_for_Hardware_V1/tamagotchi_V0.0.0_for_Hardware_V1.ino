@@ -2890,7 +2890,6 @@ void loop()
   }
   
   
-
   
   
   if (disableButtonPISO_update == false) {
@@ -2919,20 +2918,7 @@ void loop()
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("CurrentMenuID:"); display.println(currentMenuID, DEC);
-    /*
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("Wifi_Status:"); display.println("UNKNOWN");
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("LoRa_Status:"); display.println("UNKNOWN");
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("Time_Status:"); display.println("UNKNOWN");
-    */
-    //display.setTextSize(1);
-    //display.setTextColor(WHITE);
-    //display.print("tamagotchi_Status:"); display.println("UNKNOWN");
+    
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("DeBug_Status:"); display.println(showDebugMenu);
