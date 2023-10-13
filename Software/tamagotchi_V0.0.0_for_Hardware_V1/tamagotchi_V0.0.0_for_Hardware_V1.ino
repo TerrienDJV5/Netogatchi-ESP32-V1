@@ -2392,32 +2392,6 @@ void setup()   {
 
   printFreeHeap(Serial);
   
-  /*{
-  //Neco-Arc_bitmapimg.txt
-  File fileBMP;
-  fileBMP = SPIFFS.open("/Neco-Arc_bitmapimg.txt");
-  if (!fileBMP) {
-    Serial.println("Failed to open file for reading");
-    return;
-  }
-  Serial.println("File Content:");
-  while (fileBMP.available()) {
-    char filereadBuffer[2048];
-    char fileImageBuffer[2048];
-    memset(filereadBuffer, '\0', 2048);
-    memset(fileImageBuffer, '\0', 2048);
-    fileBMP.readBytesUntil('\n', filereadBuffer, 2048);
-    fileBMP.readBytesUntil('\n', fileImageBuffer, 2048);
-    display.clearDisplay();
-    display.drawBitmap(0, 0, convertTextHextoCharArray( fileImageBuffer ), 32, 56, WHITE);//Test Image Read
-    display.display();
-  }
-  fileBMP.close();
-  }//*/
-  //delay(500);
-
-  printFreeHeap(Serial);
-  
   bool rotTest = true;//true;
   if (rotTest)
   {
@@ -2429,19 +2403,16 @@ void setup()   {
     return;
   }
   Serial.println("File Content:");
+  
+  //init buffers
+  char filereadBuffer[2048];
+  char fileImageBuffer[2048];
+  memset(filereadBuffer, '\0', 2048);
+  memset(fileImageBuffer, '\0', 2048);
+  //image Basic Test Loop
   while (fileBMP.available()) {
-    printFreeHeap(Serial);
-    char filereadBuffer[2048];
-    char fileImageBuffer[2048];
-    memset(filereadBuffer, '\0', 2048);
-    memset(fileImageBuffer, '\0', 2048);
     fileBMP.readBytesUntil('\n', filereadBuffer, 2048);
     fileBMP.readBytesUntil('\n', fileImageBuffer, 2048);
-    //Serial.write(filereadBuffer, strlen(filereadBuffer));
-    //Serial.println();
-    //Serial.write(fileImageBuffer, strlen(fileImageBuffer));
-    //Serial.println();
-    printFreeHeap(Serial);
     display.clearDisplay();
     display.drawBitmap(0, 0, convertTextHextoCharArray( fileImageBuffer ), 85, 64, WHITE);//Test Image Read
     ///*
