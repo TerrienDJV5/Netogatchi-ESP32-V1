@@ -2,74 +2,14 @@
 //tamagotchi_V0.0.0 for Hardware V1
 //ESP-Wroom-32
 
-//DOIT ESP32 DEVKIT V1
-//https://lastminuteengineers.com/esp32-pinout-reference/
+//please View "Helpful-URL-OwO.txt"
 
-//https://circuits4you.com/2018/12/31/esp32-hardware-serial2-example/
-
-
-
-//https://github.com/nhatuan84/esp32-sh1106-oled/blob/master/Adafruit_SH1106.cpp
-
-//https://linuxhint.com/remove-arduino-library/#b2
-
-//https://forum.arduino.cc/t/how-to-pass-an-object-or-reference-to-a-function/340185/2
-
-//https://randomnerdtutorials.com/esp32-flash-memory/
-//https://forum.arduino.cc/t/solved-getting-array-size/506976
-
-//https://rishabhdevyadav.medium.com/create-your-own-arduino-library-h-and-cpp-files-62ab456453e0
-
-//https://www.tutorialspoint.com/c_standard_library/string_h.htm
-//https://www.tutorialspoint.com/cprogramming/c_pointers.htm
-
-//https://linuxhint.com/variable-scope-arduino/
-
-//
-//https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-//
-
-/* Making ESP32 have filesystem
-   https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/
-   https://randomnerdtutorials.com/install-esp32-filesystem-uploader-arduino-ide/
-*/
-
-
-//images
-//used for converting images to monochrome BMPs
-//https://image.online-convert.com/convert-to-bmp
-//https://javl.github.io/image2cpp/
-
-
-//helpful:
-//https://roboticsbackend.com/arduino-object-oriented-programming-oop/
-//https://dronebotworkshop.com/shift-registers/
-//https://forum.arduino.cc/t/static-array-of-strings/411408/6
-
-//https://github.com/arkhipenko/Dictionary
-
-//https://cplusplus.com/reference/cstdlib/itoa/
-//https://www.badprog.com/c-type-what-are-uint8-t-uint16-t-uint32-t-and-uint64-t
-
-//https://docs.arduino.cc/learn/programming/memory-guide
-
-//https://www.tutorialspoint.com/structs-in-arduino-program
-
-//https://randomnerdtutorials.com/esp32-dual-core-arduino-ide/
-//https://savjee.be/videos/programming-esp32-with-arduino/using-rtc-memory/
-
-
-//Check this out?
-//https://github.com/olikraus/u8g2
-
-//https://github.com/janelia-arduino/Vector
 
 
 #include "FreeRTOSConfig.h" //https://www.freertos.org/a00106.html
 #define INCLUDE_eTaskGetState true
 
 #include "esp_attr.h" //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/memory-types.html
-
 
 /*#################################################*/
 //Try This!
@@ -88,9 +28,7 @@
    https://github.com/arkhipenko/Dictionary
 */
 
-//#define _DICT_CRC_ 16
-#define _DICT_CRC_ 32
-//#define _DICT_CRC_ 64
+#define _DICT_CRC_ 32 //choices 16, 32, 64, etc
 
 #define _DICT_PACK_STRUCTURES
 //#define _DICT_COMPRESS_SHOCO
@@ -148,9 +86,6 @@
 
 
 
-
-
-
 //Library startups
 #include "Arduino.h"
 #include <string>
@@ -167,14 +102,6 @@
 
 
 
-/*
-helpful Wifi Stuff Urls
-//https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
-//https://randomnerdtutorials.com/esp32-wifimulti/
-//https://www.megunolink.com/articles/wireless/talk-esp32-over-wifi/
-//https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
-//https://github.com/xreef/SimpleFTPServer
-*/
 
 //WiFi Support
 #include "WiFi.h"
@@ -185,11 +112,18 @@ helpful Wifi Stuff Urls
 
 
 WiFiMulti wifiMulti;
-FtpServer ftpSrv; //set #define FTP_DEBUG in ESP8266FtpServer.h to see ftp verbose on serial
-const uint32_t connectTimeoutMs = 10000; // WiFi connect timeout per AP. Increase when connecting takes longer.
+
+//set #define FTP_DEBUG in ESP8266FtpServer.h to see ftp verbose on serial
+FtpServer ftpSrv;
+
+// WiFi connect timeout per AP. Increase when connecting takes longer.
+const uint32_t connectTimeoutMs = 10000;
+
 int wifi_status = WL_IDLE_STATUS;
 WiFiServer SerialWiFiserver(23);
-WiFiClient SerialWiFiclient; // Initialize the client library
+
+// Initialize the client library
+WiFiClient SerialWiFiclient;
 
 
 
@@ -200,9 +134,9 @@ WiFiClient SerialWiFiclient; // Initialize the client library
 #include "time.h"
 
 #include "driver/adc.h"
-#include "driver/dac.h"//https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32s2/api-reference/peripherals/dac.html
+#include "driver/dac.h"
 
-#include <Preferences.h> //https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/preferences.html
+#include <Preferences.h> 
 Preferences preferences;
 
 
@@ -234,7 +168,6 @@ BMIMGmanipulate bitmapIMGmanipulate0(false);
 
 
 #if (FeatureEnable_PiSo_Control==true)
-//https://docs.arduino.cc/learn/contributions/arduino-creating-library-guide
 #include "ButtonPISO.h"
 
 #endif
@@ -375,7 +308,6 @@ ButtonPISO buttonpiso1(BUTTONPISO_DataIn, BUTTONPISO_Clk, BUTTONPISO_PL);
 Adafruit_SH1106 display(OLED_SDA, OLED_SCL);
 
 
-//http://electronics4dogs.blogspot.com/2011/01/arduino-predefined-constants.html
 #if defined(ESP32)
 //#include <HardwareSerial.h>
 //HardwareSerial ExtraSerial0(0);//ESP32Serial0
@@ -406,24 +338,6 @@ LoRa_E220 e220ttl(&Serial2);  // e22 TX e22 RX
 
 //Devices Setup Complete
 
-/*
-  #include <pgmspace.h>
-  #define buttonNameBufferSize 16
-  const char buttonName_0[] PROGMEM = "UP";
-  const char buttonName_1[] PROGMEM = "Start";
-  const char buttonName_2[] PROGMEM = "Select";
-  const char buttonName_3[] PROGMEM = "A";
-  const char buttonName_4[] PROGMEM = "LEFT";
-  const char buttonName_5[] PROGMEM = "DOWN";
-  const char buttonName_6[] PROGMEM = "RIGHT";
-  const char buttonName_7[] PROGMEM = "B";
-
-  // Then set up a table to refer to your strings.
-  const char* const button_Names_Byjunction[] PROGMEM = {buttonName_0, buttonName_1, buttonName_2, buttonName_3, buttonName_4, buttonName_5, buttonName_6, buttonName_7};
-
-  char buttonNameBuffer[buttonNameBufferSize];    // make sure this is large enough for the largest string it must hold
-  //*/
-
 #define buttonPISOcount 8
 
 //Byjunction
@@ -439,19 +353,53 @@ char buttonNameString[buttonPISOcount][7] =
   "B"
 };
 
-char* returnButtonName(byte buttonID, byte opMode = 1) {
+//https://www.alt-codes.net/arrow_alt_codes.php
+char* returnButtonName(byte buttonID, byte opMode = 2) {
   /* Using the string table in program memory requires the use of special functions to retrieve the data.
        The strcpy_P function copies a string from program space to a string in RAM ("buffer").
        Make sure your receiving string in RAM  is large enough to hold whatever
        you are retrieving from program space. */
-  /*
-    if (opMode == 0) {
-    strcpy_P(buttonNameBuffer, (char*)pgm_read_word(&(button_Names_Byjunction[ buttonID ]))); // Necessary casts and dereferencing, just copy.
-    return buttonNameBuffer;
+  
+  if (buttonID < 0){
+    return NULL;
+  }
+  if (buttonID >= buttonPISOcount){
+    return NULL;
+  }
+  if (buttonID >= 8){
+    return NULL;
+  }
+  #define rBN_BASE false
+  #define rBN_DPAD true
+  byte buttonDPADorBASE_Mask = 0b01110001;//0 = BASE, 1 = DPAD //order = MSB //(76543210)
+  //byte buttonDPAD_MaskIndex[4] = {0, 6, 5, 4};//up, Right, Down, Left
+  //byte buttonBASE_MaskIndex[4] = {1, 2, 3, 7};//Start, Select, A, B
+  byte buttonID_NibbleMaskIndex[8] = {0, 0, 1, 2, 3, 2, 1, 3};//up, Start, Select, A, Left, Down, Right, B
+  char* buttonDPAD_Symbols[2][4+1] = {"↑→↓←", "▲►▼◄"};
+  char buttonBASE_Symbols[4+1] = "+-AB";
+  //char* button_Symbols[3][4+1] = {"↑→↓←", "▲►▼◄", "+-AB"};
+  
+  switch (opMode) {
+  case 0:
+  case 1:
+    switch (bitRead(buttonDPADorBASE_Mask, buttonID)) {
+      case rBN_BASE:
+        return (char*)buttonBASE_Symbols[ buttonID_NibbleMaskIndex[ buttonID ] ];
+        break;
+      case rBN_DPAD:
+        return buttonDPAD_Symbols[ opMode ][ buttonID_NibbleMaskIndex[ buttonID ] ];
+        break;
+      default:
+        return NULL;
+        break;
     }
-  */
-  if (opMode == 1) {
+    break;
+  case 2:
     return buttonNameString[buttonID];
+    break;
+  default:
+    return NULL;
+    break;
   }
 }
 unsigned int returnButtonID(char* buttonName) {

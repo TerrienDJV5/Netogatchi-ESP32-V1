@@ -1,0 +1,106 @@
+//TeegyBigz and TerrienDJV5
+//tamagotchi_V0.0.0 for Hardware V1
+//ESP-Wroom-32
+
+
+|================================================================|
+//DOIT ESP32 DEVKIT V1
+//https://lastminuteengineers.com/esp32-pinout-reference/
+
+//https://circuits4you.com/2018/12/31/esp32-hardware-serial2-example/
+
+|================================================================|
+
+//https://github.com/nhatuan84/esp32-sh1106-oled/blob/master/Adafruit_SH1106.cpp
+
+//https://linuxhint.com/remove-arduino-library/#b2
+
+//https://forum.arduino.cc/t/how-to-pass-an-object-or-reference-to-a-function/340185/2
+
+//https://randomnerdtutorials.com/esp32-flash-memory/
+//https://forum.arduino.cc/t/solved-getting-array-size/506976
+
+//https://rishabhdevyadav.medium.com/create-your-own-arduino-library-h-and-cpp-files-62ab456453e0
+
+//https://www.tutorialspoint.com/c_standard_library/string_h.htm
+//https://www.tutorialspoint.com/cprogramming/c_pointers.htm
+
+//https://linuxhint.com/variable-scope-arduino/
+
+//
+//https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+//
+
+/* Making ESP32 have filesystem
+   https://github.com/me-no-dev/arduino-esp32fs-plugin/releases/
+   https://randomnerdtutorials.com/install-esp32-filesystem-uploader-arduino-ide/
+*/
+
+
+//images
+//used for converting images to monochrome BMPs
+//https://image.online-convert.com/convert-to-bmp
+//https://javl.github.io/image2cpp/
+
+
+//helpful:
+//https://roboticsbackend.com/arduino-object-oriented-programming-oop/
+//https://dronebotworkshop.com/shift-registers/
+//https://forum.arduino.cc/t/static-array-of-strings/411408/6
+
+//https://github.com/arkhipenko/Dictionary
+
+//https://cplusplus.com/reference/cstdlib/itoa/
+//https://www.badprog.com/c-type-what-are-uint8-t-uint16-t-uint32-t-and-uint64-t
+
+//https://docs.arduino.cc/learn/programming/memory-guide
+
+//https://www.tutorialspoint.com/structs-in-arduino-program
+
+//https://randomnerdtutorials.com/esp32-dual-core-arduino-ide/
+//https://savjee.be/videos/programming-esp32-with-arduino/using-rtc-memory/
+
+
+//Check this out?
+//https://github.com/olikraus/u8g2
+
+//https://github.com/janelia-arduino/Vector
+
+
+
+|================================================================|
+|Things To Remember!|
+
+
+/*
+helpful Wifi Stuff Urls
+//https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
+//https://randomnerdtutorials.com/esp32-wifimulti/
+//https://www.megunolink.com/articles/wireless/talk-esp32-over-wifi/
+//https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
+//https://github.com/xreef/SimpleFTPServer
+*/
+
+
+//other Stuff Support
+//https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/preferences.html
+//https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32s2/api-reference/peripherals/dac.html
+
+
+https://docs.arduino.cc/learn/contributions/arduino-creating-library-guide
+http://electronics4dogs.blogspot.com/2011/01/arduino-predefined-constants.html
+
+
+|================================================================|
+|================================================================|
+|================================================================|
+|================================================================|
+|================================================================|
+|================================================================|
+|================================================================|
+|================================================================|
+
+
+
+
+
