@@ -1388,6 +1388,157 @@ void printAPStationNum(Stream &serialport){
 
 
 /*
+ * allow usage for .bmp files for images
+ */
+typedef struct {
+  //https://en.wikipedia.org/wiki/BMP_file_format
+  char imageName[32] = "IMAGE";//max name length = 31 charaters
+  uint16_t imageByteLength;
+  uint16_t widthPx;//in pixels
+  uint16_t heightPx;//in pixels
+  unsigned char* image;//size is imageByteLength
+
+  char file_BitmapFileHeader[14];
+  
+  
+  char file_DIB_Header[];
+  char file_Extra_bit_masks[12 or 16];//Optional
+  byte* file_Color_table;//Semi-Optional
+  byte* file_Gap1;//Optional
+  byte* file_Pixel_array;
+  byte* file_Gap2;//Optional
+  byte* file_ICC_color_profile;//Optional
+} WINbitmapIMG_Struct;
+
+
+typedef struct {
+  char headerField[2];
+  char bmpFileSize[4];//size is in Bytes
+  byte reserved_0[2];
+  byte reserved_1[2];
+  byte offset_pixelArray[4];
+} BitmapFileHeader_Struct;
+
+
+#define DIB_BITMAPCOREHEADER_headerSize 12    //not supported
+#define DIB_OS21XBITMAPHEADER_headerSize 12   //not supported
+#define DIB_OS22XBITMAPHEADER_headerSize 64   //not supported
+#define DIB_BITMAPINFOHEADER_headerSize 40    //supported
+#define DIB_BITMAPV2INFOHEADER_headerSize 52  //not supported
+#define DIB_BITMAPV3INFOHEADER_headerSize 56  //not supported
+#define DIB_BITMAPV4HEADER_headerSize 108     //not supported
+#define DIB_BITMAPV5HEADER_headerSize 124     //not supported
+
+
+class DIB_Class {
+  private:
+    uint32_t headerSize;
+    uint8_t *rawDIB_HeaderData;
+    void init(){
+      ;
+    };
+  public:
+    DIB_Class(){
+      init();
+    };
+    int returnDIB_Header_Size(){
+      return NULL;
+    };
+    int returnPixelWidth(){
+      return NULL;
+    };
+    int returnPixelHeight(){
+      return NULL;
+    };
+    int returnPlanes(){
+      return NULL;
+    };
+    int returnBitsPerPixel(){
+      return NULL;
+    };
+    int returnCompression(){
+      return NULL;
+    };
+    int returnImageSize(){
+      return NULL;
+    };
+    int returnXPixelsPerMeter(){
+      return NULL;
+    };
+    int returnYPixelsPerMeter(){
+      return NULL;
+    };
+    int returnColoursInColourTables(){
+      return NULL;
+    };
+    int returnImportantColoursCount(){
+      return NULL;
+    };
+    int return_Red_channel_bitmask(){
+      return NULL;
+    };
+    int return_Green_channel_bitmask(){
+      return NULL;
+    };
+    int return_Blue_channel_bitmask(){
+      return NULL;
+    };
+    int return_Alpha_channel_bitmask(){
+      return NULL;
+    };
+    int return_Colour_Space_Type(){
+      return NULL;
+    };
+    int return_Color_Space_Endpoints(){
+      return NULL;
+    };
+    int return_Gamma_for_Red_channel(){
+      return NULL;
+    };
+    int return_Gamma_for_Green_channel(){
+      return NULL;
+    };
+    int return_Gamma_for_Blue_channel(){
+      return NULL;
+    };
+    int return_Intent(){
+      return NULL;
+    };
+    int return_ICC_Profile_Data(){
+      return NULL;
+    };
+    int return_ICC_Profile_Size(){
+      return NULL;
+    };
+    int return_Reserved(){
+      return NULL;
+    };
+};
+
+
+typedef struct {
+  uint32_t headerSize = 40;
+  int32_t bitmapPixelWidth;
+  int32_t bitmapPixelHeight;
+  uint16_t colourPlanesCount = 1;
+  uint16_t pixelBitWidth;
+  uint32_t compression_method;
+  uint32_t image_size;
+  int32_t horizontal_resolution;//pixel per metre
+  int32_t vertical_resolution;//pixel per metre
+  uint32_t colourCount_in_ColourPalette;
+  uint32_t number_of_important_colors;
+} DIB_BITMAPINFOHEADER_Struct;
+
+
+/*
+ * allow usage for .bmp files for images /\
+ */
+
+
+
+
+/*
    Struct Images and Animations: Begin
 */
 typedef struct {
@@ -1400,12 +1551,85 @@ typedef struct {
 } IMGbitmapStruct;
 
 
+//basic convertion from .bmp to something usable!
+void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG);
+void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
+  if (!fileBMP) {
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+  //→ used for struct pointer
+  (void)fileBMP.seek(0);
+  (void)fileBMP.seek(10);
+  uint32_t pixelArrayOffset = ((fileBMP.read()) << 24) | ((fileBMP.read()) << 16) | ((fileBMP.read()) << 8) | fileBMP.read();
+  (void)fileBMP.seek(14);
+  uint32_t headerDIBSize = ((fileBMP.read()) << 24) | ((fileBMP.read()) << 16) | ((fileBMP.read()) << 8) | fileBMP.read();
+  unsigned char* raw_DIB_Header;
+  raw_DIB_Header = (unsigned char*)malloc(headerDIBSize + 1);
+  (void)fileBMP.seek(14);
+  fileBMP.read(raw_DIB_Header, headerDIBSize);
+  uint32_t image_size;
+  DIB_BITMAPINFOHEADER_Struct structDIB_header;
+  switch (headerDIBSize) {
+  case DIB_BITMAPINFOHEADER_headerSize:
+    structDIB_header.headerSize =                     ((raw_DIB_Header[0]) << 24) | ((raw_DIB_Header[1]) << 16) | ((raw_DIB_Header[2]) << 8) | raw_DIB_Header[3];
+    structDIB_header.bitmapPixelWidth =               ((raw_DIB_Header[4]) << 24) | ((raw_DIB_Header[5]) << 16) | ((raw_DIB_Header[6]) << 8) | raw_DIB_Header[7];
+    structDIB_header.bitmapPixelHeight =              ((raw_DIB_Header[8]) << 24) | ((raw_DIB_Header[9]) << 16) | ((raw_DIB_Header[10]) << 8) | raw_DIB_Header[11];
+    structDIB_header.colourPlanesCount =              ((raw_DIB_Header[12]) << 8) | raw_DIB_Header[13];
+    structDIB_header.pixelBitWidth =                  ((raw_DIB_Header[14]) << 8) | raw_DIB_Header[15];
+    structDIB_header.compression_method =             ((raw_DIB_Header[16]) << 24) | ((raw_DIB_Header[17]) << 16) | ((raw_DIB_Header[18]) << 8) | raw_DIB_Header[19];
+    structDIB_header.image_size =                     ((raw_DIB_Header[20]) << 24) | ((raw_DIB_Header[21]) << 16) | ((raw_DIB_Header[22]) << 8) | raw_DIB_Header[23];
+    structDIB_header.horizontal_resolution =          ((raw_DIB_Header[24]) << 24) | ((raw_DIB_Header[25]) << 16) | ((raw_DIB_Header[26]) << 8) | raw_DIB_Header[27];//pixel per metre
+    structDIB_header.vertical_resolution =            ((raw_DIB_Header[28]) << 24) | ((raw_DIB_Header[29]) << 16) | ((raw_DIB_Header[30]) << 8) | raw_DIB_Header[31];//pixel per metre
+    structDIB_header.colourCount_in_ColourPalette =   ((raw_DIB_Header[32]) << 24) | ((raw_DIB_Header[33]) << 16) | ((raw_DIB_Header[34]) << 8) | raw_DIB_Header[35];
+    structDIB_header.number_of_important_colors =     ((raw_DIB_Header[36]) << 24) | ((raw_DIB_Header[37]) << 16) | ((raw_DIB_Header[38]) << 8) | raw_DIB_Header[39];
+    
+    image_size = structDIB_header.image_size;
+    bitmapIMG.widthPx = structDIB_header.bitmapPixelWidth;
+    bitmapIMG.heightPx = structDIB_header.bitmapPixelHeight;
+    switch (structDIB_header.pixelBitWidth) {
+      case 1:
+        bitmapIMG.imageByteLength = (bitmapIMG.widthPx * bitmapIMG.heightPx) >> 3;//">>3" divides by 8
+        break;
+    }
+    
+    break;
+  }
+  free(raw_DIB_Header);
+  
+  
+  
+  (void)fileBMP.seek(pixelArrayOffset);
+  unsigned char* raw_Pixel_Array;
+  raw_Pixel_Array = (unsigned char*)malloc(structDIB_header.image_size + 1);
+  fileBMP.read(raw_Pixel_Array, structDIB_header.image_size);
+  
+  bitmapIMG.image = (unsigned char*)malloc(bitmapIMG.imageByteLength);
+  for (int index = 0; index < bitmapIMG.imageByteLength; index++) {
+    bitmapIMG.image[index] = 0;
+  }
+  unsigned int indexBit = 0;
+  for (int indexH = 0; indexH < structDIB_header.bitmapPixelHeight; indexH++) {
+    for (int indexW = 0; indexW < structDIB_header.bitmapPixelWidth; indexW++) {
+      for (int indexF = 0; indexF < structDIB_header.pixelBitWidth; indexF++) {
+        ;
+      }
+      unsigned int index = (indexW * indexH)>>3;
+      bitmapIMG.image[index] = raw_Pixel_Array[indexBit>>3];
+      indexBit = indexBit + structDIB_header.pixelBitWidth;
+    }
+    indexBit = indexBit + (structDIB_header.bitmapPixelWidth * structDIB_header.pixelBitWidth)%32;//skip over Row Padding
+  }
+  free(raw_Pixel_Array);
+  
+  //finish Me and test Me
+  
+  
+}
+
 
 void load_struct_bitmapIMG_dat_File(File &fileBMP, IMGbitmapStruct &bitmapIMG);
 void display_struct_bitmapIMG(Adafruit_SH1106 &display, IMGbitmapStruct &bitmapIMG, int locx, int locy);
-
-
-
 
 
 
@@ -2029,7 +2253,22 @@ void printFile(const char *filename, fs::FS &fs) {
 
 
 
-
+void test_bmp_image_file_read()
+{
+  printFreeHeap(Serial);
+  File fileBMP = SPIFFS.open("/gigachad64h.bmp");
+  IMGbitmapStruct gigaChadTest;
+  printFreeHeap(Serial);
+  Serial.println("IMGbitmapStruct Test: Begin");
+  
+  load_bitmapIMG_File_struct(fileBMP, gigaChadTest);
+  display.clearDisplay();
+  display_struct_bitmapIMG(display, gigaChadTest, 0, 0);
+  display.display();
+  
+  fileBMP.close();
+  printFreeHeap(Serial);
+}
 
 
 
@@ -2270,6 +2509,9 @@ void setup()   {
   */
   printFreeHeap(Serial);
   
+  test_bmp_image_file_read();
+  printFreeHeap(Serial);
+  delay(1000);
   
   test_bitmapgif_dat_FBF();
   
@@ -2277,6 +2519,7 @@ void setup()   {
   test_bitmapgif_dat_GIF();
   
   delay(250);
+  
   
   printFreeHeap(Serial);
   /*
