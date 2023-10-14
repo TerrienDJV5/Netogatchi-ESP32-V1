@@ -1656,8 +1656,6 @@ long createLONGfromBytes(unsigned char* byteArray, byte bitOrderMode)
 }
 
 void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
-  
-  
   if (!fileBMP) {
     Serial.println("Failed to open file for reading");
     return;
@@ -1702,55 +1700,54 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   BITMAPV5HEADER * bitmap_DIB_header_V5 = new BITMAPV5HEADER;
   
   switch (headerDIBSize) {
-  case DIB_BITMAPV5HEADER_headerSize:
-    bitmap_DIB_header_V5->bV5Size =             createDWORDfromBytes(&raw_DIB_Header[0], MSB);
-    bitmap_DIB_header_V5->bV5Width =            createLONGfromBytes(&raw_DIB_Header[4], MSB);
-    bitmap_DIB_header_V5->bV5Height =           createLONGfromBytes(&raw_DIB_Header[8], MSB);
-    bitmap_DIB_header_V5->bV5Planes =           createWORDfromBytes(&raw_DIB_Header[12], MSB);
-    bitmap_DIB_header_V5->bV5BitCount =         createWORDfromBytes(&raw_DIB_Header[14], MSB);
-    
-    bitmap_DIB_header_V5->bV5Compression =      createDWORDfromBytes(&raw_DIB_Header[16], MSB);
-    bitmap_DIB_header_V5->bV5SizeImage =        createDWORDfromBytes(&raw_DIB_Header[20], MSB);
-    
-    bitmap_DIB_header_V5->bV5XPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[24], MSB);
-    bitmap_DIB_header_V5->bV5YPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[28], MSB);
-    
-    bitmap_DIB_header_V5->bV5ClrUsed =          createDWORDfromBytes(&raw_DIB_Header[32], MSB);
-    bitmap_DIB_header_V5->bV5ClrImportant =     createDWORDfromBytes(&raw_DIB_Header[36], MSB);
-    
-    bitmap_DIB_header_V5->bV5RedMask =          createDWORDfromBytes(&raw_DIB_Header[40], MSB);
-    bitmap_DIB_header_V5->bV5GreenMask =        createDWORDfromBytes(&raw_DIB_Header[44], MSB);
-    bitmap_DIB_header_V5->bV5BlueMask =         createDWORDfromBytes(&raw_DIB_Header[48], MSB);
-    bitmap_DIB_header_V5->bV5AlphaMask =        createDWORDfromBytes(&raw_DIB_Header[52], MSB);
-    bitmap_DIB_header_V5->bV5CSType =           createDWORDfromBytes(&raw_DIB_Header[56], MSB);
-    
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzX =   createDWORDfromBytes(&raw_DIB_Header[60], MSB);
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzY =   createDWORDfromBytes(&raw_DIB_Header[64], MSB);
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzZ =   createDWORDfromBytes(&raw_DIB_Header[68], MSB);
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzX = createDWORDfromBytes(&raw_DIB_Header[72], MSB);
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzY = createDWORDfromBytes(&raw_DIB_Header[76], MSB);
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzZ = createDWORDfromBytes(&raw_DIB_Header[80], MSB);
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzX =  createDWORDfromBytes(&raw_DIB_Header[84], MSB);
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzY =  createDWORDfromBytes(&raw_DIB_Header[88], MSB);
-    bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzZ =  createDWORDfromBytes(&raw_DIB_Header[92], MSB);
-    
-    bitmap_DIB_header_V5->bV5GammaRed =         createDWORDfromBytes(&raw_DIB_Header[96], MSB);
-    bitmap_DIB_header_V5->bV5GammaGreen =       createDWORDfromBytes(&raw_DIB_Header[100], MSB);
-    bitmap_DIB_header_V5->bV5GammaBlue =        createDWORDfromBytes(&raw_DIB_Header[104], MSB);
-    bitmap_DIB_header_V5->bV5Intent =           createDWORDfromBytes(&raw_DIB_Header[108], MSB);
-    bitmap_DIB_header_V5->bV5ProfileData =      createDWORDfromBytes(&raw_DIB_Header[112], MSB);
-    bitmap_DIB_header_V5->bV5ProfileSize =      createDWORDfromBytes(&raw_DIB_Header[116], MSB);
-    bitmap_DIB_header_V5->bV5Reserved =         createDWORDfromBytes(&raw_DIB_Header[120], MSB);
-    
-    bitmapIMG.widthPx = bitmap_DIB_header_V5->bV5Width;
-    bitmapIMG.heightPx = bitmap_DIB_header_V5->bV5Height;
-    switch (bitmap_DIB_header_V5->bV5BitCount) {
-      case 1:
-        bitmapIMG.imageByteLength = (bitmapIMG.widthPx * bitmapIMG.heightPx) >> 3;//">>3" divides by 8
-        break;
-    }
-    
-    break;
+    case DIB_BITMAPV5HEADER_headerSize:
+      bitmap_DIB_header_V5->bV5Size =             createDWORDfromBytes(&raw_DIB_Header[0], MSB);
+      bitmap_DIB_header_V5->bV5Width =            createLONGfromBytes(&raw_DIB_Header[4], MSB);
+      bitmap_DIB_header_V5->bV5Height =           createLONGfromBytes(&raw_DIB_Header[8], MSB);
+      bitmap_DIB_header_V5->bV5Planes =           createWORDfromBytes(&raw_DIB_Header[12], MSB);
+      bitmap_DIB_header_V5->bV5BitCount =         createWORDfromBytes(&raw_DIB_Header[14], MSB);
+      
+      bitmap_DIB_header_V5->bV5Compression =      createDWORDfromBytes(&raw_DIB_Header[16], MSB);
+      bitmap_DIB_header_V5->bV5SizeImage =        createDWORDfromBytes(&raw_DIB_Header[20], MSB);
+      
+      bitmap_DIB_header_V5->bV5XPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[24], MSB);
+      bitmap_DIB_header_V5->bV5YPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[28], MSB);
+      
+      bitmap_DIB_header_V5->bV5ClrUsed =          createDWORDfromBytes(&raw_DIB_Header[32], MSB);
+      bitmap_DIB_header_V5->bV5ClrImportant =     createDWORDfromBytes(&raw_DIB_Header[36], MSB);
+      
+      bitmap_DIB_header_V5->bV5RedMask =          createDWORDfromBytes(&raw_DIB_Header[40], MSB);
+      bitmap_DIB_header_V5->bV5GreenMask =        createDWORDfromBytes(&raw_DIB_Header[44], MSB);
+      bitmap_DIB_header_V5->bV5BlueMask =         createDWORDfromBytes(&raw_DIB_Header[48], MSB);
+      bitmap_DIB_header_V5->bV5AlphaMask =        createDWORDfromBytes(&raw_DIB_Header[52], MSB);
+      bitmap_DIB_header_V5->bV5CSType =           createDWORDfromBytes(&raw_DIB_Header[56], MSB);
+      
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzX =   createDWORDfromBytes(&raw_DIB_Header[60], MSB);
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzY =   createDWORDfromBytes(&raw_DIB_Header[64], MSB);
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzZ =   createDWORDfromBytes(&raw_DIB_Header[68], MSB);
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzX = createDWORDfromBytes(&raw_DIB_Header[72], MSB);
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzY = createDWORDfromBytes(&raw_DIB_Header[76], MSB);
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzZ = createDWORDfromBytes(&raw_DIB_Header[80], MSB);
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzX =  createDWORDfromBytes(&raw_DIB_Header[84], MSB);
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzY =  createDWORDfromBytes(&raw_DIB_Header[88], MSB);
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzZ =  createDWORDfromBytes(&raw_DIB_Header[92], MSB);
+      
+      bitmap_DIB_header_V5->bV5GammaRed =         createDWORDfromBytes(&raw_DIB_Header[96], MSB);
+      bitmap_DIB_header_V5->bV5GammaGreen =       createDWORDfromBytes(&raw_DIB_Header[100], MSB);
+      bitmap_DIB_header_V5->bV5GammaBlue =        createDWORDfromBytes(&raw_DIB_Header[104], MSB);
+      bitmap_DIB_header_V5->bV5Intent =           createDWORDfromBytes(&raw_DIB_Header[108], MSB);
+      bitmap_DIB_header_V5->bV5ProfileData =      createDWORDfromBytes(&raw_DIB_Header[112], MSB);
+      bitmap_DIB_header_V5->bV5ProfileSize =      createDWORDfromBytes(&raw_DIB_Header[116], MSB);
+      bitmap_DIB_header_V5->bV5Reserved =         createDWORDfromBytes(&raw_DIB_Header[120], MSB);
+      
+      bitmapIMG.widthPx = bitmap_DIB_header_V5->bV5Width;
+      bitmapIMG.heightPx = bitmap_DIB_header_V5->bV5Height;
+      switch (bitmap_DIB_header_V5->bV5BitCount) {
+        case 1:
+          bitmapIMG.imageByteLength = (bitmapIMG.widthPx * bitmapIMG.heightPx) >> 3;//">>3" divides by 8
+          break;
+      }
+      break;
   }
   free(raw_DIB_Header);
   
@@ -2416,7 +2413,7 @@ void printFile(const char *filename, fs::FS &fs) {
 void test_bmp_image_file_read()
 {
   printFreeHeap(Serial);
-  File fileBMP = SPIFFS.open("/gigachad64h.bmp");
+  File fileBMP = SPIFFS.open("/gigachad64h_Inverted.bmp");
   IMGbitmapStruct gigaChadTest;
   printFreeHeap(Serial);
   Serial.println("IMGbitmapStruct Test: Begin");
