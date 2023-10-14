@@ -1423,11 +1423,11 @@ typedef struct {
 #define DIB_BITMAPCOREHEADER_headerSize 12    //not supported
 #define DIB_OS21XBITMAPHEADER_headerSize 12   //not supported
 #define DIB_OS22XBITMAPHEADER_headerSize 64   //not supported
-#define DIB_BITMAPINFOHEADER_headerSize 40    //supported
+#define DIB_BITMAPINFOHEADER_headerSize 40    //not supported
 #define DIB_BITMAPV2INFOHEADER_headerSize 52  //not supported
 #define DIB_BITMAPV3INFOHEADER_headerSize 56  //not supported
 #define DIB_BITMAPV4HEADER_headerSize 108     //not supported
-#define DIB_BITMAPV5HEADER_headerSize 124     //not supported
+#define DIB_BITMAPV5HEADER_headerSize 124     //supported
 
 
 class DIB_Class {
@@ -1516,19 +1516,71 @@ class DIB_Class {
 };
 
 
+
 typedef struct {
-  uint32_t headerSize = 40;
-  int32_t bitmapPixelWidth;
-  int32_t bitmapPixelHeight;
-  uint16_t colourPlanesCount = 1;
-  uint16_t pixelBitWidth;
-  uint32_t compression_method;
-  uint32_t image_size;
-  int32_t horizontal_resolution;//pixel per metre
-  int32_t vertical_resolution;//pixel per metre
-  uint32_t colourCount_in_ColourPalette;
-  uint32_t number_of_important_colors;
-} DIB_BITMAPINFOHEADER_Struct;
+  uint8_t Signature[2];
+  uint8_t File_Size[4];
+  uint8_t Reserved1[2];
+  uint8_t Reserved2[2];
+  uint8_t File_Offset_to_PixelArray[4];
+} BITMAPFILEHEADER_byteArray_Struct;
+
+typedef struct {
+  char Signature[2+1] = "  ";//only two chars
+  uint32_t File_Size;
+  uint16_t Reserved1;
+  uint16_t Reserved2;
+  uint32_t File_Offset_to_PixelArray;
+} BITMAPFILEHEADER_Struct;
+
+
+
+
+typedef unsigned long DWORD;
+typedef word WORD;
+typedef long LONG;
+
+typedef long FXPT2DOT30,*LPFXPT2DOT30;
+typedef struct tagCIEXYZ {
+  FXPT2DOT30 ciexyzX;
+  FXPT2DOT30 ciexyzY;
+  FXPT2DOT30 ciexyzZ;
+} CIEXYZ;
+
+typedef struct tagICEXYZTRIPLE {
+  CIEXYZ ciexyzRed;
+  CIEXYZ ciexyzGreen;
+  CIEXYZ ciexyzBlue;
+} CIEXYZTRIPLE;
+
+typedef struct {
+  DWORD        bV5Size;
+  LONG         bV5Width;
+  LONG         bV5Height;
+  WORD         bV5Planes;
+  WORD         bV5BitCount;
+  DWORD        bV5Compression;
+  DWORD        bV5SizeImage;
+  LONG         bV5XPelsPerMeter;
+  LONG         bV5YPelsPerMeter;
+  DWORD        bV5ClrUsed;
+  DWORD        bV5ClrImportant;
+  DWORD        bV5RedMask;
+  DWORD        bV5GreenMask;
+  DWORD        bV5BlueMask;
+  DWORD        bV5AlphaMask;
+  DWORD        bV5CSType;
+  CIEXYZTRIPLE bV5Endpoints;
+  DWORD        bV5GammaRed;
+  DWORD        bV5GammaGreen;
+  DWORD        bV5GammaBlue;
+  DWORD        bV5Intent;
+  DWORD        bV5ProfileData;
+  DWORD        bV5ProfileSize;
+  DWORD        bV5Reserved;
+} BITMAPV5HEADER, *LPBITMAPV5HEADER, *PBITMAPV5HEADER;
+
+
 
 
 /*
@@ -1552,42 +1604,147 @@ typedef struct {
 
 
 //basic convertion from .bmp to something usable!
+enum ENUMbyteOrder {LSB, MSB};
+
 void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG);
+unsigned long createDWORDfromBytes(unsigned char* byteArray, byte bitOrderMode)
+{
+  unsigned long output;
+  byte buff[4];
+  switch (bitOrderMode){
+    case LSB:
+      buff[0],buff[1],buff[2],buff[3] = 3,2,1,0;
+      break;
+    case MSB:
+      buff[0],buff[1],buff[2],buff[3] = 0,1,2,3;
+      break;
+  }
+  output = (((unsigned long)byteArray[ buff[0] ]) << 24) | (((unsigned long)byteArray[ buff[1] ]) << 16) | (((unsigned long)byteArray[ buff[2] ]) << 8) | (unsigned long)byteArray[ buff[3] ];
+  return output;
+}
+
+word createWORDfromBytes(unsigned char* byteArray, byte bitOrderMode)
+{
+  word output;
+  byte buff[2];
+  switch (bitOrderMode){
+    case LSB:
+      buff[0],buff[1] = 1, 0;
+      break;
+    case MSB:
+      buff[0],buff[1] = 0, 1;
+      break;
+  }
+  output = (((word)byteArray[ buff[0] ]) << 8) | (word)byteArray[ buff[1] ];
+  return output;
+}
+
+long createLONGfromBytes(unsigned char* byteArray, byte bitOrderMode)
+{
+  long output;
+  byte buff[4];
+  switch (bitOrderMode){
+    case LSB:
+      buff[0],buff[1],buff[2],buff[3] = 3,2,1,0;
+      break;
+    case MSB:
+      buff[0],buff[1],buff[2],buff[3] = 0,1,2,3;
+      break;
+  }
+  output = (((long)byteArray[ buff[0] ]) << 24) | (((long)byteArray[ buff[1] ]) << 16) | (((long)byteArray[ buff[2] ]) << 8) | (long)byteArray[ buff[3] ];
+  return output;
+}
+
 void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
+  
+  
   if (!fileBMP) {
     Serial.println("Failed to open file for reading");
     return;
   }
   //→ used for struct pointer
+  
+  int read_len;
+  int avail_len = fileBMP.available();
+  //read File Header
+  BITMAPFILEHEADER_byteArray_Struct * bitmapHeaderByteArray = new BITMAPFILEHEADER_byteArray_Struct;
   (void)fileBMP.seek(0);
+  read_len = fileBMP.read(bitmapHeaderByteArray->Signature, 2); // read all to buffer to buffer
+  (void)fileBMP.seek(2);
+  read_len = fileBMP.read(bitmapHeaderByteArray->File_Size, 4); // read all to buffer to buffer
+  (void)fileBMP.seek(6);
+  read_len = fileBMP.read(bitmapHeaderByteArray->Reserved1, 2); // read all to buffer to buffer
+  (void)fileBMP.seek(8);
+  read_len = fileBMP.read(bitmapHeaderByteArray->Reserved2, 2); // read all to buffer to buffer
   (void)fileBMP.seek(10);
-  uint32_t pixelArrayOffset = ((fileBMP.read()) << 24) | ((fileBMP.read()) << 16) | ((fileBMP.read()) << 8) | fileBMP.read();
+  read_len = fileBMP.read(bitmapHeaderByteArray->File_Offset_to_PixelArray, 4); // read all to buffer to buffer
   (void)fileBMP.seek(14);
+  
+  //store File Header data better
+  BITMAPFILEHEADER_Struct * bitmapHeader = new BITMAPFILEHEADER_Struct;
+  bitmapHeader->Signature[0] = (char)bitmapHeaderByteArray->Signature[0];
+  bitmapHeader->Signature[1] = (char)bitmapHeaderByteArray->Signature[1];
+  bitmapHeader->Signature[2] = '\0';
+  
+  bitmapHeader->File_Size = (((uint32_t)bitmapHeaderByteArray->File_Size[0]) << 24) | (((uint32_t)bitmapHeaderByteArray->File_Size[1]) << 16) | (((uint32_t)bitmapHeaderByteArray->File_Size[2]) << 8) | (uint32_t)bitmapHeaderByteArray->File_Size[3];
+  bitmapHeader->Reserved1 = (((uint16_t)bitmapHeaderByteArray->Reserved1[0]) << 8) | (uint16_t)bitmapHeaderByteArray->Reserved1[1];
+  bitmapHeader->Reserved2 = (((uint16_t)bitmapHeaderByteArray->Reserved2[0]) << 8) | (uint16_t)bitmapHeaderByteArray->Reserved2[1];
+  bitmapHeader->File_Offset_to_PixelArray = (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[0]) << 24) | (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[1]) << 16) | (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[2]) << 8) | (uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[3];
+  delete bitmapHeaderByteArray;
+
+  //Process DIB Header
   uint32_t headerDIBSize = ((fileBMP.read()) << 24) | ((fileBMP.read()) << 16) | ((fileBMP.read()) << 8) | fileBMP.read();
   unsigned char* raw_DIB_Header;
   raw_DIB_Header = (unsigned char*)malloc(headerDIBSize + 1);
   (void)fileBMP.seek(14);
   fileBMP.read(raw_DIB_Header, headerDIBSize);
-  uint32_t image_size;
-  DIB_BITMAPINFOHEADER_Struct structDIB_header;
+  
+  BITMAPV5HEADER * bitmap_DIB_header_V5 = new BITMAPV5HEADER;
+  
   switch (headerDIBSize) {
-  case DIB_BITMAPINFOHEADER_headerSize:
-    structDIB_header.headerSize =                     ((raw_DIB_Header[0]) << 24) | ((raw_DIB_Header[1]) << 16) | ((raw_DIB_Header[2]) << 8) | raw_DIB_Header[3];
-    structDIB_header.bitmapPixelWidth =               ((raw_DIB_Header[4]) << 24) | ((raw_DIB_Header[5]) << 16) | ((raw_DIB_Header[6]) << 8) | raw_DIB_Header[7];
-    structDIB_header.bitmapPixelHeight =              ((raw_DIB_Header[8]) << 24) | ((raw_DIB_Header[9]) << 16) | ((raw_DIB_Header[10]) << 8) | raw_DIB_Header[11];
-    structDIB_header.colourPlanesCount =              ((raw_DIB_Header[12]) << 8) | raw_DIB_Header[13];
-    structDIB_header.pixelBitWidth =                  ((raw_DIB_Header[14]) << 8) | raw_DIB_Header[15];
-    structDIB_header.compression_method =             ((raw_DIB_Header[16]) << 24) | ((raw_DIB_Header[17]) << 16) | ((raw_DIB_Header[18]) << 8) | raw_DIB_Header[19];
-    structDIB_header.image_size =                     ((raw_DIB_Header[20]) << 24) | ((raw_DIB_Header[21]) << 16) | ((raw_DIB_Header[22]) << 8) | raw_DIB_Header[23];
-    structDIB_header.horizontal_resolution =          ((raw_DIB_Header[24]) << 24) | ((raw_DIB_Header[25]) << 16) | ((raw_DIB_Header[26]) << 8) | raw_DIB_Header[27];//pixel per metre
-    structDIB_header.vertical_resolution =            ((raw_DIB_Header[28]) << 24) | ((raw_DIB_Header[29]) << 16) | ((raw_DIB_Header[30]) << 8) | raw_DIB_Header[31];//pixel per metre
-    structDIB_header.colourCount_in_ColourPalette =   ((raw_DIB_Header[32]) << 24) | ((raw_DIB_Header[33]) << 16) | ((raw_DIB_Header[34]) << 8) | raw_DIB_Header[35];
-    structDIB_header.number_of_important_colors =     ((raw_DIB_Header[36]) << 24) | ((raw_DIB_Header[37]) << 16) | ((raw_DIB_Header[38]) << 8) | raw_DIB_Header[39];
+  case DIB_BITMAPV5HEADER_headerSize:
+    bitmap_DIB_header_V5->bV5Size =             createDWORDfromBytes(&raw_DIB_Header[0], MSB);
+    bitmap_DIB_header_V5->bV5Width =            createLONGfromBytes(&raw_DIB_Header[4], MSB);
+    bitmap_DIB_header_V5->bV5Height =           createLONGfromBytes(&raw_DIB_Header[8], MSB);
+    bitmap_DIB_header_V5->bV5Planes =           createWORDfromBytes(&raw_DIB_Header[12], MSB);
+    bitmap_DIB_header_V5->bV5BitCount =         createWORDfromBytes(&raw_DIB_Header[14], MSB);
     
-    image_size = structDIB_header.image_size;
-    bitmapIMG.widthPx = structDIB_header.bitmapPixelWidth;
-    bitmapIMG.heightPx = structDIB_header.bitmapPixelHeight;
-    switch (structDIB_header.pixelBitWidth) {
+    bitmap_DIB_header_V5->bV5Compression =      createDWORDfromBytes(&raw_DIB_Header[16], MSB);
+    bitmap_DIB_header_V5->bV5SizeImage =        createDWORDfromBytes(&raw_DIB_Header[20], MSB);
+    
+    bitmap_DIB_header_V5->bV5XPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[24], MSB);
+    bitmap_DIB_header_V5->bV5YPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[28], MSB);
+    
+    bitmap_DIB_header_V5->bV5ClrUsed =          createDWORDfromBytes(&raw_DIB_Header[32], MSB);
+    bitmap_DIB_header_V5->bV5ClrImportant =     createDWORDfromBytes(&raw_DIB_Header[36], MSB);
+    
+    bitmap_DIB_header_V5->bV5RedMask =          createDWORDfromBytes(&raw_DIB_Header[40], MSB);
+    bitmap_DIB_header_V5->bV5GreenMask =        createDWORDfromBytes(&raw_DIB_Header[44], MSB);
+    bitmap_DIB_header_V5->bV5BlueMask =         createDWORDfromBytes(&raw_DIB_Header[48], MSB);
+    bitmap_DIB_header_V5->bV5AlphaMask =        createDWORDfromBytes(&raw_DIB_Header[52], MSB);
+    bitmap_DIB_header_V5->bV5CSType =           createDWORDfromBytes(&raw_DIB_Header[56], MSB);
+    
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzX =   createDWORDfromBytes(&raw_DIB_Header[60], MSB);
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzY =   createDWORDfromBytes(&raw_DIB_Header[64], MSB);
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzZ =   createDWORDfromBytes(&raw_DIB_Header[68], MSB);
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzX = createDWORDfromBytes(&raw_DIB_Header[72], MSB);
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzY = createDWORDfromBytes(&raw_DIB_Header[76], MSB);
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzZ = createDWORDfromBytes(&raw_DIB_Header[80], MSB);
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzX =  createDWORDfromBytes(&raw_DIB_Header[84], MSB);
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzY =  createDWORDfromBytes(&raw_DIB_Header[88], MSB);
+    bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzZ =  createDWORDfromBytes(&raw_DIB_Header[92], MSB);
+    
+    bitmap_DIB_header_V5->bV5GammaRed =         createDWORDfromBytes(&raw_DIB_Header[96], MSB);
+    bitmap_DIB_header_V5->bV5GammaGreen =       createDWORDfromBytes(&raw_DIB_Header[100], MSB);
+    bitmap_DIB_header_V5->bV5GammaBlue =        createDWORDfromBytes(&raw_DIB_Header[104], MSB);
+    bitmap_DIB_header_V5->bV5Intent =           createDWORDfromBytes(&raw_DIB_Header[108], MSB);
+    bitmap_DIB_header_V5->bV5ProfileData =      createDWORDfromBytes(&raw_DIB_Header[112], MSB);
+    bitmap_DIB_header_V5->bV5ProfileSize =      createDWORDfromBytes(&raw_DIB_Header[116], MSB);
+    bitmap_DIB_header_V5->bV5Reserved =         createDWORDfromBytes(&raw_DIB_Header[120], MSB);
+    
+    bitmapIMG.widthPx = bitmap_DIB_header_V5->bV5Width;
+    bitmapIMG.heightPx = bitmap_DIB_header_V5->bV5Height;
+    switch (bitmap_DIB_header_V5->bV5BitCount) {
       case 1:
         bitmapIMG.imageByteLength = (bitmapIMG.widthPx * bitmapIMG.heightPx) >> 3;//">>3" divides by 8
         break;
@@ -1599,28 +1756,31 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   
   
   
-  (void)fileBMP.seek(pixelArrayOffset);
+  (void)fileBMP.seek(bitmapHeader->File_Offset_to_PixelArray);
   unsigned char* raw_Pixel_Array;
-  raw_Pixel_Array = (unsigned char*)malloc(structDIB_header.image_size + 1);
-  fileBMP.read(raw_Pixel_Array, structDIB_header.image_size);
+  raw_Pixel_Array = (unsigned char*)malloc(bitmap_DIB_header_V5->bV5SizeImage + 1);
+  fileBMP.read(raw_Pixel_Array, bitmap_DIB_header_V5->bV5SizeImage);
   
   bitmapIMG.image = (unsigned char*)malloc(bitmapIMG.imageByteLength);
   for (int index = 0; index < bitmapIMG.imageByteLength; index++) {
     bitmapIMG.image[index] = 0;
   }
+  unsigned int paddedWidthSize = (bitmap_DIB_header_V5->bV5Width * bitmap_DIB_header_V5->bV5BitCount)%32;
   unsigned int indexBit = 0;
-  for (int indexH = 0; indexH < structDIB_header.bitmapPixelHeight; indexH++) {
-    for (int indexW = 0; indexW < structDIB_header.bitmapPixelWidth; indexW++) {
-      for (int indexF = 0; indexF < structDIB_header.pixelBitWidth; indexF++) {
+  for (int indexH = 0; indexH < bitmap_DIB_header_V5->bV5Height; indexH++) {
+    for (int indexW = 0; indexW < bitmap_DIB_header_V5->bV5Width; indexW++) {
+      for (int indexF = 0; indexF < bitmap_DIB_header_V5->bV5BitCount; indexF++) {
         ;
       }
       unsigned int index = (indexW * indexH)>>3;
       bitmapIMG.image[index] = raw_Pixel_Array[indexBit>>3];
-      indexBit = indexBit + structDIB_header.pixelBitWidth;
+      indexBit = indexBit + bitmap_DIB_header_V5->bV5BitCount;
     }
-    indexBit = indexBit + (structDIB_header.bitmapPixelWidth * structDIB_header.pixelBitWidth)%32;//skip over Row Padding
+    indexBit = indexBit + paddedWidthSize;//skip over Row Padding
   }
   free(raw_Pixel_Array);
+  delete bitmap_DIB_header_V5;
+  delete bitmapHeader;
   
   //finish Me and test Me
   
