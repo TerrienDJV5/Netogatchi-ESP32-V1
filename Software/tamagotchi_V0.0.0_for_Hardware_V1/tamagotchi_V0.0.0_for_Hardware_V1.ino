@@ -1554,6 +1554,29 @@ typedef struct tagICEXYZTRIPLE {
 } CIEXYZTRIPLE;
 
 typedef struct {
+  DWORD        bV4Size;
+  LONG         bV4Width;
+  LONG         bV4Height;
+  WORD         bV4Planes;
+  WORD         bV4BitCount;
+  DWORD        bV4Compression;
+  DWORD        bV4SizeImage;
+  LONG         bV4XPelsPerMeter;
+  LONG         bV4YPelsPerMeter;
+  DWORD        bV4ClrUsed;
+  DWORD        bV4ClrImportant;
+  DWORD        bV4RedMask;
+  DWORD        bV4GreenMask;
+  DWORD        bV4BlueMask;
+  DWORD        bV4AlphaMask;
+  DWORD        bV4CSType;
+  CIEXYZTRIPLE bV4Endpoints;
+  DWORD        bV4GammaRed;
+  DWORD        bV4GammaGreen;
+  DWORD        bV4GammaBlue;
+} BITMAPV4HEADER, *LPBITMAPV4HEADER, *PBITMAPV4HEADER;
+
+typedef struct {
   DWORD        bV5Size;
   LONG         bV5Width;
   LONG         bV5Height;
@@ -1610,52 +1633,77 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG);
 unsigned long createDWORDfromBytes(unsigned char* byteArray, byte bitOrderMode)
 {
   unsigned long output;
-  byte buff[4];
+  //byte buff[4];
+  unsigned long dbuff[4];
   switch (bitOrderMode){
     case LSB:
-      buff[0],buff[1],buff[2],buff[3] = 3,2,1,0;
+      //buff[0],buff[1],buff[2],buff[3] = 3,2,1,0;
+      dbuff[0],dbuff[1],dbuff[2],dbuff[3] = (unsigned long)byteArray[ 3 ], (unsigned long)byteArray[ 2 ], (unsigned long)byteArray[ 1 ], (unsigned long)byteArray[ 0 ];
       break;
     case MSB:
-      buff[0],buff[1],buff[2],buff[3] = 0,1,2,3;
+      //buff[0],buff[1],buff[2],buff[3] = 0,1,2,3;
+      dbuff[0],dbuff[1],dbuff[2],dbuff[3] = (unsigned long)byteArray[ 0 ], (unsigned long)byteArray[ 1 ], (unsigned long)byteArray[ 2 ], (unsigned long)byteArray[ 3 ];
       break;
   }
-  output = (((unsigned long)byteArray[ buff[0] ]) << 24) | (((unsigned long)byteArray[ buff[1] ]) << 16) | (((unsigned long)byteArray[ buff[2] ]) << 8) | (unsigned long)byteArray[ buff[3] ];
+  //output = (((unsigned long)byteArray[ buff[0] ]) << 24) | (((unsigned long)byteArray[ buff[1] ]) << 16) | (((unsigned long)byteArray[ buff[2] ]) << 8) | (unsigned long)byteArray[ buff[3] ];
+  output = (dbuff[0] << 24) | (dbuff[1] << 16) | (dbuff[2] << 8) | dbuff[3];
   return output;
 }
 
 word createWORDfromBytes(unsigned char* byteArray, byte bitOrderMode)
 {
   word output;
-  byte buff[2];
+  //byte buff[2];
+  word wbuff[2];
   switch (bitOrderMode){
     case LSB:
-      buff[0],buff[1] = 1, 0;
+      //buff[0], buff[1] = 1, 0;
+      wbuff[0], wbuff[1] = (word)byteArray[ 1 ], (word)byteArray[ 0 ];
       break;
     case MSB:
-      buff[0],buff[1] = 0, 1;
+      //buff[0], buff[1] = 0, 1;
+      wbuff[0], wbuff[1] = (word)byteArray[ 0 ], (word)byteArray[ 1 ];
       break;
   }
-  output = (((word)byteArray[ buff[0] ]) << 8) | (word)byteArray[ buff[1] ];
+  //output = ((word)byteArray[ buff[0] ] << 8) | (word)byteArray[ buff[1] ];
+  output = (wbuff[0] << 8) | wbuff[1];
   return output;
 }
 
 long createLONGfromBytes(unsigned char* byteArray, byte bitOrderMode)
 {
   long output;
-  byte buff[4];
+  //byte buff[4];
+  long lbuff[4];
   switch (bitOrderMode){
     case LSB:
-      buff[0],buff[1],buff[2],buff[3] = 3,2,1,0;
+      //buff[0],buff[1],buff[2],buff[3] = 3,2,1,0;
+      lbuff[0], lbuff[1], lbuff[2], lbuff[3] = (long)byteArray[ 3 ], (long)byteArray[ 2 ], (long)byteArray[ 1 ], (long)byteArray[ 0 ];
       break;
     case MSB:
-      buff[0],buff[1],buff[2],buff[3] = 0,1,2,3;
+      //buff[0],buff[1],buff[2],buff[3] = 0,1,2,3;
+      lbuff[0], lbuff[1], lbuff[2], lbuff[3] = (long)byteArray[ 0 ], (long)byteArray[ 1 ], (long)byteArray[ 2 ], (long)byteArray[ 3 ];
       break;
   }
-  output = (((long)byteArray[ buff[0] ]) << 24) | (((long)byteArray[ buff[1] ]) << 16) | (((long)byteArray[ buff[2] ]) << 8) | (long)byteArray[ buff[3] ];
+  //output = (((long)byteArray[ buff[0] ]) << 24) | (((long)byteArray[ buff[1] ]) << 16) | (((long)byteArray[ buff[2] ]) << 8) | (long)byteArray[ buff[3] ];
+  output = (lbuff[0] << 24) | (lbuff[1] << 16) | (lbuff[2] << 8) | lbuff[3];
   return output;
 }
 
 void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
+  typedef  enum
+{
+   BI_RGB = 0x0000,
+   BI_RLE8 = 0x0001,
+   BI_RLE4 = 0x0002,
+   BI_BITFIELDS = 0x0003,
+   BI_JPEG = 0x0004,
+   BI_PNG = 0x0005,
+   BI_CMYK = 0x000B,
+   BI_CMYKRLE8 = 0x000C,
+   BI_CMYKRLE4 = 0x000D
+} Compression;
+  
   if (!fileBMP) {
     Serial.println("Failed to open file for reading");
     return;
@@ -1691,19 +1739,137 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   delete bitmapHeaderByteArray;
 
   //Process DIB Header
-  uint32_t headerDIBSize = ((fileBMP.read()) << 24) | ((fileBMP.read()) << 16) | ((fileBMP.read()) << 8) | fileBMP.read();
+  Serial.print("fileBMP.position() Result: ");Serial.println( fileBMP.position() );
+  uint32_t headerDIBSize = fileBMP.read() | ((fileBMP.read()) << 8) | ((fileBMP.read()) << 16) | ((fileBMP.read()) << 24);
+  Serial.print("headerDIBSize: ");Serial.println(headerDIBSize);
   unsigned char* raw_DIB_Header;
   raw_DIB_Header = (unsigned char*)malloc(headerDIBSize + 1);
   (void)fileBMP.seek(14);
+  Serial.print("fileBMP.position() Result: ");Serial.println( fileBMP.position() );
   fileBMP.read(raw_DIB_Header, headerDIBSize);
+  Serial.print("fileBMP.position() Result: ");Serial.println( fileBMP.position() );
   
+  BITMAPV4HEADER * bitmap_DIB_header_V4 = new BITMAPV4HEADER;
   BITMAPV5HEADER * bitmap_DIB_header_V5 = new BITMAPV5HEADER;
+  Serial.print("&bitmap_DIB_header_V4: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V4);
+  Serial.print("&bitmap_DIB_header_V5: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V5);
   
   switch (headerDIBSize) {
+    case DIB_BITMAPV4HEADER_headerSize:
+      Serial.println("case DIB_BITMAPV4HEADER_headerSize");
+      //https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapv4header
+      bitmap_DIB_header_V4->bV4Size =             createDWORDfromBytes(&raw_DIB_Header[0], MSB);
+      Serial.print("bitmap_DIB_header_V4->bV4Size : ");Serial.println(bitmap_DIB_header_V4->bV4Size);
+      bitmap_DIB_header_V4->bV4Width =            createLONGfromBytes(&raw_DIB_Header[4], MSB);
+      bitmap_DIB_header_V4->bV4Height =           createLONGfromBytes(&raw_DIB_Header[8], MSB);
+      bitmap_DIB_header_V4->bV4Planes =           createWORDfromBytes(&raw_DIB_Header[12], MSB);
+      bitmap_DIB_header_V4->bV4BitCount =         createWORDfromBytes(&raw_DIB_Header[14], MSB);
+      
+      bitmap_DIB_header_V4->bV4Compression =      createDWORDfromBytes(&raw_DIB_Header[16], MSB);
+      bitmap_DIB_header_V4->bV4SizeImage =        createDWORDfromBytes(&raw_DIB_Header[20], MSB);
+      
+      bitmap_DIB_header_V4->bV4XPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[24], MSB);
+      bitmap_DIB_header_V4->bV4YPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[28], MSB);
+      
+      bitmap_DIB_header_V4->bV4ClrUsed =          createDWORDfromBytes(&raw_DIB_Header[32], MSB);
+      bitmap_DIB_header_V4->bV4ClrImportant =     createDWORDfromBytes(&raw_DIB_Header[36], MSB);
+      
+      bitmap_DIB_header_V4->bV4RedMask =          createDWORDfromBytes(&raw_DIB_Header[40], MSB);
+      bitmap_DIB_header_V4->bV4GreenMask =        createDWORDfromBytes(&raw_DIB_Header[44], MSB);
+      bitmap_DIB_header_V4->bV4BlueMask =         createDWORDfromBytes(&raw_DIB_Header[48], MSB);
+      bitmap_DIB_header_V4->bV4AlphaMask =        createDWORDfromBytes(&raw_DIB_Header[52], MSB);
+      bitmap_DIB_header_V4->bV4CSType =           createDWORDfromBytes(&raw_DIB_Header[56], MSB);
+      
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzRed.ciexyzX =   createDWORDfromBytes(&raw_DIB_Header[60], MSB);
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzRed.ciexyzY =   createDWORDfromBytes(&raw_DIB_Header[64], MSB);
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzRed.ciexyzZ =   createDWORDfromBytes(&raw_DIB_Header[68], MSB);
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzGreen.ciexyzX = createDWORDfromBytes(&raw_DIB_Header[72], MSB);
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzGreen.ciexyzY = createDWORDfromBytes(&raw_DIB_Header[76], MSB);
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzGreen.ciexyzZ = createDWORDfromBytes(&raw_DIB_Header[80], MSB);
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzBlue.ciexyzX =  createDWORDfromBytes(&raw_DIB_Header[84], MSB);
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzBlue.ciexyzY =  createDWORDfromBytes(&raw_DIB_Header[88], MSB);
+      bitmap_DIB_header_V4->bV4Endpoints.ciexyzBlue.ciexyzZ =  createDWORDfromBytes(&raw_DIB_Header[92], MSB);
+      
+      bitmap_DIB_header_V4->bV4GammaRed =         createDWORDfromBytes(&raw_DIB_Header[96], MSB);
+      bitmap_DIB_header_V4->bV4GammaGreen =       createDWORDfromBytes(&raw_DIB_Header[100], MSB);
+      bitmap_DIB_header_V4->bV4GammaBlue =        createDWORDfromBytes(&raw_DIB_Header[104], MSB);
+
+
+      //copy all values to V5
+      Serial.print("bitmap_DIB_header_V4->bV4Width: ");
+      Serial.println(bitmap_DIB_header_V4->bV4Width);
+      Serial.print("bitmap_DIB_header_V4->bV4Height: ");
+      Serial.println(bitmap_DIB_header_V4->bV4Height);
+      
+      Serial.print("bitmap_DIB_header_V5->bV5Width: ");
+      Serial.println(bitmap_DIB_header_V5->bV5Width);
+      Serial.print("bitmap_DIB_header_V5->bV5Height: ");
+      Serial.println(bitmap_DIB_header_V5->bV5Height);
+      
+      Serial.print("&bitmap_DIB_header_V4: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V4);
+      Serial.print("&bitmap_DIB_header_V5: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V5);
+      Serial.println("-----copy bitmap_DIB_header_V4 data to bitmap_DIB_header_V5 !-----");
+      bitmap_DIB_header_V5->bV5Size = bitmap_DIB_header_V4->bV4Size;
+      bitmap_DIB_header_V5->bV5Width = bitmap_DIB_header_V4->bV4Width;
+      bitmap_DIB_header_V5->bV5Height = bitmap_DIB_header_V4->bV4Height;
+      bitmap_DIB_header_V5->bV5Planes = bitmap_DIB_header_V4->bV4Planes;
+      bitmap_DIB_header_V5->bV5BitCount = bitmap_DIB_header_V4->bV4BitCount;
+      bitmap_DIB_header_V5->bV5Compression = bitmap_DIB_header_V4->bV4Compression;
+      bitmap_DIB_header_V5->bV5SizeImage = bitmap_DIB_header_V4->bV4SizeImage;
+      bitmap_DIB_header_V5->bV5XPelsPerMeter = bitmap_DIB_header_V4->bV4XPelsPerMeter;
+      bitmap_DIB_header_V5->bV5YPelsPerMeter = bitmap_DIB_header_V4->bV4YPelsPerMeter;
+      bitmap_DIB_header_V5->bV5ClrUsed = bitmap_DIB_header_V4->bV4ClrUsed;
+      bitmap_DIB_header_V5->bV5ClrImportant = bitmap_DIB_header_V4->bV4ClrImportant;
+      bitmap_DIB_header_V5->bV5RedMask = bitmap_DIB_header_V4->bV4RedMask;
+      bitmap_DIB_header_V5->bV5GreenMask = bitmap_DIB_header_V4->bV4GreenMask;
+      bitmap_DIB_header_V5->bV5BlueMask = bitmap_DIB_header_V4->bV4BlueMask;
+      bitmap_DIB_header_V5->bV5AlphaMask = bitmap_DIB_header_V4->bV4AlphaMask;
+      bitmap_DIB_header_V5->bV5CSType = bitmap_DIB_header_V4->bV4CSType;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzX = bitmap_DIB_header_V4->bV4Endpoints.ciexyzRed.ciexyzX;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzY = bitmap_DIB_header_V4->bV4Endpoints.ciexyzRed.ciexyzY;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzRed.ciexyzZ = bitmap_DIB_header_V4->bV4Endpoints.ciexyzRed.ciexyzZ;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzX = bitmap_DIB_header_V4->bV4Endpoints.ciexyzGreen.ciexyzX;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzY = bitmap_DIB_header_V4->bV4Endpoints.ciexyzGreen.ciexyzY;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzGreen.ciexyzZ = bitmap_DIB_header_V4->bV4Endpoints.ciexyzGreen.ciexyzZ;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzX = bitmap_DIB_header_V4->bV4Endpoints.ciexyzBlue.ciexyzX;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzY = bitmap_DIB_header_V4->bV4Endpoints.ciexyzBlue.ciexyzY;
+      bitmap_DIB_header_V5->bV5Endpoints.ciexyzBlue.ciexyzZ = bitmap_DIB_header_V4->bV4Endpoints.ciexyzBlue.ciexyzZ;
+      bitmap_DIB_header_V5->bV5GammaRed = bitmap_DIB_header_V4->bV4GammaRed;
+      bitmap_DIB_header_V5->bV5GammaGreen = bitmap_DIB_header_V4->bV4GammaGreen;
+      bitmap_DIB_header_V5->bV5GammaBlue = bitmap_DIB_header_V4->bV4GammaBlue;
+      
+      bitmap_DIB_header_V5->bV5Intent = NULL;
+      bitmap_DIB_header_V5->bV5ProfileData = NULL;
+      bitmap_DIB_header_V5->bV5ProfileSize = NULL;
+      bitmap_DIB_header_V5->bV5Reserved = NULL;
+      
+
+      
+      //memcpy(&bitmap_DIB_header_V5, &bitmap_DIB_header_V4, sizeof(bitmap_DIB_header_V4));// fucks Shit up
+      Serial.println("-----Done copy bitmap_DIB_header_V4 data to bitmap_DIB_header_V5 !-----");
+      Serial.print("&bitmap_DIB_header_V4: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V4);
+      Serial.print("&bitmap_DIB_header_V5: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V5);
+      
+      Serial.print("bitmap_DIB_header_V4->bV4Width: ");
+      Serial.println(bitmap_DIB_header_V4->bV4Width);
+      Serial.print("bitmap_DIB_header_V4->bV4Height: ");
+      Serial.println(bitmap_DIB_header_V4->bV4Height);
+      
+      Serial.print("bitmap_DIB_header_V5->bV5Width: ");
+      Serial.println(bitmap_DIB_header_V5->bV5Width);
+      Serial.print("bitmap_DIB_header_V5->bV5Height: ");
+      Serial.println(bitmap_DIB_header_V5->bV5Height);
+      break;
     case DIB_BITMAPV5HEADER_headerSize:
+      Serial.println("case DIB_BITMAPV5HEADER_headerSize");
+      //https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapv5header
       bitmap_DIB_header_V5->bV5Size =             createDWORDfromBytes(&raw_DIB_Header[0], MSB);
       bitmap_DIB_header_V5->bV5Width =            createLONGfromBytes(&raw_DIB_Header[4], MSB);
       bitmap_DIB_header_V5->bV5Height =           createLONGfromBytes(&raw_DIB_Header[8], MSB);
+      Serial.print("bitmap_DIB_header_V5->bV5Width: ");
+      Serial.println(bitmap_DIB_header_V5->bV5Width);
+      Serial.print("bitmap_DIB_header_V5->bV5Height: ");
+      Serial.println(bitmap_DIB_header_V5->bV5Height);
       bitmap_DIB_header_V5->bV5Planes =           createWORDfromBytes(&raw_DIB_Header[12], MSB);
       bitmap_DIB_header_V5->bV5BitCount =         createWORDfromBytes(&raw_DIB_Header[14], MSB);
       
@@ -1735,38 +1901,81 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
       bitmap_DIB_header_V5->bV5GammaRed =         createDWORDfromBytes(&raw_DIB_Header[96], MSB);
       bitmap_DIB_header_V5->bV5GammaGreen =       createDWORDfromBytes(&raw_DIB_Header[100], MSB);
       bitmap_DIB_header_V5->bV5GammaBlue =        createDWORDfromBytes(&raw_DIB_Header[104], MSB);
+      
       bitmap_DIB_header_V5->bV5Intent =           createDWORDfromBytes(&raw_DIB_Header[108], MSB);
       bitmap_DIB_header_V5->bV5ProfileData =      createDWORDfromBytes(&raw_DIB_Header[112], MSB);
       bitmap_DIB_header_V5->bV5ProfileSize =      createDWORDfromBytes(&raw_DIB_Header[116], MSB);
       bitmap_DIB_header_V5->bV5Reserved =         createDWORDfromBytes(&raw_DIB_Header[120], MSB);
-      
-      bitmapIMG.widthPx = bitmap_DIB_header_V5->bV5Width;
-      bitmapIMG.heightPx = bitmap_DIB_header_V5->bV5Height;
-      switch (bitmap_DIB_header_V5->bV5BitCount) {
-        case 1:
-          bitmapIMG.imageByteLength = (bitmapIMG.widthPx * bitmapIMG.heightPx) >> 3;//">>3" divides by 8
-          break;
-      }
+      break;
+    default:
+      Serial.println("case None");
       break;
   }
   free(raw_DIB_Header);
   
   
+  bitmapIMG.widthPx = bitmap_DIB_header_V5->bV5Width;
+  bitmapIMG.heightPx = bitmap_DIB_header_V5->bV5Height;
+  switch (bitmap_DIB_header_V5->bV5BitCount) {
+    case 0:
+      break;
+    case 1:
+      bitmapIMG.imageByteLength = (bitmapIMG.widthPx * bitmapIMG.heightPx) >> 3;//">>3" divides by 8
+      break;
+    case 4:
+      break;
+    case 8:
+      break;
+    case 16:
+      break;
+    case 24:
+      break;
+    case 32:
+      break;
+  }
+  switch (bitmap_DIB_header_V5->bV5Compression) {
+    case BI_RGB:
+      break;
+    case BI_RLE8:
+      break;
+    case BI_RLE4:
+      break;
+    case BI_BITFIELDS:
+      break;
+    case BI_JPEG:
+      break;
+    case BI_PNG:
+      break;
+    case BI_CMYK:
+      break;
+    case BI_CMYKRLE8:
+      break;
+    case BI_CMYKRLE4:
+      break;
+  }
   
+  
+  //read file's pixel array
+  Serial.println("-----read file's pixel array-----");
   (void)fileBMP.seek(bitmapHeader->File_Offset_to_PixelArray);
   unsigned char* raw_Pixel_Array;
   raw_Pixel_Array = (unsigned char*)malloc(bitmap_DIB_header_V5->bV5SizeImage + 1);
   fileBMP.read(raw_Pixel_Array, bitmap_DIB_header_V5->bV5SizeImage);
   
+  //convert BMP pixel array into useable Struct
+  Serial.println("-----convert BMP pixel array into useable Struct-----");
   bitmapIMG.image = (unsigned char*)malloc(bitmapIMG.imageByteLength);
-  for (int index = 0; index < bitmapIMG.imageByteLength; index++) {
+  for (unsigned int index = 0; index < bitmapIMG.imageByteLength; index++) {
     bitmapIMG.image[index] = 0;
   }
   unsigned int paddedWidthSize = (bitmap_DIB_header_V5->bV5Width * bitmap_DIB_header_V5->bV5BitCount)%32;
   unsigned int indexBit = 0;
-  for (int indexH = 0; indexH < bitmap_DIB_header_V5->bV5Height; indexH++) {
-    for (int indexW = 0; indexW < bitmap_DIB_header_V5->bV5Width; indexW++) {
-      for (int indexF = 0; indexF < bitmap_DIB_header_V5->bV5BitCount; indexF++) {
+  Serial.print("bitmap_DIB_header_V5->bV5Height: ");Serial.println(bitmap_DIB_header_V5->bV5Height);
+  Serial.print("bitmap_DIB_header_V5->bV5Width: ");Serial.println(bitmap_DIB_header_V5->bV5Width);
+  Serial.print("bitmap_DIB_header_V5->bV5BitCount: ");Serial.println(bitmap_DIB_header_V5->bV5BitCount);
+  for (unsigned int indexH = 0; indexH < bitmap_DIB_header_V5->bV5Height; indexH++) {
+    for (unsigned int indexW = 0; indexW < bitmap_DIB_header_V5->bV5Width; indexW++) {
+      for (unsigned int indexF = 0; indexF < bitmap_DIB_header_V5->bV5BitCount; indexF++) {
         ;
       }
       unsigned int index = (indexW * indexH)>>3;
@@ -1775,13 +1984,24 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
     }
     indexBit = indexBit + paddedWidthSize;//skip over Row Padding
   }
+  Serial.println("-----Free Up Memory-----");
   free(raw_Pixel_Array);
+  Serial.println("-----0-----");
+  delete bitmap_DIB_header_V4;
+  Serial.println("-----1-----");
   delete bitmap_DIB_header_V5;
+  Serial.println("-----2-----");
   delete bitmapHeader;
+  Serial.println("-----3-----");
+  Serial.println("-----Free Up Memory Complete-----");
   
   //finish Me and test Me
-  
-  
+  Serial.print("bitmapIMG.widthPx: ");
+  Serial.println(bitmapIMG.widthPx, BIN);
+  Serial.print("bitmapIMG.heightPx: ");
+  Serial.println(bitmapIMG.heightPx, BIN);
+  Serial.print("bitmapIMG.imageByteLength: ");
+  Serial.println(bitmapIMG.imageByteLength);
 }
 
 
@@ -2424,6 +2644,7 @@ void test_bmp_image_file_read()
   display.display();
   
   fileBMP.close();
+  Serial.println("IMGbitmapStruct Test: Closed");
   printFreeHeap(Serial);
 }
 
@@ -2665,8 +2886,9 @@ void setup()   {
     delay(1500);
   */
   printFreeHeap(Serial);
-  
+  delay(1000);
   test_bmp_image_file_read();
+  delay(1000);
   printFreeHeap(Serial);
   delay(1000);
   
