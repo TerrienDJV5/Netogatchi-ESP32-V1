@@ -1732,10 +1732,10 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   bitmapHeader->Signature[1] = (char)bitmapHeaderByteArray->Signature[1];
   bitmapHeader->Signature[2] = '\0';
   
-  bitmapHeader->File_Size = (((uint32_t)bitmapHeaderByteArray->File_Size[0]) << 24) | (((uint32_t)bitmapHeaderByteArray->File_Size[1]) << 16) | (((uint32_t)bitmapHeaderByteArray->File_Size[2]) << 8) | (uint32_t)bitmapHeaderByteArray->File_Size[3];
-  bitmapHeader->Reserved1 = (((uint16_t)bitmapHeaderByteArray->Reserved1[0]) << 8) | (uint16_t)bitmapHeaderByteArray->Reserved1[1];
-  bitmapHeader->Reserved2 = (((uint16_t)bitmapHeaderByteArray->Reserved2[0]) << 8) | (uint16_t)bitmapHeaderByteArray->Reserved2[1];
-  bitmapHeader->File_Offset_to_PixelArray = (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[0]) << 24) | (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[1]) << 16) | (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[2]) << 8) | (uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[3];
+  bitmapHeader->File_Size = (((uint32_t)bitmapHeaderByteArray->File_Size[3]) << 24) | (((uint32_t)bitmapHeaderByteArray->File_Size[2]) << 16) | (((uint32_t)bitmapHeaderByteArray->File_Size[1]) << 8) | (uint32_t)bitmapHeaderByteArray->File_Size[0];
+  bitmapHeader->Reserved1 = (((uint16_t)bitmapHeaderByteArray->Reserved1[1]) << 8) | (uint16_t)bitmapHeaderByteArray->Reserved1[0];
+  bitmapHeader->Reserved2 = (((uint16_t)bitmapHeaderByteArray->Reserved2[1]) << 8) | (uint16_t)bitmapHeaderByteArray->Reserved2[0];
+  bitmapHeader->File_Offset_to_PixelArray = (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[3]) << 24) | (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[2]) << 16) | (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[1]) << 8) | (uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[0];
   delete bitmapHeaderByteArray;
 
   //Process DIB Header
@@ -1767,6 +1767,7 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
       
       bitmap_DIB_header_V4->bV4Compression =      createDWORDfromBytes(&raw_DIB_Header[16], MSB);
       bitmap_DIB_header_V4->bV4SizeImage =        createDWORDfromBytes(&raw_DIB_Header[20], MSB);
+      Serial.print("bitmap_DIB_header_V4->bV4SizeImage : ");Serial.println(bitmap_DIB_header_V4->bV4SizeImage);
       
       bitmap_DIB_header_V4->bV4XPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[24], MSB);
       bitmap_DIB_header_V4->bV4YPelsPerMeter =    createLONGfromBytes(&raw_DIB_Header[28], MSB);
@@ -1916,11 +1917,24 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   
   bitmapIMG.widthPx = bitmap_DIB_header_V5->bV5Width;
   bitmapIMG.heightPx = bitmap_DIB_header_V5->bV5Height;
+  
+  unsigned int rowPaddedSize = 32 - (bitmap_DIB_header_V5->bV5Width * bitmap_DIB_header_V5->bV5BitCount)%32;//BMP Pixel array
+  unsigned int newpaddedSize = 8 - (bitmapIMG.widthPx)%8;
+  Serial.print("rowPaddedSize: ");Serial.println(rowPaddedSize);
+  Serial.print("newpaddedSize: ");Serial.println(newpaddedSize);
+  unsigned int widthByteSizeBMP = (bitmap_DIB_header_V5->bV5Width + rowPaddedSize) >> 3;
+  unsigned int widthByteSizeNEW = (bitmapIMG.widthPx + newpaddedSize) >> 3;
+  Serial.print("widthByteSizeBMP: ");Serial.println(widthByteSizeBMP);
+  Serial.print("widthByteSizeNEW: ");Serial.println(widthByteSizeNEW);
+  
+  
+  
+  Serial.print("bitmap_DIB_header_V5->bV5BitCount: ");Serial.println( bitmap_DIB_header_V5->bV5BitCount );
   switch (bitmap_DIB_header_V5->bV5BitCount) {
     case 0:
       break;
     case 1:
-      bitmapIMG.imageByteLength = (bitmapIMG.widthPx * bitmapIMG.heightPx) >> 3;//">>3" divides by 8
+      bitmapIMG.imageByteLength = ((bitmapIMG.widthPx + (8 - (bitmapIMG.widthPx)%8))>>3) * bitmapIMG.heightPx;//">>3" divides by 8
       break;
     case 4:
       break;
@@ -1933,8 +1947,14 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
     case 32:
       break;
   }
+  Serial.print("bitmap_DIB_header_V5->bV5Compression: ");Serial.println( bitmap_DIB_header_V5->bV5Compression );
+  //enum {BI_RGB, BI_RLE8, BI_RLE4, BI_BITFIELDS, BI_JPEG, BI_PNG, BI_CMYK, BI_CMYKRLE8, BI_CMYKRLE4} bV5Compression;
   switch (bitmap_DIB_header_V5->bV5Compression) {
     case BI_RGB:
+      //calculate image size if dummy value is found
+      if (bitmap_DIB_header_V5->bV5SizeImage==0){
+        bitmap_DIB_header_V5->bV5SizeImage = widthByteSizeBMP * bitmap_DIB_header_V5->bV5Height;
+      }
       break;
     case BI_RLE8:
       break;
@@ -1957,7 +1977,10 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   
   //read file's pixel array
   Serial.println("-----read file's pixel array-----");
-  (void)fileBMP.seek(bitmapHeader->File_Offset_to_PixelArray);
+  Serial.print("bitmapHeader->File_Offset_to_PixelArray: ");Serial.println( bitmapHeader->File_Offset_to_PixelArray );
+  (void)fileBMP.seek( bitmapHeader->File_Offset_to_PixelArray );
+  Serial.print("fileBMP.position() Result: ");Serial.println( fileBMP.position() );
+  
   unsigned char* raw_Pixel_Array;
   raw_Pixel_Array = (unsigned char*)malloc(bitmap_DIB_header_V5->bV5SizeImage + 1);
   fileBMP.read(raw_Pixel_Array, bitmap_DIB_header_V5->bV5SizeImage);
@@ -1968,21 +1991,30 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   for (unsigned int index = 0; index < bitmapIMG.imageByteLength; index++) {
     bitmapIMG.image[index] = 0;
   }
-  unsigned int paddedWidthSize = (bitmap_DIB_header_V5->bV5Width * bitmap_DIB_header_V5->bV5BitCount)%32;
+  
   unsigned int indexBit = 0;
   Serial.print("bitmap_DIB_header_V5->bV5Height: ");Serial.println(bitmap_DIB_header_V5->bV5Height);
   Serial.print("bitmap_DIB_header_V5->bV5Width: ");Serial.println(bitmap_DIB_header_V5->bV5Width);
   Serial.print("bitmap_DIB_header_V5->bV5BitCount: ");Serial.println(bitmap_DIB_header_V5->bV5BitCount);
-  for (unsigned int indexH = 0; indexH < bitmap_DIB_header_V5->bV5Height; indexH++) {
-    for (unsigned int indexW = 0; indexW < bitmap_DIB_header_V5->bV5Width; indexW++) {
-      for (unsigned int indexF = 0; indexF < bitmap_DIB_header_V5->bV5BitCount; indexF++) {
-        ;
-      }
-      unsigned int index = (indexW * indexH)>>3;
-      bitmapIMG.image[index] = raw_Pixel_Array[indexBit>>3];
-      indexBit = indexBit + bitmap_DIB_header_V5->bV5BitCount;
+  
+  
+  unsigned int index_0 = 0;
+  unsigned int index_1 = 0;
+  Serial.print("bitmap_DIB_header_V5->bV5SizeImage: ");Serial.println(bitmap_DIB_header_V5->bV5SizeImage);
+  Serial.print("bitmapIMG.imageByteLength: ");Serial.println(bitmapIMG.imageByteLength);
+  
+  for (unsigned int indexH = 0; indexH < bitmapIMG.heightPx; indexH++) {
+    for (unsigned int indexW = 0; indexW < widthByteSizeNEW; indexW++) {    
+      bitmapIMG.image[ index_0 + indexW ] = raw_Pixel_Array[ index_1 + indexW ];
     }
-    indexBit = indexBit + paddedWidthSize;//skip over Row Padding
+    index_0 += widthByteSizeNEW;
+    index_1 += widthByteSizeBMP;
+    Serial.print("index_0: ");Serial.println(index_0);
+    Serial.print("index_1: ");Serial.println(index_1);
+    display.clearDisplay();
+    display.drawBitmap(0, 0, bitmapIMG.image, bitmapIMG.widthPx, bitmapIMG.heightPx, WHITE);
+    display.display();
+    
   }
   Serial.println("-----Free Up Memory-----");
   free(raw_Pixel_Array);
@@ -1997,9 +2029,9 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   
   //finish Me and test Me
   Serial.print("bitmapIMG.widthPx: ");
-  Serial.println(bitmapIMG.widthPx, BIN);
+  Serial.println(bitmapIMG.widthPx);
   Serial.print("bitmapIMG.heightPx: ");
-  Serial.println(bitmapIMG.heightPx, BIN);
+  Serial.println(bitmapIMG.heightPx);
   Serial.print("bitmapIMG.imageByteLength: ");
   Serial.println(bitmapIMG.imageByteLength);
 }
@@ -2632,8 +2664,9 @@ void printFile(const char *filename, fs::FS &fs) {
 
 void test_bmp_image_file_read()
 {
+  File fileBMP;
   printFreeHeap(Serial);
-  File fileBMP = SPIFFS.open("/gigachad64h_Inverted.bmp");
+  fileBMP = SPIFFS.open("/gigachad64h_Inverted.bmp");
   IMGbitmapStruct gigaChadTest;
   printFreeHeap(Serial);
   Serial.println("IMGbitmapStruct Test: Begin");
@@ -2641,6 +2674,23 @@ void test_bmp_image_file_read()
   load_bitmapIMG_File_struct(fileBMP, gigaChadTest);
   display.clearDisplay();
   display_struct_bitmapIMG(display, gigaChadTest, 0, 0);
+  display.display();
+  
+  fileBMP.close();
+  Serial.println("IMGbitmapStruct Test: Closed");
+  printFreeHeap(Serial);
+
+  delay(1000);
+
+  printFreeHeap(Serial);
+  fileBMP = SPIFFS.open("/SmallBatteryPercent.bmp");
+  IMGbitmapStruct smallbatterypercentTest;
+  printFreeHeap(Serial);
+  Serial.println("IMGbitmapStruct Test: Begin");
+  
+  load_bitmapIMG_File_struct(fileBMP, smallbatterypercentTest);
+  display.clearDisplay();
+  display_struct_bitmapIMG(display, smallbatterypercentTest, 0, 0);
   display.display();
   
   fileBMP.close();
