@@ -205,85 +205,6 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   memset(imageOutput,0,8);
   */
   /*
-  unsigned char* shiftValueCache;
-  shiftValueCache = (unsigned char*)calloc(15, sizeof(unsigned char));
-  memcpy(shiftValueCache, (const unsigned char[]){7,6,5,4,3,2,1,0,1,2,3,4,5,6,7}, (15)*sizeof(unsigned char));
-  
-  logicTypes* logicTypeShiftCache;
-  logicTypeShiftCache = (logicTypes*)calloc(15, sizeof(logicTypes));
-  memcpy(logicTypeShiftCache, (const logicTypes[]){bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,bitwiseRShift,passThrough,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift,bitwiseLShift}, (15)*sizeof(logicTypes));
-  
-  
-  
-  logicTypes* logicTypeFullx8_OR;
-  logicTypeFullx8_OR = (logicTypes*)calloc(8, sizeof(logicTypes));
-  memcpy(logicTypeFullx8_OR, (const logicTypes[]){bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR,bitwiseOR}, 8*sizeof(logicTypes));
-  logicTypes* logicTypeFullx8_AND;
-  logicTypeFullx8_AND = (logicTypes*)calloc(8, sizeof(logicTypes));
-  memcpy(logicTypeFullx8_AND, (const logicTypes[]){bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND,bitwiseAND}, 8*sizeof(logicTypes));
-  
-  unsigned char* arrayCache0;
-  unsigned char* arrayCache1;
-  arrayCache0 = (unsigned char*)calloc(8, sizeof(unsigned char));
-  arrayCache1 = (unsigned char*)calloc(8, sizeof(unsigned char));
-  memset(arrayCache1,0,8);
-  
-  
-  memset(arrayCache0, imageIN8x8[0], 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+0, logicTypeShiftCache+0);
-  memset(arrayCache0, 0B00000001, 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  
-  memset(arrayCache0, imageIN8x8[1], 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+1, logicTypeShiftCache+1);
-  memset(arrayCache0, 0B00000010, 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  
-
-  memset(arrayCache0, imageIN8x8[2], 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+2, logicTypeShiftCache+2);
-  memset(arrayCache0, 0B00000100, 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  
-  memset(arrayCache0, imageIN8x8[3], 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+3, logicTypeShiftCache+3);
-  memset(arrayCache0, 0B00001000, 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  
-
-  memset(arrayCache0, imageIN8x8[4], 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+4, logicTypeShiftCache+4);
-  memset(arrayCache0, 0B00010000, 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  
-  memset(arrayCache0, imageIN8x8[5], 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+5, logicTypeShiftCache+5);
-  memset(arrayCache0, 0B00100000, 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  
-
-  memset(arrayCache0, imageIN8x8[6], 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+6, logicTypeShiftCache+6);
-  memset(arrayCache0, 0B01000000, 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  
-  memset(arrayCache0, imageIN8x8[7], 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache0, shiftValueCache+7, logicTypeShiftCache+7);
-  memset(arrayCache0, 0B10000000, 8);
-  logicOP_UnsignedCharX8_logicArrayFunc(arrayCache1, arrayCache1, arrayCache0, logicTypeFullx8_AND);
-  logicOP_UnsignedCharX8_logicArrayFunc(imageOutput, imageOutput, arrayCache1, logicTypeFullx8_OR);
-  */
-
-  
-  
-  /*
   byte* cS;//columnSelect
   cS = (byte*)calloc(8, sizeof(byte));
   cS[0] = B00000001;cS[1] = B00000010;cS[2] = B00000100;cS[3] = B00001000;cS[4] = B00010000;cS[5] = B00100000;cS[6] = B01000000;cS[7] = B10000000;
@@ -329,18 +250,8 @@ void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   
   //*/
   //free(cS);
-  memmove(imageIN8x8, imageOutput, 8);
-  free(imageOutput);
-  /*
-  free(shiftValueCache);
-  free(logicTypeShiftCache);
-  
-  free(arrayCache0);
-  free(arrayCache1);
-  
-  free(logicTypeFullx8_AND);
-  free(logicTypeFullx8_OR);
-  */
+  memcpy(imageIN8x8, imageOutput, sizeof(imageOutput));
+  //free(imageOutput);
 }
 
 
@@ -563,6 +474,7 @@ void BMIMGmanipulate::rotate128x128ImageClockwise(unsigned char imageInput[]){
 
 //input images types only work for 8x8,16x16,32x32,64x64,128x128
 void BMIMGmanipulate::rotate_ImageClockwise_recursionFunc(unsigned char imageInput[], unsigned int imageByteWidth, unsigned int imageByteHeight ){
+  //Serial.print("Rotate Recursion : ");Serial.print(imageByteWidth);Serial.print(" / ");Serial.print(imageByteHeight);Serial.println();
   //unsigned int imageByteWidth = 2;
   //unsigned int imageByteHeight = 16;
   unsigned int fullImageByteSize = imageByteWidth*imageByteHeight;
@@ -598,6 +510,7 @@ void BMIMGmanipulate::rotate_ImageClockwise_recursionFunc(unsigned char imageInp
     rotate_ImageClockwise_recursionFunc(sectorX0Y1, (imageByteWidth/2), (imageByteHeight/2) );
     rotate_ImageClockwise_recursionFunc(sectorX1Y1, (imageByteWidth/2), (imageByteHeight/2) );
   }
+  
   
   
   //Rotate Sectors
