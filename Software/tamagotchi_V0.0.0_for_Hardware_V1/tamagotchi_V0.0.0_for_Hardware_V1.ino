@@ -3469,7 +3469,7 @@ void loop()
   char localIntVar[64];
   strcpy(localIntVar, "Buzzer.pwm");
   //create a task that will be executed in the TaskBuzzercode() function, with priority 20 and executed on core 1
-  if (frameCountVariable % 65536){
+  if ((frameCountVariable % 65536) == 0){
   xTaskCreatePinnedToCore(
     TaskBuzzercode,   /* Task function. */
     "TaskBuzzercode",     /* name of task. */
