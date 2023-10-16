@@ -2006,9 +2006,6 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
     for (unsigned int indexW = 0; indexW < widthByteSizeNEW; indexW++) {
       bitmapIMG.image[ index_0 + indexW ] = raw_Pixel_Array[ index_1 + indexW ];
     }
-    display.clearDisplay();
-    display.drawBitmap(0, 0, bitmapIMG.image, bitmapIMG.widthPx, bitmapIMG.heightPx, WHITE);
-    display.display();
   }
   Serial.println("-----Free Up Memory-----");
   free(raw_Pixel_Array);
@@ -3411,10 +3408,12 @@ void TaskBuzzercode( void * pvParameters ) {
   int *sound;
   sound = (int*)calloc(1024, sizeof(int));
   for (int index = 0; index < 1024; index++) {
+    sound[ index ] = 1024;
+  }
+  for (int index = 0; index < 1024; index++) {
     analogWrite(buzzerPin, sound[ index ]);
     delayMicroseconds(10);
   }
-  
   free(sound);
   Serial.println("Ending TaskBuzzer");
   vTaskDelete( NULL );
@@ -3470,6 +3469,7 @@ void loop()
   char localIntVar[64];
   strcpy(localIntVar, "Buzzer.pwm");
   //create a task that will be executed in the TaskBuzzercode() function, with priority 20 and executed on core 1
+  if (frameCountVariable % 65536){
   xTaskCreatePinnedToCore(
     TaskBuzzercode,   /* Task function. */
     "TaskBuzzercode",     /* name of task. */
@@ -3478,7 +3478,7 @@ void loop()
     20,           /* priority of the task */
     &TaskBuzzer,      /* Task handle to keep track of created task */
     1);          /* pin task to core 1 */
-    
+  }  
 
   if (timeConfigured==false){
     if (WiFi.status() == WL_CONNECTED){
