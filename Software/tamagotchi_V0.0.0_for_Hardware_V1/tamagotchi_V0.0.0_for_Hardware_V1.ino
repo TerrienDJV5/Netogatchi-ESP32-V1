@@ -478,7 +478,7 @@ bool disableButtonPISO_update = false;
 unsigned int currentMenuID = 0;
 unsigned int previousMenuID = 0;
 unsigned long frameCountVariable;//This variable stores the number of frames that have been displayed since the program started.
-static unsigned char* batteryIconBigImage; //batteryBig_bitmapimg.dat
+static unsigned char* batteryIconBigImage; //batteryBig_Full.bmp //SmallBatteryPercent.bmp
 static unsigned int batteryIconBigWidth;
 static unsigned int batteryIconBigHeight;
 int cursorXPos = 0;
@@ -1629,8 +1629,8 @@ typedef struct _Win5xBitmapHeader{
 /*
    Struct Images and Animations: Begin
 */
+//https://www.tutorialspoint.com/structs-in-arduino-program
 typedef struct {
-  //https://www.tutorialspoint.com/structs-in-arduino-program
   char imageName[32] = "IMAGE";//max name length = 31 charaters
   uint16_t imageByteLength;
   uint16_t widthPx;//in pixels
@@ -1710,6 +1710,7 @@ long createLONGfromBytes(unsigned char* byteArray, ENUMbyteOrder bitOrderMode)
 void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   Serial.println("-----(Func)load_bitmapIMG_File_struct-----");
   printFreeHeap(Serial);
+  const char _NotSupportedMessage[] = "Not Supported!";
   typedef  enum {
     BI_RGB = 0x0000,
     BI_RLE8 = 0x0001,
@@ -1750,43 +1751,11 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   BITMAPFILEHEADER_byteArray_Struct * bitmapHeaderByteArray = new BITMAPFILEHEADER_byteArray_Struct;
   (void)fileBMP.seek(0);
   read_len = fileBMP.read(bitmapHeaderByteArray->rawData, 14); // read all to buffer to buffer
-  ///* Test ME
-  bitmapHeaderByteArray->Signature[0] = bitmapHeaderByteArray->rawData[0];
-  bitmapHeaderByteArray->Signature[1] = bitmapHeaderByteArray->rawData[1];
-  bitmapHeaderByteArray->File_Size[0] = bitmapHeaderByteArray->rawData[2];
-  bitmapHeaderByteArray->File_Size[1] = bitmapHeaderByteArray->rawData[3];
-  bitmapHeaderByteArray->File_Size[2] = bitmapHeaderByteArray->rawData[4];
-  bitmapHeaderByteArray->File_Size[3] = bitmapHeaderByteArray->rawData[5];
-  bitmapHeaderByteArray->Reserved1[0] = bitmapHeaderByteArray->rawData[6];
-  bitmapHeaderByteArray->Reserved1[1] = bitmapHeaderByteArray->rawData[7];
-  bitmapHeaderByteArray->Reserved2[0] = bitmapHeaderByteArray->rawData[8];
-  bitmapHeaderByteArray->Reserved2[1] = bitmapHeaderByteArray->rawData[9];
-  bitmapHeaderByteArray->File_Offset_to_PixelArray[0] = bitmapHeaderByteArray->rawData[10];
-  bitmapHeaderByteArray->File_Offset_to_PixelArray[1] = bitmapHeaderByteArray->rawData[11];
-  bitmapHeaderByteArray->File_Offset_to_PixelArray[2] = bitmapHeaderByteArray->rawData[12];
-  bitmapHeaderByteArray->File_Offset_to_PixelArray[3] = bitmapHeaderByteArray->rawData[13];
-  //*/
-  ///* Test ME
-  memcpy ( &bitmapHeaderByteArray->rawData[0], &bitmapHeaderByteArray->Signature, sizeof(bitmapHeaderByteArray->Signature) );
-  memcpy ( &bitmapHeaderByteArray->rawData[2], &bitmapHeaderByteArray->File_Size, sizeof(bitmapHeaderByteArray->File_Size) );
-  memcpy ( &bitmapHeaderByteArray->rawData[6], &bitmapHeaderByteArray->Reserved1, sizeof(bitmapHeaderByteArray->Reserved1) );
-  memcpy ( &bitmapHeaderByteArray->rawData[8], &bitmapHeaderByteArray->Reserved2, sizeof(bitmapHeaderByteArray->Reserved2) );
-  memcpy ( &bitmapHeaderByteArray->rawData[10], &bitmapHeaderByteArray->File_Offset_to_PixelArray, sizeof(bitmapHeaderByteArray->File_Offset_to_PixelArray) );
-  //*/
-  //read as segments \/
-  /* working code
-  (void)fileBMP.seek(0);
-  read_len = fileBMP.read(bitmapHeaderByteArray->Signature, 2); // read all to buffer to buffer
-  (void)fileBMP.seek(2);
-  read_len = fileBMP.read(bitmapHeaderByteArray->File_Size, 4); // read all to buffer to buffer
-  (void)fileBMP.seek(6);
-  read_len = fileBMP.read(bitmapHeaderByteArray->Reserved1, 2); // read all to buffer to buffer
-  (void)fileBMP.seek(8);
-  read_len = fileBMP.read(bitmapHeaderByteArray->Reserved2, 2); // read all to buffer to buffer
-  (void)fileBMP.seek(10);
-  read_len = fileBMP.read(bitmapHeaderByteArray->File_Offset_to_PixelArray, 4); // read all to buffer to buffer
-  (void)fileBMP.seek(14);
-  //*/
+  memcpy ( &bitmapHeaderByteArray->Signature, &bitmapHeaderByteArray->rawData[0], sizeof(bitmapHeaderByteArray->Signature) );
+  memcpy ( &bitmapHeaderByteArray->File_Size, &bitmapHeaderByteArray->rawData[2], sizeof(bitmapHeaderByteArray->File_Size) );
+  memcpy ( &bitmapHeaderByteArray->Reserved1, &bitmapHeaderByteArray->rawData[6], sizeof(bitmapHeaderByteArray->Reserved1) );
+  memcpy ( &bitmapHeaderByteArray->Reserved2, &bitmapHeaderByteArray->rawData[8], sizeof(bitmapHeaderByteArray->Reserved2) );
+  memcpy ( &bitmapHeaderByteArray->File_Offset_to_PixelArray, &bitmapHeaderByteArray->rawData[10], sizeof(bitmapHeaderByteArray->File_Offset_to_PixelArray) );
   
   //store File Header data better
   BITMAPFILEHEADER_Struct * bitmapHeader = new BITMAPFILEHEADER_Struct;
@@ -1799,64 +1768,91 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   bitmapHeader->Reserved2 = (((uint16_t)bitmapHeaderByteArray->Reserved2[1]) << 8) | (uint16_t)bitmapHeaderByteArray->Reserved2[0];
   bitmapHeader->File_Offset_to_PixelArray = (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[3]) << 24) | (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[2]) << 16) | (((uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[1]) << 8) | (uint32_t)bitmapHeaderByteArray->File_Offset_to_PixelArray[0];
   delete bitmapHeaderByteArray;
+  
+  //Check File Header Signature
+  if (strcmp(bitmapHeader->Signature, "BM")==0){
+    Serial.println("case \"BM\"");
+  }else if (strcmp(bitmapHeader->Signature, "BA")==0){
+    Serial.println("case \"BA\"");
+    Serial.print("bitmapHeader->Signature: ");Serial.println(bitmapHeader->Signature);
+    Serial.println(_NotSupportedMessage);
+    delete bitmapHeader;
+    return;
+  }else if (strcmp(bitmapHeader->Signature, "CI")==0){
+    Serial.println("case \"CI\"");
+    Serial.print("bitmapHeader->Signature: ");Serial.println(bitmapHeader->Signature);
+    Serial.println(_NotSupportedMessage);
+    delete bitmapHeader;
+    return;
+  }else if (strcmp(bitmapHeader->Signature, "CP")==0){
+    Serial.println("case \"CP\"");
+    Serial.print("bitmapHeader->Signature: ");Serial.println(bitmapHeader->Signature);
+    Serial.println(_NotSupportedMessage);
+    delete bitmapHeader;
+    return;
+  }else if (strcmp(bitmapHeader->Signature, "IC")==0){
+    Serial.println("case \"IC\"");
+    Serial.print("bitmapHeader->Signature: ");Serial.println(bitmapHeader->Signature);
+    Serial.println(_NotSupportedMessage);
+    delete bitmapHeader;
+    return;
+  }else if (strcmp(bitmapHeader->Signature, "PT")==0){
+    Serial.println("case \"PT\"");
+    Serial.print("bitmapHeader->Signature: ");Serial.println(bitmapHeader->Signature);
+    Serial.println(_NotSupportedMessage);
+    delete bitmapHeader;
+    return;
+  }else{
+    Serial.print("bitmapHeader->Signature: ");Serial.println(bitmapHeader->Signature);
+    Serial.print("Signature ");Serial.println(_NotSupportedMessage);
+    delete bitmapHeader;
+    return;
+  };
 
   //Process DIB Header
   Serial.print("fileBMP.position() Result: ");Serial.println( fileBMP.position() );
   uint32_t headerDIBSize = fileBMP.read() | ((fileBMP.read()) << 8) | ((fileBMP.read()) << 16) | ((fileBMP.read()) << 24);
   Serial.print("headerDIBSize: ");Serial.println(headerDIBSize);
-  unsigned char* raw_DIB_Header;
-  raw_DIB_Header = (unsigned char*)malloc(headerDIBSize + 1);
+  
+  unsigned char* raw_DIB_Header = (unsigned char*)malloc(headerDIBSize + 1);
   (void)fileBMP.seek(14);
   fileBMP.read(raw_DIB_Header, headerDIBSize);
-  
+  printFreeHeap(Serial);
   WIN4XBITMAPHEADER * bitmap_DIB_header_V4 = new WIN4XBITMAPHEADER;
   WIN5XBITMAPHEADER * bitmap_DIB_header_V5 = new WIN5XBITMAPHEADER;
+  WIN5XBITMAPHEADER * bitmap_DIB_header = new WIN5XBITMAPHEADER;
+  Serial.print("Pointer of bitmap_DIB_header_V4: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V4);//prints Pointer
+  Serial.print("Pointer of bitmap_DIB_header_V5: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V5);//prints Pointer
+  printFreeHeap(Serial);
   
-  Serial.print("&bitmap_DIB_header_V4: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V4);
-  Serial.print("&bitmap_DIB_header_V5: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V5);
   
-  if (bitmapHeader->Signature == "BM"){
-    Serial.println("case \"BM\"");
-  }else if (bitmapHeader->Signature == "BA"){
-    Serial.println("case \"BA\"");
-    Serial.println("Not Supported");
-  }else if (bitmapHeader->Signature == "CI"){
-    Serial.println("case \"CI\"");
-    Serial.println("Not Supported");
-  }else if (bitmapHeader->Signature == "CP"){
-    Serial.println("case \"CP\"");
-    Serial.println("Not Supported");
-  }else if (bitmapHeader->Signature == "IC"){
-    Serial.println("case \"IC\"");
-    Serial.println("Not Supported");
-  }else if (bitmapHeader->Signature == "PT"){
-    Serial.println("case \"PT\"");
-    Serial.println("Not Supported");
-  }else{
-    Serial.println("case None");
-  };
-
-  if (bitmapHeader->Signature == "BM"){
+  bool flag_DIBSupported = false;
+  if (strcmp(bitmapHeader->Signature, "BM")==0){
   switch (headerDIBSize)
   {
     case DIB_BITMAPCOREHEADER_headerSize or DIB_OS21XBITMAPHEADER_headerSize:
       Serial.println("case DIB_BITMAPCOREHEADER_headerSize");
-      Serial.println("Not Supported");
+      Serial.println(_NotSupportedMessage);
+      flag_DIBSupported = false;
       break;
     case DIB_BITMAPINFOHEADER_headerSize:
       Serial.println("case DIB_BITMAPINFOHEADER_headerSize");
-      Serial.println("Not Supported");
+      Serial.println(_NotSupportedMessage);
+      flag_DIBSupported = false;
       break;
     case DIB_BITMAPV2INFOHEADER_headerSize:
       Serial.println("case DIB_BITMAPV2INFOHEADER_headerSize");
-      Serial.println("Not Supported");
+      Serial.println(_NotSupportedMessage);
+      flag_DIBSupported = false;
       break;
     case DIB_BITMAPV3INFOHEADER_headerSize:
       Serial.println("case DIB_BITMAPV3INFOHEADER_headerSize");
-      Serial.println("Not Supported");
+      Serial.println(_NotSupportedMessage);
+      flag_DIBSupported = false;
       break;
     case DIB_BITMAPV4HEADER_headerSize:
       Serial.println("case DIB_BITMAPV4HEADER_headerSize");
+      flag_DIBSupported = true;
       //https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapv4header
       bitmap_DIB_header_V4->Size =            createDWORDfromBytes(&raw_DIB_Header[0], MSB);
       bitmap_DIB_header_V4->Width =           createLONGfromBytes(&raw_DIB_Header[4], MSB);
@@ -1895,8 +1891,6 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
 
 
       //copy all values to V5
-      Serial.print("&bitmap_DIB_header_V4: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V4);
-      Serial.print("&bitmap_DIB_header_V5: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V5);
       Serial.println("-----copy bitmap_DIB_header_V4 data to bitmap_DIB_header_V5 !-----");
       bitmap_DIB_header_V5->Size = bitmap_DIB_header_V4->Size;
       bitmap_DIB_header_V5->Width = bitmap_DIB_header_V4->Width;
@@ -1932,15 +1926,12 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
       bitmap_DIB_header_V5->ProfileSize = NULL;
       bitmap_DIB_header_V5->Reserved = NULL;
       
-
-      
       //memcpy(&bitmap_DIB_header_V5, &bitmap_DIB_header_V4, sizeof(bitmap_DIB_header_V4));// fucks Shit up
       Serial.println("-----Done copy bitmap_DIB_header_V4 data to bitmap_DIB_header_V5 !-----");
-      Serial.print("&bitmap_DIB_header_V4: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V4);
-      Serial.print("&bitmap_DIB_header_V5: ");Serial.printf("%p\n", (void *)bitmap_DIB_header_V5);
       break;
     case DIB_BITMAPV5HEADER_headerSize:
       Serial.println("case DIB_BITMAPV5HEADER_headerSize");
+      flag_DIBSupported = true;
       //https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapv5header
       bitmap_DIB_header_V5->Size =            createDWORDfromBytes(&raw_DIB_Header[0], MSB);
       bitmap_DIB_header_V5->Width =           createLONGfromBytes(&raw_DIB_Header[4], MSB);
@@ -1984,18 +1975,18 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
       break;
     default:
       Serial.println("case None");
+      Serial.println(_NotSupportedMessage);
+      flag_DIBSupported = false;
       break;
   }
   }
   free(raw_DIB_Header);
-  
+  //Process DIB Header Done
+    
   bitmapIMG.widthPx = bitmap_DIB_header_V5->Width;
   bitmapIMG.heightPx = bitmap_DIB_header_V5->Height;
   Serial.print("bitmap_DIB_header_V5->Height: ");Serial.println(bitmap_DIB_header_V5->Height);
   Serial.print("bitmap_DIB_header_V5->Width: ");Serial.println(bitmap_DIB_header_V5->Width);
-  Serial.print("bitmap_DIB_header_V5->BitsPerPixel: ");Serial.println(bitmap_DIB_header_V5->BitsPerPixel);
-  
-  
   
   unsigned int rowPaddedSize = (32 - (bitmap_DIB_header_V5->Width * bitmap_DIB_header_V5->BitsPerPixel)%32)%32;//BMP Pixel array
   unsigned int newpaddedSize = (8 - (bitmapIMG.widthPx)%8)%8;
@@ -2005,8 +1996,6 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   unsigned int widthByteSizeNEW = (bitmapIMG.widthPx + newpaddedSize) >> 3;//">>3" divides by 8
   Serial.print("widthByteSizeBMP: ");Serial.println(widthByteSizeBMP);
   Serial.print("widthByteSizeNEW: ");Serial.println(widthByteSizeNEW);
-  
-  
   
   Serial.print("bitmap_DIB_header_V5->BitsPerPixel: ");Serial.println( bitmap_DIB_header_V5->BitsPerPixel );
   switch (bitmap_DIB_header_V5->BitsPerPixel) {
@@ -2052,7 +2041,8 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
     case BI_CMYKRLE4:
       break;
   }
-  
+  //read file's Color Table
+  //No!
   
   //read file's pixel array
   Serial.println("-----read file's pixel array-----");
@@ -2060,8 +2050,7 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   (void)fileBMP.seek( bitmapHeader->File_Offset_to_PixelArray );
   Serial.print("fileBMP.position() Result: ");Serial.println( fileBMP.position() );
   
-  unsigned char* raw_Pixel_Array;
-  raw_Pixel_Array = (unsigned char*)malloc(bitmap_DIB_header_V5->SizeOfBitmap + 1);
+  unsigned char* raw_Pixel_Array = (unsigned char*)malloc(bitmap_DIB_header_V5->SizeOfBitmap + 1);
   fileBMP.read(raw_Pixel_Array, bitmap_DIB_header_V5->SizeOfBitmap);
   
   //convert BMP pixel array into useable Struct
@@ -2084,6 +2073,7 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   free(raw_Pixel_Array);
   delete bitmap_DIB_header_V4;
   delete bitmap_DIB_header_V5;
+  delete bitmap_DIB_header;
   delete bitmapHeader;
   Serial.println("-----Free Up Memory Complete-----");
   
@@ -2495,6 +2485,30 @@ void load_bitmapdat_File(unsigned char* &imageloadlocation, unsigned int &imageD
   //display.drawBitmap(0, 0, fileImageDataBuffer, frameWidthSize, frameHeightSize, WHITE);
 }
 
+void load_bitmapBMP_File(unsigned char*&, unsigned int&, unsigned int&, unsigned int&, File &);
+
+void load_bitmapBMP_File(unsigned char* &imageloadlocation, unsigned int &imageDataLength, unsigned int &widthPointer, unsigned int &heightPointer, File &fileBMP) {
+  if (!fileBMP) {
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+  Serial.printf("Address stored in widthPointer variable: %x\n", &widthPointer  );
+  Serial.printf("Value of widthPointer variable: %d\n", widthPointer );
+  Serial.printf("Address stored in heightPointer variable: %x\n", &heightPointer  );
+  Serial.printf("Value of heightPointer variable: %d\n", heightPointer );
+  IMGbitmapStruct * tempIMG = new IMGbitmapStruct;
+  load_bitmapIMG_File_struct(fileBMP, *tempIMG);
+  
+  imageloadlocation = (unsigned char*)malloc(tempIMG->imageByteLength + 1);
+  //memcpy(imageloadlocation, tempIMG->image, sizeof(tempIMG->image));
+  memcpy(imageloadlocation, tempIMG->image, tempIMG->imageByteLength);
+  widthPointer = tempIMG->widthPx;
+  heightPointer = tempIMG->heightPx;
+  imageDataLength = tempIMG->imageByteLength;
+  delete tempIMG;
+}
+
+
 
 
 void readbitmapdatFile(Adafruit_SH1106 &display, File &fileBMP);
@@ -2771,6 +2785,25 @@ void test_bmp_image_file_read()
   
   fileBMP.close();
   Serial.println("IMGbitmapStruct Test: Closed");
+  printFreeHeap(Serial);
+
+  delay(1000);
+  
+  printFreeHeap(Serial);
+  fileBMP = SPIFFS.open("/Neco-Arc_0.bmp");
+  IMGbitmapStruct * NecoArcTest = new IMGbitmapStruct;
+  printFreeHeap(Serial);
+  Serial.println("IMGbitmapStruct Test: Begin");
+  
+  load_bitmapIMG_File_struct(fileBMP, *NecoArcTest);
+  fileBMP.close();
+  
+  display.clearDisplay();
+  display_struct_bitmapIMG(display, *NecoArcTest, 0, 0);
+  display.display();
+  
+  Serial.println("IMGbitmapStruct Test: Closed");
+  delete NecoArcTest;
   printFreeHeap(Serial);
 }
 
@@ -3088,7 +3121,7 @@ void setup()   {
 
   printFreeHeap(Serial);
   
-  bool rotTest = true;//true;
+  bool rotTest = false;//true;
   if (rotTest)
   {
   //"/boyKisserFaceGif_bitmapgif.txt"
@@ -3145,6 +3178,7 @@ void setup()   {
   /*
    * Load Sprites Start
    */
+  /*
   {
   File fileBMP;
   fileBMP = SPIFFS.open("/batteryBig_bitmapimg.dat");
@@ -3157,7 +3191,28 @@ void setup()   {
   }
   fileBMP.close();
   }
-
+  //*/
+  {
+  File fileBMP;
+  fileBMP = SPIFFS.open("/batteryBig_Full.bmp");
+  while (fileBMP.available()) {
+    unsigned char* imageloadlocation;
+    unsigned int imageDataLength = 0;
+    load_bitmapBMP_File(imageloadlocation, imageDataLength, batteryIconBigWidth, batteryIconBigHeight, fileBMP);
+    batteryIconBigImage = (unsigned char*)malloc(imageDataLength + 1);
+    memcpy(&batteryIconBigImage, &imageloadlocation, imageDataLength);
+    display.clearDisplay();
+    display.drawBitmap(32, 32, imageloadlocation, batteryIconBigWidth, batteryIconBigHeight, WHITE);
+    display.display();
+    delay(1000);
+    display.clearDisplay();
+    display.drawBitmap(32, 32, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
+    display.display();
+    delay(1000);
+  }
+  fileBMP.close();
+  }
+  /*
   {
   File fileBMP;
   fileBMP = SPIFFS.open("/Neco-Arc_bitmapimg.dat");
@@ -3169,6 +3224,24 @@ void setup()   {
     load_bitmapdat_File(imageloadlocation, imageDataLength, imageWidth, imageHeight, fileBMP);
     //adds to charater Buffer
     memcpy(&visableCharacterBuffer[ 0 ], imageloadlocation, imageDataLength);//4*56
+  }
+  fileBMP.close();
+  }
+  //*/
+  {
+  File fileBMP;
+  fileBMP = SPIFFS.open("/Neco-Arc_0.bmp");
+  while (fileBMP.available()) {
+    unsigned char* imageloadlocation;
+    unsigned int imageDataLength = 0;
+    unsigned int imageWidth = 0;
+    unsigned int imageHeight = 0;
+    load_bitmapBMP_File(imageloadlocation, imageDataLength, imageWidth, imageHeight, fileBMP);
+    //adds to charater Buffer
+    memcpy(&visableCharacterBuffer[ 0 ], imageloadlocation, imageDataLength);
+    display.clearDisplay();
+    display.drawBitmap(32, 32, visableCharacterBuffer[ 0 ], imageWidth, imageHeight, WHITE);
+    display.display();
   }
   fileBMP.close();
   }
