@@ -468,6 +468,19 @@ char debugCommandBuffer[maxDebugCommandLength];    // make sure this is large en
 #endif
 #endif
 
+/*
+   Basic Struct Image
+*/
+//https://www.tutorialspoint.com/structs-in-arduino-program
+typedef struct {
+  char imageName[32+1] = "IMAGE";//max name length = 32 charaters
+  uint16_t imageByteLength;
+  uint16_t widthPx;//in pixels
+  uint16_t heightPx;//in pixels
+  unsigned char* image;//size is imageByteLength
+} IMGbitmapStruct;
+
+
 
 
 //Debug Based
@@ -478,6 +491,7 @@ bool disableButtonPISO_update = false;
 unsigned int currentMenuID = 0;
 unsigned int previousMenuID = 0;
 unsigned long frameCountVariable;//This variable stores the number of frames that have been displayed since the program started.
+IMGbitmapStruct batteryIconBig;
 static unsigned char* batteryIconBigImage; //batteryBig_Full.bmp //SmallBatteryPercent.bmp
 static unsigned int batteryIconBigWidth;
 static unsigned int batteryIconBigHeight;
@@ -543,7 +557,8 @@ const unsigned int characterPixelWidth = 32;//4 bytes
 const unsigned int characterPixelHeight = 56;
 const unsigned int characterFrameByteSize = ((characterPixelWidth % 8 + characterPixelWidth) >> 3) * characterPixelHeight;
 const unsigned int characterBufferFrameCount = 32;
-static unsigned char visableCharacterBuffer[ characterBufferFrameCount ][ characterFrameByteSize ];
+//static unsigned char visableCharacterBuffer[ characterBufferFrameCount ][ characterFrameByteSize ];
+IMGbitmapStruct visableCharacterBuffer[ characterBufferFrameCount ];
 
 //Sprite Storage/Memory (_gMSB)(__GMSB__)
 const unsigned int spritePagePixelWidth = 1024;
@@ -1629,14 +1644,6 @@ typedef struct _Win5xBitmapHeader{
 /*
    Struct Images and Animations: Begin
 */
-//https://www.tutorialspoint.com/structs-in-arduino-program
-typedef struct {
-  char imageName[32] = "IMAGE";//max name length = 31 charaters
-  uint16_t imageByteLength;
-  uint16_t widthPx;//in pixels
-  uint16_t heightPx;//in pixels
-  unsigned char* image;//size is imageByteLength
-} IMGbitmapStruct;
 
 
 //basic convertion from .bmp to something usable!
@@ -2445,72 +2452,6 @@ void display_struct_bitmapGIF(Adafruit_SH1106 &display, GIFbitmapStruct &bitmapG
 
 
 
-
-
-
-
-
-
-
-
-
-
-void load_bitmapdat_File(unsigned char*&, unsigned int&, unsigned int&, unsigned int&, File &);
-
-void load_bitmapdat_File(unsigned char* &imageloadlocation, unsigned int &imageDataLength, unsigned int &widthPointer, unsigned int &heightPointer, File &fileBMP) {
-  if (!fileBMP) {
-    Serial.println("Failed to open file for reading");
-    return;
-  }
-  Serial.printf("Address stored in widthPointer variable: %x\n", &widthPointer  );
-  Serial.printf("Value of widthPointer variable: %d\n", widthPointer );
-  Serial.printf("Address stored in heightPointer variable: %x\n", &heightPointer  );
-  Serial.printf("Value of heightPointer variable: %d\n", heightPointer );
-  unsigned int frameDataSize;
-  frameDataSize = ((fileBMP.read()) << 8) | (fileBMP.read());
-  unsigned int frameWidthSize;
-  frameWidthSize = ((fileBMP.read()) << 8) | (fileBMP.read()); frameWidthSize++;
-  frameDataSize -= 2;
-  unsigned int frameHeightSize;
-  frameHeightSize = ((fileBMP.read()) << 8) | (fileBMP.read()); frameHeightSize++;
-  frameDataSize -= 2;
-  //unsigned char* fileImageDataBuffer;
-  //fileImageDataBuffer = (unsigned char*)malloc(frameDataSize+1);
-  imageloadlocation = (unsigned char*)malloc(frameDataSize + 1);
-  fileBMP.read(imageloadlocation, frameDataSize);
-  widthPointer = frameWidthSize;
-  heightPointer = frameHeightSize;
-  imageDataLength = frameDataSize;
-
-  //display.drawBitmap(0, 0, fileImageDataBuffer, frameWidthSize, frameHeightSize, WHITE);
-}
-
-void load_bitmapBMP_File(unsigned char*&, unsigned int&, unsigned int&, unsigned int&, File &);
-
-void load_bitmapBMP_File(unsigned char* &imageloadlocation, unsigned int &imageDataLength, unsigned int &widthPointer, unsigned int &heightPointer, File &fileBMP) {
-  if (!fileBMP) {
-    Serial.println("Failed to open file for reading");
-    return;
-  }
-  Serial.printf("Address stored in widthPointer variable: %x\n", &widthPointer  );
-  Serial.printf("Value of widthPointer variable: %d\n", widthPointer );
-  Serial.printf("Address stored in heightPointer variable: %x\n", &heightPointer  );
-  Serial.printf("Value of heightPointer variable: %d\n", heightPointer );
-  IMGbitmapStruct * tempIMG = new IMGbitmapStruct;
-  load_bitmapIMG_File_struct(fileBMP, *tempIMG);
-  
-  imageloadlocation = (unsigned char*)malloc(tempIMG->imageByteLength + 1);
-  //memcpy(imageloadlocation, tempIMG->image, sizeof(tempIMG->image));
-  memcpy(imageloadlocation, tempIMG->image, tempIMG->imageByteLength);
-  widthPointer = tempIMG->widthPx;
-  heightPointer = tempIMG->heightPx;
-  imageDataLength = tempIMG->imageByteLength;
-  delete tempIMG;
-}
-
-
-
-
 void readbitmapdatFile(Adafruit_SH1106 &display, File &fileBMP);
 
 void readbitmapdatFile(Adafruit_SH1106 &display, File &fileBMP) {
@@ -2998,52 +2939,6 @@ void setup()   {
   /*
    * Startup Tests Starts
    */
-  //Text Image Read
-  printFreeHeap(Serial);
-
-  /*
-    static unsigned char animationFrameBuffer[1024*16];
-    unsigned char* framepointerArray[22];
-    File fileBMP;
-    fileBMP = SPIFFS.open("/boyKisserFaceGif_bitmapgif.dat");
-    //loads file into large buffer then saves pointers and plays frames from pointers
-    unsigned char* imageloadlocation;
-    unsigned int imageDataLength = 0;
-    unsigned int imageWidth = 0;
-    unsigned int imageHeight = 0;
-    Serial.println("File Content:");
-    unsigned int currentFrame = 0;
-    unsigned int currentAnimationDataLength = 0;
-
-    while(fileBMP.available()){
-    load_bitmapdat_File(imageloadlocation, imageDataLength, imageWidth, imageHeight, fileBMP);
-    framepointerArray[currentFrame] = &animationFrameBuffer[ currentAnimationDataLength ];
-    memcpy(framepointerArray[currentFrame], imageloadlocation, imageDataLength);
-    currentAnimationDataLength += imageDataLength;
-    Serial.println(currentFrame);
-    currentFrame++;
-    }
-
-    fileBMP.close();
-
-    long int t1 = micros();
-    for (unsigned int index=0; index < 22; index++){
-    display.clearDisplay();
-    display.drawBitmap(0, 0, framepointerArray[index], imageWidth, imageHeight, WHITE);
-    display.display();
-    }
-    long int t2 = micros();
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.print("Frames: "); display.print( 22 ); display.println();
-    display.print("T-Time(ns): "); display.print( t2-t1 ); display.println("");
-    display.print("FPS: "); display.print( (double)(22/((double)(t2-t1)/1000000)) ); display.println();
-    //Serial.print("Time taken by the task: "); Serial.print(t2-t1); Serial.println(" microseconds(ns)");
-    display.display();
-    delay(1500);
-  */
   printFreeHeap(Serial);
   delay(1000);
   test_bmp_image_file_read();
@@ -3121,7 +3016,7 @@ void setup()   {
 
   printFreeHeap(Serial);
   
-  bool rotTest = false;//true;
+  bool rotTest = true;//true;
   if (rotTest)
   {
   //"/boyKisserFaceGif_bitmapgif.txt"
@@ -3178,72 +3073,17 @@ void setup()   {
   /*
    * Load Sprites Start
    */
-  /*
   {
-  File fileBMP;
-  fileBMP = SPIFFS.open("/batteryBig_bitmapimg.dat");
-  while (fileBMP.available()) {
-    unsigned char* imageloadlocation;
-    unsigned int imageDataLength = 0;
-    load_bitmapdat_File(imageloadlocation, imageDataLength, batteryIconBigWidth, batteryIconBigHeight, fileBMP);
-    batteryIconBigImage = (unsigned char*)malloc(imageDataLength + 1);
-    memcpy(&batteryIconBigImage[0], imageloadlocation, imageDataLength);
+    File fileBMP;
+    fileBMP = SPIFFS.open("/batteryBig_Full.bmp");
+    load_bitmapIMG_File_struct(fileBMP, batteryIconBig);
+    fileBMP.close();
   }
-  fileBMP.close();
-  }
-  //*/
   {
-  File fileBMP;
-  fileBMP = SPIFFS.open("/batteryBig_Full.bmp");
-  while (fileBMP.available()) {
-    unsigned char* imageloadlocation;
-    unsigned int imageDataLength = 0;
-    load_bitmapBMP_File(imageloadlocation, imageDataLength, batteryIconBigWidth, batteryIconBigHeight, fileBMP);
-    batteryIconBigImage = (unsigned char*)malloc(imageDataLength + 1);
-    memcpy(&batteryIconBigImage, &imageloadlocation, imageDataLength);
-    display.clearDisplay();
-    display.drawBitmap(32, 32, imageloadlocation, batteryIconBigWidth, batteryIconBigHeight, WHITE);
-    display.display();
-    delay(1000);
-    display.clearDisplay();
-    display.drawBitmap(32, 32, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
-    display.display();
-    delay(1000);
-  }
-  fileBMP.close();
-  }
-  /*
-  {
-  File fileBMP;
-  fileBMP = SPIFFS.open("/Neco-Arc_bitmapimg.dat");
-  while (fileBMP.available()) {
-    unsigned char* imageloadlocation;
-    unsigned int imageDataLength = 0;
-    unsigned int imageWidth = 0;
-    unsigned int imageHeight = 0;
-    load_bitmapdat_File(imageloadlocation, imageDataLength, imageWidth, imageHeight, fileBMP);
-    //adds to charater Buffer
-    memcpy(&visableCharacterBuffer[ 0 ], imageloadlocation, imageDataLength);//4*56
-  }
-  fileBMP.close();
-  }
-  //*/
-  {
-  File fileBMP;
-  fileBMP = SPIFFS.open("/Neco-Arc_0.bmp");
-  while (fileBMP.available()) {
-    unsigned char* imageloadlocation;
-    unsigned int imageDataLength = 0;
-    unsigned int imageWidth = 0;
-    unsigned int imageHeight = 0;
-    load_bitmapBMP_File(imageloadlocation, imageDataLength, imageWidth, imageHeight, fileBMP);
-    //adds to charater Buffer
-    memcpy(&visableCharacterBuffer[ 0 ], imageloadlocation, imageDataLength);
-    display.clearDisplay();
-    display.drawBitmap(32, 32, visableCharacterBuffer[ 0 ], imageWidth, imageHeight, WHITE);
-    display.display();
-  }
-  fileBMP.close();
+    File fileBMP;
+    fileBMP = SPIFFS.open("/Neco-Arc_0.bmp");
+    load_bitmapIMG_File_struct(fileBMP, visableCharacterBuffer[ 0 ]);
+    fileBMP.close();
   }
   
   /*
@@ -3989,7 +3829,8 @@ void menu_MAIN(){
     display.drawLine(47, 7, 47 + 8, 7 + 8, WHITE);
   }
   {
-    display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
+    display_struct_bitmapIMG(display, batteryIconBig, batteryXpos, batteryYpos);
+    //display.drawBitmap(batteryXpos, batteryYpos, batteryIconBigImage, batteryIconBigWidth, batteryIconBigHeight, WHITE);
     if (batteryVoltage == 0.0){
       display.fillRect(batteryXpos + 4, batteryYpos + 2, 20, 8, BLACK);
     }else{
@@ -4016,8 +3857,9 @@ void menu_MAIN(){
   display.print("FPS~:"); display.print( system_Frame_FPS ); display.println();
   //display.print("RawButtons:"); display.println(buttonpiso1.getRAWState(), BIN);
   display.print("battery:"); display.print(batteryPercent); display.print("%, "); display.print(batteryVoltage); display.println("V");
-  display.print("ShowingVCB_frame:"); display.println(frameCountVariable % 32);
-  display.drawBitmap(0, 8, visableCharacterBuffer[ frameCountVariable % 32 ], 32, 56, WHITE);
+  display.print("ShowingVCB_frame:"); display.println(frameCountVariable % characterBufferFrameCount);
+  display_struct_bitmapIMG(display, visableCharacterBuffer[ frameCountVariable % characterBufferFrameCount ], 0, 8);
+  //display.drawBitmap(0, 8, visableCharacterBuffer[ frameCountVariable % 32 ], 32, 56, WHITE);
 }
 
 
