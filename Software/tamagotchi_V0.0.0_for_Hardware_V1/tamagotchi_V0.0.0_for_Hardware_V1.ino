@@ -472,12 +472,78 @@ char debugCommandBuffer[maxDebugCommandLength];    // make sure this is large en
    Basic Struct Image
 */
 //https://www.tutorialspoint.com/structs-in-arduino-program
-typedef struct {
+//http://www.cs.ecu.edu/~karl/3300/spr14/Notes/C/Structure/constructor.html
+typedef struct _IMGbitmapStructure{
   char imageName[32+1] = "IMAGE";//max name length = 32 charaters
-  uint16_t imageByteLength;
-  uint16_t widthPx;//in pixels
-  uint16_t heightPx;//in pixels
-  unsigned char* image;//size is imageByteLength
+  uint16_t imageByteLength = 0;
+  uint16_t widthPx = 0;//in pixels
+  uint16_t heightPx = 0;//in pixels
+  unsigned char* pixelBitDataArray = NULL;//size is imageByteLength
+  bool setPixel(unsigned int widthIndex, unsigned int heightIndex)
+  {
+    bool result = false;
+    if ( (widthIndex < widthPx)&(heightIndex < heightPx) )
+    {
+      //set pixel
+      result = true;
+    }
+    return result;
+  }
+  bool clearPixel(unsigned int widthIndex, unsigned int heightIndex)
+  {
+    bool result = false;
+    if ( (widthIndex < widthPx)&(heightIndex < heightPx) )
+    {
+      //clear pixel
+      result = true;
+    }
+    return result;
+  }
+  void allocate(unsigned int width, unsigned int height)
+  {
+    if ((void*)pixelBitDataArray!=NULL)//case if image Pointer is already allocated, if so use free on it too Reallocate.
+    {
+      free(pixelBitDataArray);
+    }
+    widthPx = width;
+    heightPx = height;
+    widthPadding = (8 - (widthPx % 8));
+    imageByteLength = ((widthPx + widthPadding)>>3) * heightPx;
+    pixelBitDataArray = new unsigned char[imageByteLength];
+    autoAllocatedFlag = true;
+    Serial.print(_funcMSG);
+    Serial.printf("allocated %d bytes of memory at %p for image of size width (%d) and height (%d).\n",  imageByteLength, (void*)imageByteLength, widthPx, heightPx);
+  }
+  _IMGbitmapStructure(unsigned int width, unsigned int height, char name[32+1])
+  {
+    strncpy(imageName, name, sizeof(imageName));
+    allocate(width, height);
+  }
+  _IMGbitmapStructure(unsigned int width, unsigned int height)
+  {
+    allocate(width, height);
+  }
+  _IMGbitmapStructure()
+  {
+    ;
+  }
+  ~_IMGbitmapStructure()
+  {
+    if ((void*)pixelBitDataArray != NULL){
+      Serial.print(_funcMSG);
+      Serial.printf("autoAllocatedFlag:(%d)---", autoAllocatedFlag);
+      Serial.printf("deallocating %d bytes of memory at address (%p) for image of size width (%d) and height (%d).\n",  imageByteLength, (void*)pixelBitDataArray, widthPx, heightPx);
+      delete [] pixelBitDataArray;
+    }else{
+      Serial.print(_funcMSG);
+      Serial.printf("deallocating %d bytes of memory at address (%p)(NULL) for image of size width (%d) and height (%d).\n",  imageByteLength, (void*)pixelBitDataArray, widthPx, heightPx);
+    }
+    
+  }
+  private:
+    uint16_t widthPadding = 0;//in bits
+    bool autoAllocatedFlag = false;//true if allocated via Struct Allocation Function
+    const char *_funcMSG = "-----STRUCT_FUNC_MSG(_IMGbitmapStructure)-----";
 } IMGbitmapStruct;
 
 
@@ -1957,16 +2023,6 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
       bitmap_DIB_header_V5->Size =            createDWORDfromBytes(&raw_DIB_Header[0], LSB);
       bitmap_DIB_header_V5->Width =           createLONGfromBytes(&raw_DIB_Header[4], LSB);
       bitmap_DIB_header_V5->Height =          createLONGfromBytes(&raw_DIB_Header[8], LSB);
-      Serial.println("bitmap_DIB_header_V5->Width: ");
-      Serial.println(raw_DIB_Header[4], HEX);
-      Serial.println(raw_DIB_Header[5], HEX);
-      Serial.println(raw_DIB_Header[6], HEX);
-      Serial.println(raw_DIB_Header[7], HEX);
-      Serial.println("bitmap_DIB_header_V5->Height: ");
-      Serial.println(raw_DIB_Header[8], HEX);
-      Serial.println(raw_DIB_Header[9], HEX);
-      Serial.println(raw_DIB_Header[10], HEX);
-      Serial.println(raw_DIB_Header[11], HEX);
       
       bitmap_DIB_header_V5->Planes =          createWORDfromBytes(&raw_DIB_Header[12], LSB);
       bitmap_DIB_header_V5->BitsPerPixel =    createWORDfromBytes(&raw_DIB_Header[14], LSB);
@@ -2087,7 +2143,8 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   
   //convert BMP pixel array into useable Struct
   Serial.println("-----convert BMP pixel array into useable Struct-----");
-  bitmapIMG.image = (unsigned char*)malloc(bitmapIMG.imageByteLength);
+  //bitmapIMG.pixelBitDataArray = (unsigned char*)malloc(bitmapIMG.imageByteLength);
+  bitmapIMG.allocate(bitmap_DIB_header_V5->Width, bitmap_DIB_header_V5->Height);
   
   unsigned int index_0 = 0;
   unsigned int index_1 = 0;
@@ -2098,7 +2155,7 @@ void load_bitmapIMG_File_struct(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
     index_0 = widthByteSizeNEW * indexH;
     index_1 = widthByteSizeBMP * (bitmapIMG.heightPx - indexH - 1);
     for (unsigned int indexW = 0; indexW < widthByteSizeNEW; indexW++) {
-      bitmapIMG.image[ index_0 + indexW ] = raw_Pixel_Array[ index_1 + indexW ];
+      bitmapIMG.pixelBitDataArray[ index_0 + indexW ] = raw_Pixel_Array[ index_1 + indexW ];
     }
   }
   Serial.println("-----Free Up Memory-----");
@@ -2147,17 +2204,17 @@ void load_struct_bitmapIMG_dat_File(File &fileBMP, IMGbitmapStruct &bitmapIMG) {
   bitmapIMG.imageByteLength -= 2;
   unsigned char* imageTemp;
   imageTemp = (unsigned char*)malloc(bitmapIMG.imageByteLength + 1);
-  bitmapIMG.image = (unsigned char*)malloc(bitmapIMG.imageByteLength);
+  bitmapIMG.pixelBitDataArray = (unsigned char*)malloc(bitmapIMG.imageByteLength);
   fileBMP.read(imageTemp, bitmapIMG.imageByteLength);
   for (int index = 0; index < bitmapIMG.imageByteLength; index++) {
-    bitmapIMG.image[index] = imageTemp[index];
+    bitmapIMG.pixelBitDataArray[index] = imageTemp[index];
   }
   free(imageTemp);
 }
 
 
 void display_struct_bitmapIMG(Adafruit_SH1106 &display, IMGbitmapStruct &bitmapIMG, int locx, int locy) {
-  display.drawBitmap(locx, locy, bitmapIMG.image, bitmapIMG.widthPx, bitmapIMG.heightPx, WHITE);
+  display.drawBitmap(locx, locy, bitmapIMG.pixelBitDataArray, bitmapIMG.widthPx, bitmapIMG.heightPx, WHITE);
 }
 
 
@@ -2818,7 +2875,7 @@ void printParameters(Stream &serialport, struct Configuration configuration);
 void printModuleInformation(Stream &serialport, struct ModuleInformation moduleInformation);
 
 
-void printScrollText(Adafruit_SH1106 &display, char textInput[], unsigned int textMaxScrollLength, unsigned int frameOffset);
+void printScrollTextLeft(Adafruit_SH1106 &display, char textInput[], unsigned int textMaxScrollLength, unsigned int frameOffset);
 
 
 
@@ -2971,10 +3028,10 @@ void setup()   {
   printFreeHeap(Serial);
   delay(1000);
   
-  //test_bitmapgif_dat_FBF();
+  test_bitmapgif_dat_FBF();
   
   delay(250);
-  //test_bitmapgif_dat_GIF();
+  test_bitmapgif_dat_GIF();
   
   delay(250);
   
@@ -3041,25 +3098,28 @@ void setup()   {
   
   {
   //load boy-kisser from sprite sheet
-  Serial.println("-----Load Sprite of Boy-kisser-----");
+  Serial.println("-----Load Sprite of Boy-kisser Vertical-----");
   printFreeHeap(Serial);
   File fileBMP;
-  fileBMP = SPIFFS.open("/BoyKisserSpriteVertical.bmp");//Horizontal
+  fileBMP = SPIFFS.open("/BoyKisserSpriteVertical.bmp");
   IMGbitmapStruct * boyKisserSpriteSheet = new IMGbitmapStruct;
   load_bitmapIMG_File_struct(fileBMP, *boyKisserSpriteSheet);
   fileBMP.close();
   Serial.println("cutSpriteSheet");
   //cut sprite sheet
   IMGbitmapStruct boyKisserFrames[22];
+  unsigned int spriteWidth = 85;
+  unsigned int spriteHeight = 64;
   for(byte frame = 0; frame < 22; frame++){
-    boyKisserFrames[frame].widthPx = 85;
-    boyKisserFrames[frame].heightPx = 64;
+    boyKisserFrames[frame].widthPx = spriteWidth;
+    boyKisserFrames[frame].heightPx = spriteHeight;
     unsigned int framePaddingLength = (8 - boyKisserFrames[frame].widthPx%8);
     unsigned int widthByteLength = ((8 - (boyKisserFrames[frame].widthPx % 8)) + boyKisserFrames[frame].widthPx) >> 3;
     //create images
     boyKisserFrames[frame].imageByteLength = ( widthByteLength )*boyKisserFrames[frame].heightPx;
-    boyKisserFrames[frame].image = (unsigned char*)malloc( boyKisserFrames[frame].imageByteLength );
-    memcpy(boyKisserFrames[frame].image, &boyKisserSpriteSheet->image[ boyKisserFrames[frame].imageByteLength * frame ], boyKisserFrames[frame].imageByteLength);
+    //boyKisserFrames[frame].pixelBitDataArray = (unsigned char*)malloc( boyKisserFrames[frame].imageByteLength );
+    boyKisserFrames[frame].allocate(spriteWidth, spriteHeight);
+    memcpy(boyKisserFrames[frame].pixelBitDataArray, &boyKisserSpriteSheet->pixelBitDataArray[ boyKisserFrames[frame].imageByteLength * frame ], boyKisserFrames[frame].imageByteLength);
   }
   delete boyKisserSpriteSheet;
   for(byte frame = 0; frame < 22; frame++){
@@ -3070,10 +3130,11 @@ void setup()   {
   }
   
   printFreeHeap(Serial);
-  Serial.println("-----Continuing from Sprite of Boy-kisser-----");
+  Serial.println("-----Continuing from Sprite of Boy-kisser Vertical-----");
   delay(1000);
   }
-
+  
+  delay(1000);
   
   bool rotTest = true;//true;
   if (rotTest)
@@ -3657,7 +3718,8 @@ void loop()
     display.print("currentMenuID:"); display.println(currentMenuID);
   }
   
-  printScrollText(display, "OwO123456789ABCDEFOwOabcdef", 5, frameCountVariable);
+  display.setCursor(5, display.getCursorY());
+  printScrollTextLeft(display, "OwO123456789ABCDEFOwOabcdef", 5, frameCountVariable);
   
   //display.print("CPU Freq: ");display.println(getCpuFrequencyMhz());
   
@@ -3823,7 +3885,6 @@ void loop()
     };
   }
   
-  
   //update Frame
   display.display();
   //update frame count variable
@@ -3861,22 +3922,69 @@ void display_connected_devices()
 
 
 
-void printScrollText(Adafruit_SH1106 &display, char textInput[], unsigned int textMaxScrollLength, unsigned int frameOffset) {
+void printScrollTextLeft(Adafruit_SH1106 &display, char textInput[], unsigned int textMaxScrollLength, unsigned int frameOffset)
+{
+  //uses (Standard ASCII 5x7 font) for Charater size.
+  //char textInput[]; //Text Input
+  //unsigned int textMaxScrollLength; //Length of Text from Input to scroll!
+  //unsigned int frameOffset; //global frame count since start
+  const byte charaSX = 5;
+  const byte charaSY = 7;
+  //currently only can only scroll from start to end going Left.
+  unsigned int frameStartScroll_Index = 0;//specify what frame the function was first called.
+  /*
+   * The Start frame the scroll math will be base off will always be 0
+   */
+  byte pixelSpeedFrame = 1;//how many pixels does the text move in a single frame!
+  unsigned int localFrameOffset = frameOffset - frameStartScroll_Index;
+  if (frameOffset < frameStartScroll_Index){
+    localFrameOffset = 0;
+  }
+  //fix sync issue
+  //Work on (oct 20 2023)
+  bool printDebugText = false;
+  if (printDebugText){
+    Serial.printf("-----FUNC(printScrollTextLeft(display, %s, %i, %i))-----\n", textInput, textMaxScrollLength, frameOffset );
+  }
   char textInputShort[textMaxScrollLength+1];
-  unsigned int textMaxLength = strlen(textInput);
-  unsigned int textStartIndex = frameOffset>>3;//== (frameOffset/8)
+  unsigned int maxlocalFrame = ((strlen(textInput)-textMaxScrollLength)*(charaSX*pixelSpeedFrame));
+  unsigned int localFrame = (localFrameOffset)%(maxlocalFrame);
+  unsigned int textStartIndex = (localFrame)/(charaSX*pixelSpeedFrame);
+  if (printDebugText){
+    Serial.printf("maxlocalFrame= %d\n", maxlocalFrame);
+    Serial.printf("localFrame= %d\n", localFrame);
+    Serial.printf("textStartIndex= %d, textInputShort= \"%s\"\n", textStartIndex, textInputShort);
+  }
   memset(textInputShort, '\0', textMaxScrollLength+1);
-  strncmp(textInputShort, &textInput[ textStartIndex ], textMaxScrollLength);
-  display.setCursor(display.getCursorX()+(frameOffset%(2<<3)), display.getCursorY());
+  strncpy(textInputShort, &textInput[ textStartIndex ], textMaxScrollLength);
+  if (printDebugText){
+    Serial.printf("&textInput[ textStartIndex = %d ]= \"%s\" = textInputShort= \"%s\", textMaxScrollLength= %d \n", textStartIndex, &textInput[ textStartIndex ], textInputShort, textMaxScrollLength);
+  }
+  unsigned int setCursorX = display.getCursorX() - localFrame%(charaSX*pixelSpeedFrame);
+  unsigned int setCursorY = display.getCursorY();
+  if (printDebugText){
+    Serial.printf("setCursorX= %d , setCursorY= %d, textInputShort= \"%s\"\n", setCursorX, setCursorY, textInputShort);
+  }
+  display.setCursor(setCursorX, setCursorY);
   display.println(textInputShort);
 }
 
 void printFreeHeap(Stream &serialport) {
+  bool showMSGIdentifierOnPrint = false;
+  if (showMSGIdentifierOnPrint){
+    serialport.print("-----ESP_STAT-----");
+  }
+  //-----ESP_STAT-----
   serialport.print("ESP.getFreeHeap():");
   serialport.println(ESP.getFreeHeap());
 }
 
 void printHeapFrag(Stream &serialport) {
+  bool showMSGIdentifierOnPrint = false;
+  if (showMSGIdentifierOnPrint){
+    serialport.print("-----ESP_STAT-----");
+  }
+  //-----ESP_STAT-----
   serialport.print("HeapFrag:"); serialport.print(getFragmentation()); serialport.print("%"); serialport.println();
 }  
 
