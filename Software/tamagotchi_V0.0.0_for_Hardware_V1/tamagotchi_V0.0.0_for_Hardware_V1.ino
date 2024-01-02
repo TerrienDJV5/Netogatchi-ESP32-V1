@@ -4079,6 +4079,7 @@ void menu_SELECTION(){
 
 void menu_LORA(){
   //ToDo: make this its own Loop And only breakOut of it if the (currentMenuID!=2)
+  //Work On me
   display.clearDisplay();
   //https://github.com/xreef/EByte_LoRa_E220_Series_Library
   display.setCursor(0, 1 * 8);
@@ -4150,6 +4151,7 @@ void menu_LORA(){
   display.print("\"");
   display.println();
   display.setCursor(0, 5 * 8);
+  display.display();
 }
 
 void menu_SPIFFS(){
@@ -4287,6 +4289,10 @@ void menu_IP(){
 
 
 
+/*
+ * ToDo: recode serial Debug Commands to allow easier additions of new commands
+ * idea(1): make a index list of commands where commands have indexes and thus can be used in a switch case tree
+ */
 
 void checkAllDebugInputs(){
   //https://arduino.stackexchange.com/questions/31256/multiple-client-server-over-wifi
@@ -4340,10 +4346,9 @@ class DebugCommands {
 };
 
 
-
+//https://forum.arduino.cc/t/can-you-pass-a-serial-port-as-a-parameter/658755
 void serialDebugCommands(Stream &serialport)
 {
-  //https://forum.arduino.cc/t/can-you-pass-a-serial-port-as-a-parameter/658755
   //get serial debug command!
   if (serialport.available() != 0) {
     String debugCommandString = serialport.readString();  //read until timeout
@@ -4359,36 +4364,25 @@ void serialDebugCommands(Stream &serialport)
     char commandInputs[ MAXDEBUG_COMMANDINPUT_LENGTH ];
     char subTargetCommand[ MAXDEBUG_SUBTARGETCOMMAND_LENGTH ];
     char subCommandInputs[ MAXDEBUG_SUBCOMMANDINPUT_LENGTH ];
-    //
-    /*
-      char cacheCommand_0[64];
-      char cacheCommand_1[64];
-      char valueCommandCheckCache_0[64];
-      char valueCommandCheckCache_1[64];
-      char valueCommandCheckCache_2[64];
-      char valueCommandCheckCache_3[64];
-      int intDebugValue_0;
-      int intDebugValue_1;
-      int intDebugValue_2;
-      int intDebugValue_3;
-      //*/
-
+    
     printCharArrayValue(serialport, debugCommand, "Debug Command");
 
     serial_WiFi_DebugCommands(serialport, debugCommand);
     serial_LoRa_DebugCommands(serialport, debugCommand);
     serial_ButtonPISO_DebugCommands(serialport, debugCommand);
-
+    
     if (commandSelect(debugCommand, "set ")) {
       strcpy(targetCommand, "set ");
       strcpy(commandInputs, &debugCommand[strlen(targetCommand)]);
       printCharArrayValue(serialport, commandInputs, "commandInputs");
+      
       if (commandSelect(commandInputs, "taskbarRotation ")) {
         //command format: set taskbarRotation #
         //command format: set taskbarRotation hidden
         strcpy(subTargetCommand, "taskbarRotation ");
         strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
         printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+        
         //https://linuxhint.com/arduino-atoi-function/
         taskbarRotation = atoi(subCommandInputs);//outputs 0 if 0 or is not a valid number
         if (taskbarRotation == 0) {
@@ -4406,6 +4400,7 @@ void serialDebugCommands(Stream &serialport)
         strcpy(subTargetCommand, "chargingFlag ");
         strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
         printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+        
         chargingFlag = atoi(subCommandInputs);
       }
       if (commandSelect(commandInputs, "DebugMenu ")) {
@@ -4417,16 +4412,10 @@ void serialDebugCommands(Stream &serialport)
         strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
         printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
 
-        if (strcmp(subCommandInputs, "hidden") == 0) {
+        if ( (strcmp(subCommandInputs, "hidden") == 0)|(strcmp(subCommandInputs, "invisible") == 0) ) {
           showDebugMenu = 0;
         }
-        if (strcmp(subCommandInputs, "show") == 0) {
-          showDebugMenu = 1;
-        }
-        if (strcmp(subCommandInputs, "invisible") == 0) {
-          showDebugMenu = 0;
-        }
-        if (strcmp(subCommandInputs, "visible") == 0) {
+        if ( (strcmp(subCommandInputs, "show") == 0)|(strcmp(subCommandInputs, "visible") == 0) ) {
           showDebugMenu = 1;
         }
         if (showDebugMenu == 0) {
@@ -4441,6 +4430,7 @@ void serialDebugCommands(Stream &serialport)
         strcpy(subTargetCommand, "MenuID ");
         strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
         printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+        
         currentMenuID = atoi(subCommandInputs);
       }
 
@@ -4521,6 +4511,7 @@ void serial_ButtonPISO_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "ButtonPISO ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      
       for (uint8_t buttonIndex = 0; buttonIndex < buttonPISOcount; buttonIndex++) {
         strcpy(valueCommandCheckCache_0, buttonNameString[buttonIndex]);
         strcat(valueCommandCheckCache_0, " ");
@@ -4571,6 +4562,7 @@ void serial_LoRa_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "getconfig");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      
       printLoRaConfig(serialport, e220ttl);
     }
   }
@@ -4590,6 +4582,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
     strcpy(targetCommand, "control WiFi ");
     strcpy(commandInputs, &debugCommand[strlen(targetCommand)]);
     printCharArrayValue(serialport, commandInputs, "commandInputs");
+    
     //https://www.mischianti.org/2021/03/06/esp32-practical-power-saving-manage-wifi-and-cpu-1/
     //https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
     //https://espressif-docs.readthedocs-hosted.com/projects/arduino-esp32/en/latest/api/wifi.html
@@ -4611,6 +4604,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "showMode ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      
       serialport.println("WiFi.mode(WIFI_STA)  station mode: the ESP32 connects to an access point");
       serialport.println("WiFi.mode(WIFI_AP)  access point mode: stations can connect to the ESP32");
       serialport.println("WiFi.mode(WIFI_AP_STA)  access point and a station connected to another access point");
@@ -4622,6 +4616,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "setMode ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      
       if (strcmp(subCommandInputs, "WIFI_STA") == 0) {
         WiFi.mode(WIFI_STA);  //station mode: the ESP32 connects to an access point
       }
@@ -4637,22 +4632,30 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "getMode ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      
       serialport.print("WiFi.getMode():"); serialport.print(WiFi.getMode()); serialport.print(", ");
-      if (WiFi.getMode() == WIFI_MODE_NULL) {
-        serialport.println("WiFi.getMode() == WIFI_MODE_NULL");
-      };
-      if (WiFi.getMode() == WIFI_MODE_STA) {
-        serialport.println("WiFi.getMode() == WIFI_MODE_STA");
-      };
-      if (WiFi.getMode() == WIFI_MODE_AP) {
-        serialport.println("WiFi.getMode() == WIFI_MODE_AP");
-      };
-      if (WiFi.getMode() == WIFI_MODE_APSTA) {
-        serialport.println("WiFi.getMode() == WIFI_MODE_APSTA");
-      };
-      if (WiFi.getMode() == WIFI_MODE_MAX) {
-        serialport.println("WiFi.getMode() == WIFI_MODE_MAX");
-      };
+      switch (WiFi.getMode()){
+        case WIFI_MODE_NULL:
+          serialport.println("WiFi.getMode() == WIFI_MODE_NULL");
+          break;
+        case WIFI_MODE_STA:
+          serialport.println("WiFi.getMode() == WIFI_MODE_STA");
+          break;
+        case WIFI_MODE_AP:
+          serialport.println("WiFi.getMode() == WIFI_MODE_AP");
+          break;
+        case WIFI_MODE_APSTA:
+          serialport.println("WiFi.getMode() == WIFI_MODE_APSTA");
+          break;
+        case WIFI_MODE_MAX:
+          serialport.println("WiFi.getMode() == WIFI_MODE_MAX");
+          break;
+        default:
+          serialport.print("WiFi.getMode() == (Default Catch All case)");
+          serialport.printf("{%d}", WiFi.getMode());
+          serialport.println();
+          break;
+      }
     }
     if (commandSelect(commandInputs, "connect ")) {
       //command format: control WiFi connect "SSID" "PassWord"
@@ -4782,6 +4785,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "connect ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      
       WiFi.disconnect(true);  // Disconnect from the network
       serialport.println("Wifi Disconnected!");
     }
@@ -4790,6 +4794,7 @@ void serial_WiFi_DebugCommands(Stream &serialport, char *debugCommand)
       strcpy(subTargetCommand, "checkSavedInfo ");
       strcpy(subCommandInputs, &commandInputs[strlen(subTargetCommand)]);
       printCharArrayValue(serialport, subCommandInputs, "subCommandInputs");
+      
       readFile(serialport, SPIFFS, "/Wifi_Connections.json");
       serialport.println("checkSavedInfo!");
     }
