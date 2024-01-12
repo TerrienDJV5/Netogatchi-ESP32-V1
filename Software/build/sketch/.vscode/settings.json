@@ -1,0 +1,10 @@
+#line 1 "/home/hacktopubuntu/Documents/GitHub/Netogatchi-ESP32-V1/Software/tamagotchi_V0.0.0_for_Hardware_V1/.vscode/settings.json"
+{
+    "idf.port": "/dev/ttyUSB0",
+    "idf.adapterTargetName": "esp32",
+    "idf.flashType": "UART",
+    "idf.openOcdConfigs": [
+        "interface/ftdi/esp32_devkitj_v1.cfg",
+        "target/esp32.cfg"
+    ]
+}

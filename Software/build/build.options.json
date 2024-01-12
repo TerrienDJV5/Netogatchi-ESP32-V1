@@ -1,0 +1,11 @@
+{
+  "additionalFiles": "../../..,../../..,../../..,../..,../..,../..,../..,../..,../..,../..,../..,../../..,../../..",
+  "builtInToolsFolders": "",
+  "compiler.optimization_flags": "-Os",
+  "customBuildProperties": "",
+  "fqbn": "esp32:esp32:esp32:JTAGAdapter=default,PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,LoopCore=1,EventsCore=1,DebugLevel=none,EraseFlash=none",
+  "hardwareFolders": "/home/hacktopubuntu/.arduino15/packages",
+  "otherLibrariesFolders": "/home/hacktopubuntu/Arduino/libraries",
+  "runtime.ide.version": "10607",
+  "sketchLocation": "/home/hacktopubuntu/Documents/GitHub/Netogatchi-ESP32-V1/Software/tamagotchi_V0.0.0_for_Hardware_V1"
+}
