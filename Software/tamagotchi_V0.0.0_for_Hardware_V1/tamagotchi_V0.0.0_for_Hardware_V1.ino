@@ -1482,7 +1482,7 @@ typedef struct {
   char file_BitmapFileHeader[14];
   
   
-  char file_DIB_Header[];
+  char file_DIB_Header[12 or 64 or 16 or 40 or 52 or 56 or 108 or 124];
   char file_Extra_bit_masks[12 or 16];//Optional
   byte* file_Color_table;//Semi-Optional
   byte* file_Gap1;//Optional
