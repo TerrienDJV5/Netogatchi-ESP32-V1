@@ -6,10 +6,10 @@
 
 
 
-#include "FreeRTOSConfig.h" //https://www.freertos.org/a00106.html
+#include <FreeRTOSConfig.h> //https://www.freertos.org/a00106.html
 #define INCLUDE_eTaskGetState true
 
-#include "esp_attr.h" //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/memory-types.html
+#include <esp_attr.h> //https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/memory-types.html
 
 /*#################################################*/
 //Try This!
@@ -90,8 +90,8 @@
 #include "Arduino.h"
 #include <string>
 
-#include "FS.h"
-#include "SPIFFS.h"
+#include <FS.h>
+#include <SPIFFS.h>
 //https://www.tutorialspoint.com/esp32_for_iot/esp32_for_iot_spiffs_storage.htm
 
 
@@ -104,9 +104,9 @@
 
 
 //WiFi Support
-#include "WiFi.h"
+#include <WiFi.h>
 #include <esp_wifi.h>
-#include "WiFiType.h"
+#include <WiFiType.h>
 #include <WiFiMulti.h>
 #include <SimpleFTPServer.h> //FTP
 
