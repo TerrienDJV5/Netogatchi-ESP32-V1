@@ -300,6 +300,7 @@ BluetoothSerial SerialBT;
 
 
 //Devices Setup
+#include "tamagotchi_feature_onboardkeys.hpp"
 #if (FeatureEnable_PiSo_Control==true)
 ButtonPISO buttonpiso1(BUTTONPISO_DataIn, BUTTONPISO_Clk, BUTTONPISO_PL);
 #endif
