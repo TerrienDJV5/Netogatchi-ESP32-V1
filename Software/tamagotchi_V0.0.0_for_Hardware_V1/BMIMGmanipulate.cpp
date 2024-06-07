@@ -199,19 +199,10 @@ void BMIMGmanipulate::logicOP_UnsignedCharX8_logicArrayFunc(unsigned char arrayx
 
 void BMIMGmanipulate::rotate8x8ImageClockwise(unsigned char imageIN8x8[]){
   unsigned char imageOutput[8];
-  /*
-  unsigned char* imageOutput;
-  imageOutput = (unsigned char*)calloc(8, sizeof(unsigned char));
-  memset(imageOutput,0,8);
-  */
-  /*
-  byte* cS;//columnSelect
-  cS = (byte*)calloc(8, sizeof(byte));
-  cS[0] = B00000001;cS[1] = B00000010;cS[2] = B00000100;cS[3] = B00001000;cS[4] = B00010000;cS[5] = B00100000;cS[6] = B01000000;cS[7] = B10000000;
-  */
-  ///*
   //
   //imageOutput[ 0 ] = getRShiftAND( imageIN8x8[0], 7, cS[0] ) | ((imageIN8x8[1]>>6) & B00000010);
+  
+  //
   imageOutput[ 0 ] = ((imageIN8x8[0]>>7) & B00000001) | ((imageIN8x8[1]>>6) & B00000010);
   imageOutput[ 1 ] = ((imageIN8x8[0]>>6) & B00000001) | ((imageIN8x8[1]>>5) & B00000010);
   imageOutput[ 2 ] = ((imageIN8x8[0]>>5) & B00000001) | ((imageIN8x8[1]>>4) & B00000010);
@@ -286,8 +277,8 @@ void BMIMGmanipulate::rotate16x16ImageClockwise(unsigned char imageInput[]){
   rotate8x8ImageClockwise( sectorX1Y1 );
   
   //Rotate Sectors
-  unsigned char *sectorStorage;
-  sectorStorage = (unsigned char *)malloc(sectorByteSize);
+  unsigned char* sectorStorage;
+  sectorStorage = (unsigned char*)malloc(sectorByteSize);
   memmove(sectorStorage, sectorX1Y0, sectorByteSize );
   memmove(sectorX1Y0, sectorX0Y0, sectorByteSize );
   memmove(sectorX0Y0, sectorX0Y1, sectorByteSize );
@@ -305,7 +296,6 @@ void BMIMGmanipulate::rotate16x16ImageClockwise(unsigned char imageInput[]){
   free(sectorX1Y0);
   free(sectorX0Y1);
   free(sectorX1Y1);
-  
 }
 
 
@@ -521,7 +511,8 @@ void BMIMGmanipulate::rotate_ImageClockwise_recursionFunc(unsigned char imageInp
   memmove(sectorX0Y0, sectorX0Y1, sectorByteSize );
   memmove(sectorX0Y1, sectorX1Y1, sectorByteSize );
   memmove(sectorX1Y1, sectorStorage, sectorByteSize );
-  free(sectorStorage);
+  //free(sectorStorage);
+  delete sectorStorage;
   
   for (uint16_t index = 0; index < sectorByteHeight; index++) {
     memcpy(&imageInput[ index*imageByteWidth ], &sectorX0Y0[ index*sectorByteWidth ], sectorByteWidth);
@@ -529,10 +520,15 @@ void BMIMGmanipulate::rotate_ImageClockwise_recursionFunc(unsigned char imageInp
     memcpy(&imageInput[ index*imageByteWidth+sectorByteSize*2 ], &sectorX0Y1[ index*sectorByteWidth ], sectorByteWidth);
     memcpy(&imageInput[ index*imageByteWidth+sectorByteSize*2+sectorByteWidth ], &sectorX1Y1[ index*sectorByteWidth ], sectorByteWidth);
   }
-  free(sectorX0Y0);
-  free(sectorX1Y0);
-  free(sectorX0Y1);
-  free(sectorX1Y1);
+  //free(sectorX0Y0);
+  //free(sectorX1Y0);
+  //free(sectorX0Y1);
+  //free(sectorX1Y1);
+
+  delete sectorX0Y0;
+  delete sectorX1Y0;
+  delete sectorX0Y1;
+  delete sectorX1Y1;
   
 }
 
