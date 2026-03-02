@@ -1034,7 +1034,7 @@ void remove_WiFiCredential_From_WiFiCredentialsList(List_WiFi_Credentials_Struct
   Serial.println("malloc/calloc/realloc og List Complete");
   Serial.println("Populate Resize List!");
   //bug: results in all saved Credentials to be removed if one is invalid! (Status : Fixed)
-  //Finish me!
+  //Finish me note made on jul 12, 2024?!
   unsigned int indexoffset = 0;
   for (unsigned int index = 0; index < (wifiCredentialList.length+1); index++) {
     Serial.print("indexoffset:");Serial.println( indexoffset );
